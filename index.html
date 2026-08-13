@@ -92,28 +92,46 @@
       <div class="rank num">01</div>
       <div class="meat">
         <a class="rname" href="https://github.com/firecrawl/anydoc" rel="noopener">firecrawl/anydoc</a>
-        <p class="blurb">anydoc is a Rust library from firecrawl that converts Word, PowerPoint, Excel, OpenDocument, RTF, EPUB, CSV, and PDF into GitHub-Flavored Markdown, with Node.js and Python bindings available on npm and PyPI. I could not run it because the Rust toolchain is not installed on this box. The codebase is heavily Rust at roughly 19,900 lines with Python and JavaScript bindings layered on top, but test coverage looks thin with only one test file present despite CI being configured.</p>
+        <p class="blurb">anydoc is a Rust library from firecrawl that converts Word, PowerPoint, Excel, OpenDocument, RTF, EPUB, CSV, and PDF documents into clean Markdown. It ships with Node.js and Python bindings and is published to Crates.io, npm, and PyPI under the MIT license.
+
+We did not run it. The box has no Rust toolchain installed, so we could not compile the core library or test the bindings.
+
+One thing worth noting from the static signals: the repo has 24,404 lines across 275 files, but only 1 test file. For a converter handling eight different document formats, that is a thin test surface relative to the code size. The Rust core is 19,892 lines, with Python and JavaScript bindings adding another 4,114 lines.</p>
         <div class="meta"><span class="lang">Rust</span><span class="stars num">&#9733; 15.3k</span><span class="pr num">static review</span></div>
       </div>
     </li><li class="repo">
       <div class="rank num">02</div>
       <div class="meat">
         <a class="rname" href="https://github.com/trycompai/crm" rel="noopener">trycompai/crm</a>
-        <p class="blurb">Comp AI CRM is an open source CRM built for AI agents, described as &quot;agentic-first,&quot; written mostly in TypeScript with some Python and shell. I could not run it because the box has no Node runtime installed. One thing worth noting: it is a large project at 1,400 files and roughly 111,000 lines, but it ships with 97 test files and CI, so there is at least some test coverage for a codebase this size.</p>
+        <p class="blurb">trycompai/crm is an open source CRM built for AI agents, described as &quot;agentic-first.&quot; It&#x27;s a TypeScript project at 8,354 stars and climbing, MIT licensed, with a &quot;Powered by Context&quot; badge suggesting it ties into some broader agent platform. The README is truncated so most claims about actual agent integration are cut off.
+
+I could not run it. The box has no Node runtime installed and the repo needs one. No build, no server, no tests executed.
+
+One concrete signal from the statics: 97 test files against 1,400 total files is roughly a 7% file coverage ratio. The codebase is large at 111,538 lines across 1,400 files, with TypeScript dominant and a small Python component at 2,377 lines. The test ratio is thin for something billing itself as production CRM infrastructure.</p>
         <div class="meta"><span class="lang">TypeScript</span><span class="stars num">&#9733; 8.4k</span><span class="pr num">static review</span></div>
       </div>
     </li><li class="repo">
       <div class="rank num">03</div>
       <div class="meat">
         <a class="rname" href="https://github.com/FareedKhan-dev/kimi-k3-in-c" rel="noopener">FareedKhan-dev/kimi-k3-in-c</a>
-        <p class="blurb">This repo is a C99 implementation of Kimi K3 inference claiming to run a 2.78-trillion-parameter model in 8.24 GB of RAM on a single CPU with no BLAS, no framework, and no GPU. I could not run it because there is no runnable Python entrypoint and the primary language is C, so this was a static review only. One thing worth noting: the repo reports 0 test files despite the README advertising tests as present, and CI is enabled, so whatever passes CI is not coming from a test suite you can inspect locally.</p>
+        <p class="blurb">kimi-k3-in-c is a C99 project claiming to run a 2.78-trillion-parameter Kimi K3 model on a single CPU in 8.24 GB of RAM with no BLAS, no framework, and no GPU. The repo is 17,516 lines across 289 files, mostly C at 10,832 lines plus Python tooling at 5,922 lines.
+
+We did not run it. There is no runnable Python entrypoint and our box lacks the C toolchain setup this project expects, so this is static review only.
+
+One concrete signal: zero test files. CI runs but there is nothing for it to actually test against. For a project making an extraordinary claim about trillion-parameter inference in 8 GB, that absence is the first thing a developer will notice before building anything. Apache-2.0 license is clean.</p>
         <div class="meta"><span class="lang">C</span><span class="stars num">&#9733; 5.3k</span><span class="pr num">static review</span></div>
       </div>
     </li><li class="repo">
       <div class="rank num">04</div>
       <div class="meat">
         <a class="rname" href="https://github.com/guillaumemeyer/watermarks-remover" rel="noopener">guillaumemeyer/watermarks-remover</a>
-        <p class="blurb">watermarks-remover is a Python tool that strips AI provenance marks across PNG, JPEG, SVG, PDF, DOCX, HTML, and Markdown files, targeting Unicode text hygiene, statistical rewrite hooks, and C2PA metadata. I installed it with `pip install -r requirements-dev.txt` and ran `pytest -q`, which passed cleanly with exit 0 across 10 test files. The codebase is modest at 6,468 lines spread across 60 files, with CI configured and an MIT license, so integration into existing pipelines is straightforward.</p>
+        <p class="blurb">watermarks-remover is a Python tool by Guillaume Meyer with 3,388 stars and climbing. It strips AI provenance marks from text and documents across a wide set of formats: PNG, JPEG, SVG, PDF, DOCX, HTML, and Markdown. The repo is 6,468 lines across 60 files, with 6,228 lines of Python and 240 lines of Shell. It targets three categories of marks: invisible Unicode characters and space homoglyphs (Layer A), statistical token-sampling watermarks (Layer B, via rewrite hooks), and C2PA or other embedded metadata in binary files. License is MIT.
+
+I cloned it, ran the dev install, and executed the test suite. Tests passed. Then I ran three of the inspection scripts on a plain text file containing two lines with no AI marks. `audit_lib.py` produced no output. `inspect_file.py` reported &quot;Kind: text&quot;, &quot;Length: 63 chars&quot;, &quot;Suspicious: 0&quot;, and explained that Layer A only covers invisible Unicode and space homoglyphs, that statistical watermarks are not detectable without the Layer B rewrite pass, and that pixel-domain marks are out of scope. `inspect_text.py` gave the same results. The tool correctly identified the text as clean and was explicit about what it cannot detect. That honesty in the output is useful. It does not overclaim.
+
+The codebase signals real maturity for a tool at this stage. 60 files with 6,228 lines of Python is substantial. There are 10 test files and CI is enabled. The MIT license removes adoption friction. The architecture is split into discrete layers and inspect kinds (strip, bidi, tag_chars, variation_selector, zwj_family, space, confusable, other_cf), which suggests the author thought through the problem space rather than shipping a single regex pass. The emoji glue preservation default with a `--strip-emoji-glue` paranoid flag is a nice touch.
+
+If you need to audit or strip AI provenance marks from text or documents, this is worth your time. The inspection scripts work, the output is clear about boundaries, and the test suite backs it up. The statistical watermark detection gap is a real limitation but the tool is upfront about it. It delivers on what Layer A claims to do.</p>
         <div class="meta"><span class="lang">Python</span><span class="stars num">&#9733; 3.4k</span><span class="pr num">ran &#10003; tests passed</span></div>
       </div>
     </li>
