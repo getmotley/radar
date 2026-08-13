@@ -84,6 +84,42 @@
   <p class="lead">The trending firehose, filtered. New repos gaining stars fast, deduplicated and sorted into what they actually are, ranked by momentum. It shows what's spiking, not a judgment of code quality. 40 repos this run.</p>
   <div class="stamp"><span class="dot"></span> Updated 13 Aug 2026</div>
 
+  <section class="cluster reviews">
+    <h2><span class="o">What we found running today's top repos</span></h2>
+    <p class="cdesc">Most trending lists just count stars. We clone the day's fastest-rising repos and actually run them. Below: what each one is, whether it ran on our box, and the one thing worth knowing. We ran 1 of 4 today; the rest need a toolchain we don't keep on the box, and we say so plainly. Honest, not scraped.</p>
+    <ul class="repos">
+    <li class="repo">
+      <div class="rank num">01</div>
+      <div class="meat">
+        <a class="rname" href="https://github.com/firecrawl/anydoc" rel="noopener">firecrawl/anydoc</a>
+        <p class="blurb">anydoc is a Rust library from firecrawl that converts Word, PowerPoint, Excel, OpenDocument, RTF, EPUB, CSV, and PDF into GitHub-Flavored Markdown, with Node.js and Python bindings available on npm and PyPI. I could not run it because the Rust toolchain is not installed on this box. The codebase is heavily Rust at roughly 19,900 lines with Python and JavaScript bindings layered on top, but test coverage looks thin with only one test file present despite CI being configured.</p>
+        <div class="meta"><span class="lang">Rust</span><span class="stars num">&#9733; 15.3k</span><span class="pr num">static review</span></div>
+      </div>
+    </li><li class="repo">
+      <div class="rank num">02</div>
+      <div class="meat">
+        <a class="rname" href="https://github.com/trycompai/crm" rel="noopener">trycompai/crm</a>
+        <p class="blurb">Comp AI CRM is an open source CRM built for AI agents, described as &quot;agentic-first,&quot; written mostly in TypeScript with some Python and shell. I could not run it because the box has no Node runtime installed. One thing worth noting: it is a large project at 1,400 files and roughly 111,000 lines, but it ships with 97 test files and CI, so there is at least some test coverage for a codebase this size.</p>
+        <div class="meta"><span class="lang">TypeScript</span><span class="stars num">&#9733; 8.4k</span><span class="pr num">static review</span></div>
+      </div>
+    </li><li class="repo">
+      <div class="rank num">03</div>
+      <div class="meat">
+        <a class="rname" href="https://github.com/FareedKhan-dev/kimi-k3-in-c" rel="noopener">FareedKhan-dev/kimi-k3-in-c</a>
+        <p class="blurb">This repo is a C99 implementation of Kimi K3 inference claiming to run a 2.78-trillion-parameter model in 8.24 GB of RAM on a single CPU with no BLAS, no framework, and no GPU. I could not run it because there is no runnable Python entrypoint and the primary language is C, so this was a static review only. One thing worth noting: the repo reports 0 test files despite the README advertising tests as present, and CI is enabled, so whatever passes CI is not coming from a test suite you can inspect locally.</p>
+        <div class="meta"><span class="lang">C</span><span class="stars num">&#9733; 5.3k</span><span class="pr num">static review</span></div>
+      </div>
+    </li><li class="repo">
+      <div class="rank num">04</div>
+      <div class="meat">
+        <a class="rname" href="https://github.com/guillaumemeyer/watermarks-remover" rel="noopener">guillaumemeyer/watermarks-remover</a>
+        <p class="blurb">watermarks-remover is a Python tool that strips AI provenance marks across PNG, JPEG, SVG, PDF, DOCX, HTML, and Markdown files, targeting Unicode text hygiene, statistical rewrite hooks, and C2PA metadata. I installed it with `pip install -r requirements-dev.txt` and ran `pytest -q`, which passed cleanly with exit 0 across 10 test files. The codebase is modest at 6,468 lines spread across 60 files, with CI configured and an MIT license, so integration into existing pipelines is straightforward.</p>
+        <div class="meta"><span class="lang">Python</span><span class="stars num">&#9733; 3.4k</span><span class="pr num">ran &#10003; tests passed</span></div>
+      </div>
+    </li>
+    </ul>
+  </section>
+
   <section class="cluster">
     <h2><span class="o">AI-ML</span> <span class="cnt num">20</span></h2>
     <p class="cdesc">Models, agents, and the tooling around them.</p>
