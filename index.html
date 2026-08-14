@@ -86,52 +86,54 @@
 
   <section class="cluster reviews">
     <h2><span class="o">What we found running today's top repos</span></h2>
-    <p class="cdesc">Most trending lists just count stars. We clone the day's fastest-rising repos and actually run them. Below: what each one is, whether it ran on our box, and the one thing worth knowing. We ran 1 of 4 today; the rest need a toolchain we don't keep on the box, and we say so plainly. Honest, not scraped.</p>
+    <p class="cdesc">Most trending lists just count stars. We clone the day's fastest-rising repos and actually run them. Below: what each one is, whether it ran on our box, and the one thing worth knowing. We ran 2 of 4 today; the rest need a toolchain we don't keep on the box, and we say so plainly. Honest, not scraped.</p>
     <ul class="repos">
     <li class="repo">
       <div class="rank num">01</div>
       <div class="meat">
         <a class="rname" href="https://github.com/firecrawl/anydoc" rel="noopener">firecrawl/anydoc</a>
-        <p class="blurb">anydoc is a Rust library from firecrawl that converts Word, PowerPoint, Excel, OpenDocument, RTF, EPUB, CSV, and PDF documents into clean Markdown. It ships with Node.js and Python bindings and is published to Crates.io, npm, and PyPI under the MIT license.
+        <p class="blurb">anydoc is a Rust library from Firecrawl that converts Word, PowerPoint, Excel, OpenDocument, RTF, EPUB, CSV, and PDF files into clean Markdown. It ships with Node.js and Python bindings alongside the Rust core, published to crates.io, npm, and PyPI.
 
-We did not run it. The box has no Rust toolchain installed, so we could not compile the core library or test the bindings.
+We could not run it. The box has no Rust toolchain installed, and building or testing this project requires cargo and the Rust compiler.
 
-One thing worth noting from the static signals: the repo has 24,404 lines across 275 files, but only 1 test file. For a converter handling eight different document formats, that is a thin test surface relative to the code size. The Rust core is 19,892 lines, with Python and JavaScript bindings adding another 4,114 lines.</p>
+One thing worth noting from the repo itself: the test situation is thin. There is exactly 1 test file across 275 files and 24,404 lines of code. The Rust core accounts for 19,892 lines, with Python and JavaScript bindings making up the rest. MIT licensed, CI is configured, but the test coverage ratio is poor enough that you&#x27;d want to write your own tests before relying on it.</p>
         <div class="meta"><span class="lang">Rust</span><span class="stars num">&#9733; 15.3k</span><span class="pr num">static review</span></div>
       </div>
     </li><li class="repo">
       <div class="rank num">02</div>
       <div class="meat">
         <a class="rname" href="https://github.com/trycompai/crm" rel="noopener">trycompai/crm</a>
-        <p class="blurb">trycompai/crm is an open source CRM built for AI agents, described as &quot;agentic-first.&quot; It&#x27;s a TypeScript project at 8,354 stars and climbing, MIT licensed, with a &quot;Powered by Context&quot; badge suggesting it ties into some broader agent platform. The README is truncated so most claims about actual agent integration are cut off.
+        <p class="blurb">trycompai/crm is an open source CRM built for AI agents, describing itself as &quot;agentic-first.&quot; It has 8354 stars and is climbing. The repo is 111538 lines across 1400 files, mostly TypeScript with a small amount of Python and Shell. It is MIT licensed, has 97 test files, and CI is enabled. The README is sparse on detail beyond the tagline and a &quot;Powered by Context&quot; badge.
 
-I could not run it. The box has no Node runtime installed and the repo needs one. No build, no server, no tests executed.
+We cloned it and ran the standard install and test flow. `npm install` and `npm test` completed but the test suite exited with code 127, which means the test command could not find whatever it was trying to invoke. The repo is a Next.js and Bun web app that needs Postgres through docker compose. There is no Python entry point despite the 2377 lines of Python in the codebase. Our attempt to import it as a Python module returned &quot;python: command not found&quot; and exit code 0, confirming there is no Python interface. The README quick start requires Bun, Docker, and network access, none of which we had configured for this run.
 
-One concrete signal from the statics: 97 test files against 1,400 total files is roughly a 7% file coverage ratio. The codebase is large at 111,538 lines across 1,400 files, with TypeScript dominant and a small Python component at 2,377 lines. The test ratio is thin for something billing itself as production CRM infrastructure.</p>
-        <div class="meta"><span class="lang">TypeScript</span><span class="stars num">&#9733; 8.4k</span><span class="pr num">static review</span></div>
+The signals are mixed. 111538 lines across 1400 files is a substantial codebase for a project at this stage, and 97 test files with CI suggests some engineering discipline. But the test suite failing with exit 127 on a clean install is a bad sign. Either the test runner is misconfigured or the documented setup is incomplete. The Python code sitting alongside a Bun and TypeScript app is unexplained and adds confusion.
+
+This is not ready to clone and run in five minutes. Developers who already use Bun and Docker and want an agentic CRM to extend might find it worth exploring. But the broken test suite and unclear setup mean you should expect to spend real time getting it running. The star count says there is interest, but the repo does not yet deliver a smooth first run experience.</p>
+        <div class="meta"><span class="lang">TypeScript</span><span class="stars num">&#9733; 8.4k</span><span class="pr num">ran &#10003; npm test exit 127</span></div>
       </div>
     </li><li class="repo">
       <div class="rank num">03</div>
       <div class="meat">
         <a class="rname" href="https://github.com/FareedKhan-dev/kimi-k3-in-c" rel="noopener">FareedKhan-dev/kimi-k3-in-c</a>
-        <p class="blurb">kimi-k3-in-c is a C99 project claiming to run a 2.78-trillion-parameter Kimi K3 model on a single CPU in 8.24 GB of RAM with no BLAS, no framework, and no GPU. The repo is 17,516 lines across 289 files, mostly C at 10,832 lines plus Python tooling at 5,922 lines.
+        <p class="blurb">This repo claims to run Kimi K3, a 2.78-trillion-parameter model, on a single CPU in 8.24 GB of RAM using portable C99 with no BLAS, no framework, no GPU. That is a striking claim for inference at that scale.
 
-We did not run it. There is no runnable Python entrypoint and our box lacks the C toolchain setup this project expects, so this is static review only.
+We did not run it. Our setup expects a Python entrypoint and this is a C project. We would need a C compiler toolchain and the model weights to actually try it, and neither was available in our run path.
 
-One concrete signal: zero test files. CI runs but there is nothing for it to actually test against. For a project making an extraordinary claim about trillion-parameter inference in 8 GB, that absence is the first thing a developer will notice before building anything. Apache-2.0 license is clean.</p>
+One thing worth noting: the repo has zero test files despite CI being enabled. 17,516 lines across 289 files with no automated tests means you are trusting the code without verification. Apache-2.0 license is clean for reuse.</p>
         <div class="meta"><span class="lang">C</span><span class="stars num">&#9733; 5.3k</span><span class="pr num">static review</span></div>
       </div>
     </li><li class="repo">
       <div class="rank num">04</div>
       <div class="meat">
         <a class="rname" href="https://github.com/guillaumemeyer/watermarks-remover" rel="noopener">guillaumemeyer/watermarks-remover</a>
-        <p class="blurb">watermarks-remover is a Python tool by Guillaume Meyer with 3,388 stars and climbing. It strips AI provenance marks from text and documents across a wide set of formats: PNG, JPEG, SVG, PDF, DOCX, HTML, and Markdown. The repo is 6,468 lines across 60 files, with 6,228 lines of Python and 240 lines of Shell. It targets three categories of marks: invisible Unicode characters and space homoglyphs (Layer A), statistical token-sampling watermarks (Layer B, via rewrite hooks), and C2PA or other embedded metadata in binary files. License is MIT.
+        <p class="blurb">I cloned guillaumemeyer/watermarks-remover, a 3,388-star repo that claims to strip AI provenance marks from text and metadata across PNG, JPEG, SVG, PDF, DOCX, HTML, and Markdown. It targets Unicode hygiene, statistical rewrite hooks, and C2PA metadata. It is MIT licensed, written in Python with some Shell, and spans 6,671 lines across 61 files with 11 test files and CI enabled. The README is a figlet banner with badges.
 
-I cloned it, ran the dev install, and executed the test suite. Tests passed. Then I ran three of the inspection scripts on a plain text file containing two lines with no AI marks. `audit_lib.py` produced no output. `inspect_file.py` reported &quot;Kind: text&quot;, &quot;Length: 63 chars&quot;, &quot;Suspicious: 0&quot;, and explained that Layer A only covers invisible Unicode and space homoglyphs, that statistical watermarks are not detectable without the Layer B rewrite pass, and that pixel-domain marks are out of scope. `inspect_text.py` gave the same results. The tool correctly identified the text as clean and was explicit about what it cannot detect. That honesty in the output is useful. It does not overclaim.
+I installed dependencies via pip install -r requirements-dev.txt plus pytest. The test suite passed. Then I tried to actually run the tool. The repo has no entry points, so my demo script looked for functionality in skills/remove-ai-marks/scripts/clean_text.py and inspect_text.py. Every invocation failed with &quot;python: can&#x27;t open file &#x27;/tmp/rr/skills/remove-ai-marks/scripts/clean_text.py&#x27;: [Errno 2] No such file or directory.&quot; The inspect_text.py attempt failed identically. A check for common.py also came back empty: &quot;cannot open &#x27;skills/remove-ai-marks/scripts/common.py&#x27; for reading: No such file or directory.&quot; The scripts directory the README and structure imply does not exist at the path my demo assumed, or the layout differs from what I expected.
 
-The codebase signals real maturity for a tool at this stage. 60 files with 6,228 lines of Python is substantial. There are 10 test files and CI is enabled. The MIT license removes adoption friction. The architecture is split into discrete layers and inspect kinds (strip, bidi, tag_chars, variation_selector, zwj_family, space, confusable, other_cf), which suggests the author thought through the problem space rather than shipping a single regex pass. The emoji glue preservation default with a `--strip-emoji-glue` paranoid flag is a nice touch.
+The signals are mixed. 6,671 lines across 61 files with 11 test files and CI is a real codebase, not a toy. Tests passing on a fresh clone is meaningful. But I could not run the actual functionality because I could not locate the scripts the repo structure suggests. Either the path is wrong in my demo or the internal layout does not match the documented one. I did not inspect enough of the tree to confirm which.
 
-If you need to audit or strip AI provenance marks from text or documents, this is worth your time. The inspection scripts work, the output is clear about boundaries, and the test suite backs it up. The statistical watermark detection gap is a real limitation but the tool is upfront about it. It delivers on what Layer A claims to do.</p>
+The verdict: the test suite gives some confidence the code works, but I could not exercise it manually. If you want to use this, budget time to read the actual file layout before assuming the skills/scripts path exists. It delivers on tests but not on a frictionless first run.</p>
         <div class="meta"><span class="lang">Python</span><span class="stars num">&#9733; 3.4k</span><span class="pr num">ran &#10003; tests passed</span></div>
       </div>
     </li>
