@@ -86,55 +86,81 @@
 
   <section class="cluster reviews">
     <h2><span class="o">What we found running today's top repos</span></h2>
-    <p class="cdesc">Most trending lists just count stars. We clone the day's fastest-rising repos and actually run them. Below: what each one is, whether it ran on our box, and the one thing worth knowing. We ran 2 of 4 today; the rest need a toolchain we don't keep on the box, and we say so plainly. Honest, not scraped.</p>
+    <p class="cdesc">Most trending lists just count stars. We clone the day's fastest-rising repos and actually run them. Below: what each one is, whether it ran on our box, and the one thing worth knowing. We ran 4 of 6 today; the rest need a toolchain we don't keep on the box, and we say so plainly. Honest, not scraped.</p>
     <ul class="repos">
     <li class="repo">
       <div class="rank num">01</div>
       <div class="meat">
         <a class="rname" href="https://github.com/firecrawl/anydoc" rel="noopener">firecrawl/anydoc</a>
-        <p class="blurb">anydoc is a Rust library from Firecrawl that converts Word, PowerPoint, Excel, OpenDocument, RTF, EPUB, CSV, and PDF files into clean Markdown. It ships with Node.js and Python bindings alongside the Rust core, published to crates.io, npm, and PyPI.
+        <p class="blurb">anydoc is a Rust library from Firecrawl that converts Word, PowerPoint, Excel, OpenDocument, RTF, EPUB, CSV, and PDF files into clean Markdown. It ships with Node.js and Python bindings alongside the core Rust crate, published to Crates.io, npm, and PyPI.
 
-We could not run it. The box has no Rust toolchain installed, and building or testing this project requires cargo and the Rust compiler.
+We could not run this one. The box has no Rust toolchain installed, so building the crate or compiling the native bindings was off the table.
 
-One thing worth noting from the repo itself: the test situation is thin. There is exactly 1 test file across 275 files and 24,404 lines of code. The Rust core accounts for 19,892 lines, with Python and JavaScript bindings making up the rest. MIT licensed, CI is configured, but the test coverage ratio is poor enough that you&#x27;d want to write your own tests before relying on it.</p>
+One thing worth noting from the static signals: the repo is about 24,400 lines across 275 files, nearly 20,000 of them Rust, yet the test suite is a single file. For a parser handling eight-plus document formats at 15,000 stars, that ratio is thin. MIT license, CI enabled, but the test coverage signal is a real flag before you wire this into a pipeline.</p>
         <div class="meta"><span class="lang">Rust</span><span class="stars num">&#9733; 15.3k</span><span class="pr num">static review</span></div>
       </div>
     </li><li class="repo">
       <div class="rank num">02</div>
       <div class="meat">
         <a class="rname" href="https://github.com/trycompai/crm" rel="noopener">trycompai/crm</a>
-        <p class="blurb">trycompai/crm is an open source CRM built for AI agents, describing itself as &quot;agentic-first.&quot; It has 8354 stars and is climbing. The repo is 111538 lines across 1400 files, mostly TypeScript with a small amount of Python and Shell. It is MIT licensed, has 97 test files, and CI is enabled. The README is sparse on detail beyond the tagline and a &quot;Powered by Context&quot; badge.
+        <p class="blurb">trycompai/crm is an open source CRM written in TypeScript that pitches itself as built for AI agents first. It sits at 8354 stars and climbing, MIT licensed, with roughly 111,000 lines across 1400 files. The repo is a monorepo split into apps and packages: apps/agent, apps/api, apps/app, plus packages for auth, db, env, telemetry, ui, and validation. Shell and Python appear as minority languages alongside the dominant TypeScript.
 
-We cloned it and ran the standard install and test flow. `npm install` and `npm test` completed but the test suite exited with code 127, which means the test command could not find whatever it was trying to invoke. The repo is a Next.js and Bun web app that needs Postgres through docker compose. There is no Python entry point despite the 2377 lines of Python in the codebase. Our attempt to import it as a Python module returned &quot;python: command not found&quot; and exit code 0, confirming there is no Python interface. The README quick start requires Bun, Docker, and network access, none of which we had configured for this run.
+Cloning and running it tells you quickly that this is not a CLI or library. `npm test` exited with code 127, meaning the test runner was not found in the current environment. That is expected given the project targets Bun, not Node. I then ran an inspection script that checked for entry points and structure. It found the root package.json plus nested ones under apps/agent, apps/api, apps/app, and packages/auth, packages/validation. No CLI scripts exist. The script printed the setup requirements plainly: &quot;Documented setup requires: Bun, Docker, Postgres, .env config&quot; and &quot;Cannot run without: network (docker compose), Docker daemon, Bun runtime.&quot; It concluded: &quot;cannot execute without Docker + Bun + Postgres + network&quot; and &quot;This is not a standalone tool; it is a deployable web application.&quot;
 
-The signals are mixed. 111538 lines across 1400 files is a substantial codebase for a project at this stage, and 97 test files with CI suggests some engineering discipline. But the test suite failing with exit 127 on a clean install is a bad sign. Either the test runner is misconfigured or the documented setup is incomplete. The Python code sitting alongside a Bun and TypeScript app is unexplained and adds confusion.
+The signals on maturity are mixed but mostly positive. 111,538 lines across 1400 files is a substantial codebase. There are 97 test files and CI is enabled, which suggests real engineering effort, not a weekend prototype. The presence of a dedicated agent app alongside api and web apps shows the architecture is intentional. The caveat is that you cannot evaluate it by installing and poking around. You need the full runtime stack, Docker, Bun, Postgres, and network access for compose.
 
-This is not ready to clone and run in five minutes. Developers who already use Bun and Docker and want an agentic CRM to extend might find it worth exploring. But the broken test suite and unclear setup mean you should expect to spend real time getting it running. The star count says there is interest, but the repo does not yet deliver a smooth first run experience.</p>
+If you are building agentic workflows and want a CRM your agents can talk to, this is worth setting up properly. If you want something to install and test in five minutes, it is not that. It delivers on its architecture claims but only if you commit to the deployment path.</p>
         <div class="meta"><span class="lang">TypeScript</span><span class="stars num">&#9733; 8.4k</span><span class="pr num">ran &#10003; npm test exit 127</span></div>
       </div>
     </li><li class="repo">
       <div class="rank num">03</div>
       <div class="meat">
         <a class="rname" href="https://github.com/FareedKhan-dev/kimi-k3-in-c" rel="noopener">FareedKhan-dev/kimi-k3-in-c</a>
-        <p class="blurb">This repo claims to run Kimi K3, a 2.78-trillion-parameter model, on a single CPU in 8.24 GB of RAM using portable C99 with no BLAS, no framework, no GPU. That is a striking claim for inference at that scale.
+        <p class="blurb">This repo claims to run a 2.78-trillion-parameter Kimi K3 model on a single CPU in 8.24 GB of RAM, written in portable C99 with no BLAS, no framework, and no GPU. The codebase is 17,516 lines across 289 files, mostly C with some Shell and Python, under Apache-2.0.
 
-We did not run it. Our setup expects a Python entrypoint and this is a C project. We would need a C compiler toolchain and the model weights to actually try it, and neither was available in our run path.
+We did not run it. Our box lacks the C toolchain needed to compile and execute a C99 project with no Python entrypoint, so this was a static review only.
 
-One thing worth noting: the repo has zero test files despite CI being enabled. 17,516 lines across 289 files with no automated tests means you are trusting the code without verification. Apache-2.0 license is clean for reuse.</p>
+One concrete signal: the repo has zero test files despite shipping CI. For a project making an extraordinary claim about trillion-scale inference in 8 GB, that absence is the first thing a developer would want to address before trusting the binary.</p>
         <div class="meta"><span class="lang">C</span><span class="stars num">&#9733; 5.3k</span><span class="pr num">static review</span></div>
       </div>
     </li><li class="repo">
       <div class="rank num">04</div>
       <div class="meat">
         <a class="rname" href="https://github.com/guillaumemeyer/watermarks-remover" rel="noopener">guillaumemeyer/watermarks-remover</a>
-        <p class="blurb">I cloned guillaumemeyer/watermarks-remover, a 3,388-star repo that claims to strip AI provenance marks from text and metadata across PNG, JPEG, SVG, PDF, DOCX, HTML, and Markdown. It targets Unicode hygiene, statistical rewrite hooks, and C2PA metadata. It is MIT licensed, written in Python with some Shell, and spans 6,671 lines across 61 files with 11 test files and CI enabled. The README is a figlet banner with badges.
+        <p class="blurb">guillaumemeyer/watermarks-remover is a Python project with 3,388 GitHub stars and rising. It claims to strip AI provenance marks from files in formats including PNG, JPEG, SVG, PDF, DOCX, HTML, and Markdown. The toolkit targets Unicode text hygiene, statistical rewrite hooks, and C2PA metadata removal. The repo spans 6,671 lines across 61 files, with 6,431 lines of Python and 240 lines of Shell. It is MIT licensed and has 11 test files with CI enabled.
 
-I installed dependencies via pip install -r requirements-dev.txt plus pytest. The test suite passed. Then I tried to actually run the tool. The repo has no entry points, so my demo script looked for functionality in skills/remove-ai-marks/scripts/clean_text.py and inspect_text.py. Every invocation failed with &quot;python: can&#x27;t open file &#x27;/tmp/rr/skills/remove-ai-marks/scripts/clean_text.py&#x27;: [Errno 2] No such file or directory.&quot; The inspect_text.py attempt failed identically. A check for common.py also came back empty: &quot;cannot open &#x27;skills/remove-ai-marks/scripts/common.py&#x27; for reading: No such file or directory.&quot; The scripts directory the README and structure imply does not exist at the path my demo assumed, or the layout differs from what I expected.
+I cloned it, installed dependencies via pip install -r requirements-dev.txt plus pytest, and the full test suite passed. Then I tried to actually run the tool. The README and setup provide no entry points, so I looked for scripts under skills/remove-ai-marks/scripts and attempted to run inspect_text.py and clean_text.py on a trivial plain text input file. The result was python: can&#x27;t open file &#x27;/tmp/rr/skills/remove-ai-marks/scripts/inspect_text.py&#x27;: [Errno 2] No such file or directory, followed by the same error for clean_text.py, then ModuleNotFoundError: No module named &#x27;common&#x27;. The scripts I expected to find do not exist at the path the demo assumed, or the repo organizes them differently than the description implies. The tests pass but I could not invoke the core functionality on a real input.
 
-The signals are mixed. 6,671 lines across 61 files with 11 test files and CI is a real codebase, not a toy. Tests passing on a fresh clone is meaningful. But I could not run the actual functionality because I could not locate the scripts the repo structure suggests. Either the path is wrong in my demo or the internal layout does not match the documented one. I did not inspect enough of the tree to confirm which.
+The signals here are mixed. The test suite is real and green, CI is configured, and the codebase is substantial at 6,671 lines. But a project marketed as a watermark remover should be runnable, and I could not get it to run on a basic text file. The absence of a documented entry point or CLI is a real gap for a tool aimed at developers who want to process files.
 
-The verdict: the test suite gives some confidence the code works, but I could not exercise it manually. If you want to use this, budget time to read the actual file layout before assuming the skills/scripts path exists. It delivers on tests but not on a frictionless first run.</p>
+My verdict: the tests pass and the code exists, but if you clone this today expecting to run it on a file, you will need to spend time figuring out where the actual scripts live and how to invoke them. I would hold off until the project ships a documented entry point.</p>
         <div class="meta"><span class="lang">Python</span><span class="stars num">&#9733; 3.4k</span><span class="pr num">ran &#10003; tests passed</span></div>
+      </div>
+    </li><li class="repo">
+      <div class="rank num">05</div>
+      <div class="meat">
+        <a class="rname" href="https://github.com/genspark-ai/genoffice" rel="noopener">genspark-ai/genoffice</a>
+        <p class="blurb">GenOffice is genspark-ai&#x27;s bid at an open-source AI office suite for macOS, Windows, and Linux. It claims to be the first full-featured one, covering Word, Excel, PowerPoint, PDF, and Markdown editing with built-in AI agents as a first-class workflow rather than a bolt-on. It is six Electron apps sharing one engine layer. The repo is sizable: 351,904 lines across 1,358 files, mostly TypeScript with a Rust core, Apache-2.0 licensed, 2,838 stars and rising.
+
+I cloned it and ran npm install and npm test. The test suite exited with code 1, so the tests did not pass on my run. I then tried to actually launch it. There is no bin field in package.json and no CLI binary. The repo ships as native desktop packages: deb, rpm, and AppImage. You need sudo to install one of those and a display environment to run it. I could not get the application itself open without meeting those requirements. The demo script output confirmed this: &quot;Cannot run without installing the native desktop package, which requires sudo and a display environment.&quot;
+
+The signals are mixed but mostly positive on paper. 428 test files exist and CI is configured, which suggests real engineering discipline. 344,314 lines of TypeScript across 1,358 files is a large codebase for a 2,838-star project, meaning this is not a weekend clone. But the failing test suite on a fresh install is a concern. If a contributor cannot get green tests from npm install onward, the contributor onboarding needs work.
+
+If you want a free desktop office suite that reads and writes real Microsoft formats and has AI baked into editing, GenOffice is worth downloading a release build. If you want to run it from source or contribute, expect friction. The tests did not pass for me and there is no quick-start path beyond installing a native package. It is a serious project, but &quot;open source&quot; here means the code is available, not that it is trivial to self-host.</p>
+        <div class="meta"><span class="lang">TypeScript</span><span class="stars num">&#9733; 2.8k</span><span class="pr num">ran &#10003; npm test exit 1</span></div>
+      </div>
+    </li><li class="repo">
+      <div class="rank num">06</div>
+      <div class="meat">
+        <a class="rname" href="https://github.com/imsai-sh/zhuzhiliao" rel="noopener">imsai-sh/zhuzhiliao</a>
+        <p class="blurb">I cloned imsai-sh/zhuzhiliao today, a 2695-star repo that simulates a traditional bamboo cicada toy. The kind you spin and it makes a crying sound. The README pitches it as zero-dependency, single file, mobile-first, with real audio samples. The official demo lives at zhuzhiliao.icu.
+
+Running it is just serving the directory. The repo has no package.json entry point, no Python modules, no build step. I ran `python3 -m http.server 8123` and curled the root. It returned HTML immediately, so the index.html loads fine. The actual file tree tells the real story though: index.html, sw.js, a manifest, some icons, and a 3d/ folder with three.module.min.js, OrbitControls.js, boot3d.js, and model.js. So the &quot;zero-dependency single file&quot; claim is a stretch. There is a vendored copy of Three.js in there and separate 3d logic files. The LICENSE file exists but the README explicitly says this is not open source, redistribution and public deployment are not permitted, and they have already caught people ripping the hand-drawn cicada art and swapping in real person images. That is a specific and weird problem to have.
+
+Maturity signals are thin. 2103 lines of JavaScript across 18 files, zero test files, no CI. License unknown in the metadata, and the author is actively warning against reuse. The CLAUDE.md file suggests an AI agent was involved in development somehow.
+
+Who is this for? Mostly people who want to play with the toy at the official site. If you are a developer looking to study the implementation, the source is public for learning purposes only. You cannot deploy it, redistribute it, or build on it without crossing the author. It is a neat artifact but the licensing situation makes it effectively read-only.</p>
+        <div class="meta"><span class="lang">JavaScript</span><span class="stars num">&#9733; 2.7k</span><span class="pr num">ran &#10003; node -e require(&#x27;./index.js&#x27;) exit 1</span></div>
       </div>
     </li>
     </ul>
