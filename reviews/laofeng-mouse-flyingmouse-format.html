@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LaoFeng-mouse/flyingmouse-format &mdash; run &amp; review &middot; Motley Radar</title>
+<meta name="description" content="We cloned and ran LaoFeng-mouse/flyingmouse-format. FlyingMouse Format is a Windows desktop file converter by LaoFeng, written mostly in JavaScript with some Python and Shell. It bundles FFmpeg…">
+<link rel="canonical" href="https://getmotley.github.io/radar/reviews/laofeng-mouse-flyingmouse-format.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="LaoFeng-mouse/flyingmouse-format — we ran it and wrote up what happened">
+<meta property="og:description" content="FlyingMouse Format is a Windows desktop file converter by LaoFeng, written mostly in JavaScript with some Python and Shell. It bundles FFmpeg…">
+<meta name="theme-color" content="#FF4D00">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 42 42'%3E%3Crect width='42' height='42' fill='%23F4EFE6'/%3E%3Ccircle cx='11' cy='11' r='8' fill='%23111'/%3E%3Crect x='24' y='3' width='15' height='15' transform='rotate(45 31 10)' fill='%23FF4D00'/%3E%3Cpath d='M3 39 L11 24 L19 39 Z' fill='%23FF4D00'/%3E%3Crect x='25' y='24' width='15' height='15' fill='%23111'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;900&family=Familjen+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{--paper:#F4EFE6;--card:#FBF7EF;--ink:#111111;--muted:#6a6459;--accent:#FF4D00}
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:"Familjen Grotesk",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased}
+  .disp{font-family:"Archivo","Familjen Grotesk",sans-serif;font-weight:900;font-stretch:125%;letter-spacing:-.01em;line-height:1.02;text-transform:none;word-break:break-word}
+  .num{font-variant-numeric:tabular-nums lining-nums}
+  a{color:var(--ink)}
+  .wrap{max-width:680px;margin:0 auto;padding:0 20px}
+  .top{display:flex;align-items:center;justify-content:space-between;padding:20px 0}
+  .brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink)}
+  .brand .name{font-family:"Archivo",sans-serif;font-weight:900;font-stretch:125%;font-size:19px;letter-spacing:.02em;text-transform:uppercase}
+  .top .back{font-size:13px;font-weight:600;color:var(--muted);text-decoration:none}
+  .top .back:hover{color:var(--ink)}
+  .kicker{font-family:"Archivo",sans-serif;font-weight:900;text-transform:uppercase;font-size:12px;letter-spacing:.09em;color:var(--accent);margin:14px 0 6px}
+  .title{font-size:clamp(26px,5.6vw,40px);margin:0 0 12px}
+  .badges{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 8px}
+  .bdg{font-size:12px;font-weight:700;border:2px solid var(--ink);padding:2px 9px;white-space:nowrap;color:var(--muted)}
+  .bdg.stars{color:var(--accent);border-color:var(--ink)}
+  .bdg.lang{color:var(--ink)}
+  .bdg.ran{color:var(--ink);border-color:var(--accent);box-shadow:2px 2px 0 var(--accent)}
+  .article{margin:22px 0 8px}
+  .article p{margin:0 0 16px;font-size:16.5px;color:#26241f;line-height:1.62}
+  .article p:first-child{font-size:18px;color:var(--ink)}
+  .ah{font-family:"Archivo",sans-serif;font-weight:900;font-stretch:112%;text-transform:uppercase;font-size:19px;margin:30px 0 4px;border-bottom:3px solid var(--ink);padding-bottom:7px}
+  .ah .o{color:var(--accent)}
+  .cap{color:var(--muted);font-size:13.5px;margin:8px 0 12px}
+  code{font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;background:#1110;border:1px solid #1113;padding:1px 5px}
+  .term{font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;line-height:1.5;white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;padding:13px 15px;margin:0 0 12px;border:3px solid var(--ink)}
+  .term.cmd{background:#111;color:#F4EFE6}
+  .term.cmd::before{content:"$ command";display:block;font-size:10.5px;letter-spacing:.08em;color:var(--accent);margin-bottom:7px;text-transform:uppercase}
+  .term.out{background:var(--card);color:#26241f}
+  .term.out::before{content:"output";display:block;font-size:10.5px;letter-spacing:.08em;color:var(--muted);margin-bottom:7px;text-transform:uppercase}
+  .cta{margin:26px 0 0}
+  .cta a{display:inline-block;border:3px solid var(--ink);background:var(--card);padding:11px 16px;font-weight:700;font-size:14px;text-decoration:none;box-shadow:4px 4px 0 var(--ink)}
+  .cta a:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--ink)}
+  footer{margin:40px 0 60px;padding-top:18px;border-top:3px solid var(--ink);font-size:13px;color:var(--muted);line-height:1.55}
+  footer b{color:var(--ink);font-family:"Archivo",sans-serif;font-weight:900;font-stretch:112%;text-transform:uppercase}
+  footer a{color:var(--ink);font-weight:600}
+  @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <a class="brand" href="https://getmotley.github.io/">
+      <svg width="30" height="30" viewBox="0 0 42 42" aria-hidden="true">
+        <circle cx="11" cy="11" r="8" fill="#111"/><rect x="24" y="3" width="15" height="15" transform="rotate(45 31 10)" fill="#FF4D00"/>
+        <path d="M3 39 L11 24 L19 39 Z" fill="#FF4D00"/><rect x="25" y="24" width="15" height="15" fill="#111"/>
+      </svg>
+      <span class="name">Motley</span>
+    </a>
+    <a class="back" href="https://getmotley.github.io/radar/">&larr; back to the Radar</a>
+  </div>
+
+  <div class="kicker">Run &amp; Review &middot; 15 Aug 2026</div>
+  <h1 class="disp title">LaoFeng-mouse/flyingmouse-format</h1><div class="badges"><span class="bdg lang">JavaScript</span><span class="bdg stars num">&#9733; 3.1k</span><span class="bdg">unknown</span><span class="bdg num">27,279 LOC</span><span class="bdg ran">ran &#10003; npm test exit 1</span></div><div class="article"><p>FlyingMouse Format is a Windows desktop file converter by LaoFeng, written mostly in JavaScript with some Python and Shell. It bundles FFmpeg, LibreOffice, Poppler, and Tesseract to convert images, documents, spreadsheets, presentations, PDFs, audio, video, and WPS formats, with OCR and batch support. The README stresses offline use and a strict non-commercial clause, explicitly forbidding resale on platforms like Xianyu and Taobao. It sits at 3056 stars and climbing.</p><p>I cloned it and ran `npm ci` then `npm test`, which exited with code 1. The pretest alone runs four specific test files covering PDF structure and office conversion. Then I tried the CLI. `node cli.js capabilities --json` returned a warning that the LibreOffice capability probe failed, with an OfficeEngineError stating the LibreOffice document conversion engine is missing and advising a full reinstall. I created a trivial text file and attempted `node cli.js convert /tmp/test.txt --to pdf`, but the output was dominated by the same engine error. No PDF was produced. The tool could not complete a basic conversion without its bundled dependencies present.</p><p>The repo is sizable at 27279 lines across 179 files, with 52 test files and CI configured via GitHub Actions. That signals real engineering effort. But the license is unknown in the metadata, and the non-commercial terms in the README are restrictive. The codebase leans heavily on external engines that must be installed for it to function at all.</p><p>Verdict: this is an Electron app that needs its full Windows install with bundled engines to work. Running it from source on a bare Linux box fails because LibreOffice and other engines are absent. Developers wanting to evaluate it should grab the Windows release, not the repo. It does not deliver as a clone-and-run CLI tool.</p></div><h2 class="ah"><span class="o">What we ran</span></h2><p class="cap">The exact command we gave it, and the real output from our box. Nothing edited.</p><pre class="term cmd">#!/usr/bin/env bash
+set -e
+
+echo &quot;=== ls top-level ===&quot;
+ls -1 | head -30
+
+echo &quot;&quot;
+echo &quot;=== package.json ===&quot;
+cat package.json 2&gt;/dev/null | head -20
+
+echo &quot;&quot;
+echo &quot;=== node cli.js capabilities --json ===&quot;
+node cli.js capabilities --json 2&gt;&amp;1 | head -40
+
+echo &quot;&quot;
+echo &quot;=== make a trivial .txt and try convert to pdf ===&quot;
+echo &quot;hello world&quot; &gt; /tmp/test.txt
+node cli.js convert /tmp/test.txt --to pdf --output /tmp/test_out.pdf --json 2&gt;&amp;1 | head -40
+echo &quot;exit: $?&quot;
+ls -la /tmp/test_out.pdf 2&gt;&amp;1 || true</pre><pre class="term out">=== ls top-level ===
+AGENTS.md
+LICENSE
+README.md
+agent-skill
+agent-skill-installer.js
+bin
+bmp-input.js
+build
+ci-engines-v1.json
+cli.js
+config.js
+diagnostics.js
+docs
+docstructure-engine-lock.json
+ebook.js
+electron-main.js
+electron-security.js
+ico-format.js
+image-conversion.js
+image.js
+logger.js
+media.js
+node_modules
+ocr.js
+office-convert.js
+office-engine.js
+office-quality.js
+output
+package-lock.json
+package.json
+
+=== package.json ===
+{
+  &quot;name&quot;: &quot;flyingmouse-format&quot;,
+  &quot;version&quot;: &quot;0.6.0&quot;,
+  &quot;private&quot;: true,
+  &quot;author&quot;: &quot;FlyingMouse Format&quot;,
+  &quot;productName&quot;: &quot;FlyingMouse Format&quot;,
+  &quot;engines&quot;: {
+    &quot;node&quot;: &quot;&gt;=18&quot;
+  },
+  &quot;description&quot;: &quot;Windows desktop universal file format converter (offline, bundled FFmpeg/LibreOffice/Poppler/Tesseract).&quot;,
+  &quot;main&quot;: &quot;electron-main.js&quot;,
+  &quot;bin&quot;: {
+    &quot;flyingmouse-format&quot;: &quot;cli.js&quot;
+  },
+  &quot;scripts&quot;: {
+    &quot;pretest&quot;: &quot;node --test tests/pdf-structure-engine.test.js tests/pdf-office-docx.test.js tests/pdf-office-xlsx.test.js tests/pdf-structure-score.test.js&quot;,
+    &quot;pretest:ci&quot;: &quot;node --test tests/pdf-structure-engine.test.js tests/pdf-office-docx.test.js tests/pdf-office-xlsx.test.js tests/pdf-structure-score.test.js&quot;,
+    &quot;start&quot;: &quot;node server.js&quot;,
+    &quot;desktop&quot;: &quot;electron .&quot;,
+    &quot;dist&quot;: &quot;electron-builder --win nsis --publish never&quot;,
+
+=== node cli.js capabilities --json ===
+[WARN] LibreOffice capability probe failed
+OfficeEngineError: 缺少 LibreOffice 文档转换引擎，请重新安装完整版本的飞鼠格式。
+    at classifyExecutionError (/tmp/rr/LaoFeng-mouse_flyingmouse-format/office-engine.js:67:10)
+    at executeWithProfile (/tmp/rr/LaoFeng-mouse_flyingmouse-format/office-engine.js:100:13)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async probeLibreOffice (/tmp/rr/LaoFeng-mouse_flyingmouse-format/office-engine.js:108:18)
+    at async getTools (/tmp/rr/LaoFeng-mouse_flyingmouse-format/server.js:226:21)
+    at async /tmp/rr/LaoFeng-mouse_flyingmouse-format/server.js:309:17
+[WARN] Command failed: pdftoppm -v
+Error: spawn pdftoppm ENOENT
+    at ChildProcess._handle.onexit (node:internal/child_process:285:19)
+    at onErrorNT (node:internal/child_process:483:16)
+    at process.processTicksAndRejections (node:internal/process/task_queues:82:21)
+{&quot;tools&quot;:{&quot;ffmpeg&quot;:true,&quot;libreoffice&quot;:false,&quot;poppler&quot;:false,&quot;ocr&quot;:false,&quot;pdf&quot;:true,&quot;sharp&quot;:true,&quot;zip&quot;:true},&quot;platform&quot;:{&quot;os&quot;:&quot;linux&quot;,&quot;arch&quot;:&quot;x64&quot;},&quot;toolDetails&quot;:{&quot;libreoffice&quot;:{&quot;enabled&quot;:false,&quot;errorCode&quot;:&quot;OFFICE_ENGINE_MISSING&quot;,&quot;messages&quot;:{&quot;zhCN&quot;:&quot;缺少 LibreOffice 文档转换引擎，请重新安装完整版本</pre><div class="cta"><a href="https://github.com/LaoFeng-mouse/flyingmouse-format" rel="noopener">View LaoFeng-mouse/flyingmouse-format on GitHub &rarr;</a></div>
+
+  <footer>
+    <p><b>Motley</b> &nbsp; we clone the day's fastest-rising GitHub repos and run them &nbsp;&middot;&nbsp; <a href="https://getmotley.github.io/radar/">see the whole Radar</a>. Not affiliated with GitHub, Inc.</p>
+    <p style="opacity:.7;font-size:13px">Privacy-friendly, cookieless analytics (page counts only, no personal data, no ads).</p>
+  </footer>
+</div>
+<script data-goatcounter="https://motley.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+</body>
+</html>

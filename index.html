@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>GitHub Trending Radar &mdash; the trending repos worth your attention</title>
-<meta name="description" content="A deduplicated, clustered, momentum-ranked digest of new GitHub repositories gaining stars fast. The trending firehose, filtered and sorted by topic. Updated 14 Aug 2026. Free, no signup.">
+<meta name="description" content="A deduplicated, clustered, momentum-ranked digest of new GitHub repositories gaining stars fast. The trending firehose, filtered and sorted by topic. Updated 15 Aug 2026. Free, no signup.">
 <link rel="canonical" href="https://getmotley.github.io/radar/">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://getmotley.github.io/radar/">
 <meta property="og:title" content="GitHub Trending Radar">
-<meta property="og:description" content="The trending firehose, filtered: new repos gaining stars fast, deduped, clustered, ranked by momentum. Updated 14 Aug 2026.">
+<meta property="og:description" content="The trending firehose, filtered: new repos gaining stars fast, deduped, clustered, ranked by momentum. Updated 15 Aug 2026.">
 <meta name="twitter:card" content="summary">
 <meta name="theme-color" content="#FF4D00">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 42 42'%3E%3Crect width='42' height='42' fill='%23F4EFE6'/%3E%3Ccircle cx='11' cy='11' r='8' fill='%23111'/%3E%3Crect x='24' y='3' width='15' height='15' transform='rotate(45 31 10)' fill='%23FF4D00'/%3E%3Cpath d='M3 39 L11 24 L19 39 Z' fill='%23FF4D00'/%3E%3Crect x='25' y='24' width='15' height='15' fill='%23111'/%3E%3C/svg%3E">
@@ -54,6 +54,9 @@
   .lang,.stars,.pr{font-size:12px;font-weight:700;border:2px solid var(--ink);padding:2px 8px;white-space:nowrap}
   .stars{color:var(--accent)}
   .pr{color:var(--muted);border-color:#0002}
+  .readmore{font-size:12.5px;font-weight:700;color:var(--accent);text-decoration:none;border-bottom:2px solid var(--accent);white-space:nowrap}
+  .readmore:hover{background:var(--accent);color:#fff}
+  .reviews .rname{border-bottom-width:2px}
   .about{margin:40px 0 0;border:3px solid var(--ink);background:var(--card);box-shadow:8px 8px 0 var(--ink);padding:20px}
   .about h3{font-family:"Archivo",sans-serif;font-weight:900;text-transform:uppercase;font-size:17px;margin:0 0 8px}
   .about p{margin:0 0 8px;font-size:14px;color:#3a3833}
@@ -82,108 +85,76 @@
 
   <h1 class="disp">GitHub Trending <span class="o">Radar</span></h1>
   <p class="lead">The trending firehose, filtered. New repos gaining stars fast, deduplicated and sorted into what they actually are, ranked by momentum. It shows what's spiking, not a judgment of code quality. 40 repos this run.</p>
-  <div class="stamp"><span class="dot"></span> Updated 14 Aug 2026</div>
+  <div class="stamp"><span class="dot"></span> Updated 15 Aug 2026</div>
 
   <section class="cluster reviews">
     <h2><span class="o">What we found running today's top repos</span></h2>
-    <p class="cdesc">Most trending lists just count stars. We clone the day's fastest-rising repos and actually run them. Below: what each one is, whether it ran on our box, and the one thing worth knowing. We ran 4 of 6 today; the rest need a toolchain we don't keep on the box, and we say so plainly. Honest, not scraped.</p>
+    <p class="cdesc">Most trending lists just count stars. We clone the day's fastest-rising repos and actually run them. Each card links to the full write-up: what it is, whether it ran on our box, the real command and output, and the one thing worth knowing. We ran 4 of 6 today; the rest need a toolchain we don't keep on the box, and we say so plainly. Honest, not scraped.</p>
     <ul class="repos">
     <li class="repo">
       <div class="rank num">01</div>
       <div class="meat">
-        <a class="rname" href="https://github.com/deepseek-ai/deepseek-harness" rel="noopener">deepseek-ai/deepseek-harness</a>
-        <p class="blurb">DeepSeek Harness (dsh) is an open source agent framework from DeepSeek AI, written primarily in TypeScript, with a &quot;everything is a plugin&quot; architecture powered by Cordis. The repo carries 75,634 stars and is in a developer preview stage, with the README explicitly warning that breaking changes are coming. It ships under MIT license.
-
-I cloned it and ran the documented commands. `npm test` exited with code 127, which means the test runner itself was not found or could not execute. The runtime demo was worse. Running `npx @deepseek-ai/dsh --help` returned `sh: 1: dsh: not found`. The `--version` attempt produced the same error. Even `dsh web` with a 3 second timeout failed identically: `sh: 1: dsh: command not found`. The npx package did not place a usable binary on the PATH, so none of the documented entry points worked from a clean install.
-
-The signals are mixed. The codebase is large at 569,789 lines across 7,411 files, with 700 test files and CI enabled. That suggests real engineering effort, not a toy. But the fact that the published npm package does not expose a working `dsh` command, and that the test suite cannot even start, points to packaging or environment problems that undermine first impressions. The developer preview label is accurate.
-
-If you want to evaluate this, clone the source and run from there rather than relying on npx. The npm distribution is currently broken for the basic CLI path. Anyone expecting a working out of the box agent harness today will be disappointed. This is something to watch, not something to build on yet.</p>
-        <div class="meta"><span class="lang">TypeScript</span><span class="stars num">&#9733; 75.6k</span><span class="pr num">ran &#10003; npm test exit 127</span></div>
+        <a class="rname" href="reviews/deepseek-ai-deepseek-harness.html">deepseek-ai/deepseek-harness</a>
+        <p class="blurb">I cloned deepseek-ai/deepseek-harness today. It is a TypeScript agent framework from DeepSeek built on the &quot;everything is a plugin&quot; principle, powered by a library called Cordis which…</p>
+        <div class="meta"><span class="lang">TypeScript</span><span class="stars num">&#9733; 102.3k</span><span class="pr num">ran &#10003; npm test exit 127</span><a class="readmore" href="reviews/deepseek-ai-deepseek-harness.html">Read the full review &rarr;</a></div>
       </div>
     </li><li class="repo">
       <div class="rank num">02</div>
       <div class="meat">
-        <a class="rname" href="https://github.com/firecrawl/anydoc" rel="noopener">firecrawl/anydoc</a>
-        <p class="blurb">anydoc is a Rust library from firecrawl that converts documents (Word, PowerPoint, Excel, OpenDocument, RTF, EPUB, CSV, PDF) into clean Markdown. It ships with Node.js and Python bindings alongside the core crate. The repo is MIT licensed, with roughly 19,900 lines of Rust across 275 files.
-
-I could not run it. The box has no Rust toolchain installed, and building the native bindings requires cargo and rustc. So I have no results to report on actual conversion quality or speed.
-
-One static signal worth noting: the test coverage ratio is effectively nonexistent. The repo has 1 test file against 275 source files. For a converter handling eight different document formats, that is a thin safety net. CI is configured, but the test count does not reflect that. You would want to add your own fixtures before trusting output.</p>
-        <div class="meta"><span class="lang">Rust</span><span class="stars num">&#9733; 15.9k</span><span class="pr num">static review</span></div>
+        <a class="rname" href="reviews/firecrawl-anydoc.html">firecrawl/anydoc</a>
+        <p class="blurb">anydoc is a Rust library from Firecrawl that converts Word, PowerPoint, Excel, OpenDocument, RTF, EPUB, CSV, and PDF documents into clean Markdown. It ships with Node.js and Python…</p>
+        <div class="meta"><span class="lang">Rust</span><span class="stars num">&#9733; 16.1k</span><span class="pr num">static review</span><a class="readmore" href="reviews/firecrawl-anydoc.html">Read the full review &rarr;</a></div>
       </div>
     </li><li class="repo">
       <div class="rank num">03</div>
       <div class="meat">
-        <a class="rname" href="https://github.com/guillaumemeyer/watermarks-remover" rel="noopener">guillaumemeyer/watermarks-remover</a>
-        <p class="blurb">watermarks-remover is a Python tool that strips AI provenance marks from text and image files. The README claims support for Unicode text hygiene, statistical rewrite hooks, and removal of C2PA metadata across PNG, JPEG, SVG, PDF, DOCX, HTML, and Markdown. It is MIT licensed with 6,671 lines across 61 files, including about 6,431 lines of Python and 240 lines of shell. It has roughly 6,000 GitHub stars and appears to be climbing.
-
-I cloned it, installed requirements-dev.txt plus pytest, and ran the test suite. Tests passed. I then ran the actual tool. I created a plain text file containing &quot;This is a test sentence with no watermarks.&quot; and pointed the `inspect_text.py` script at it from the `skills/remove-ai-marks/scripts` directory. The script ran without error. I also imported `common.py` as a module check, which returned &quot;common.py imported OK.&quot; Both the inspection tool and the module import behaved correctly on clean input.
-
-The signals here are decent for a project this size. It has 11 test files, CI is configured, and the MIT license is permissive. The repo includes Dockerfiles for specific watermarking schemes like SynthID and ctrlregen, which suggests targeted handling rather than generic cleanup. One caveat: the repo is structured as a skills directory, not a standard pip-installable package, so you are working with scripts rather than a CLI entry point. That is fine but worth knowing before you integrate it anywhere.
-
-For developers who need to scrub AI watermarks from content they own or are auditing, this tool does what it says. The test suite passes, the scripts run, and the scope is broad across file formats. It is not a library you import into production code without wrapping. It is a working utility for a task that most tools do not attempt at all.</p>
-        <div class="meta"><span class="lang">Python</span><span class="stars num">&#9733; 6.0k</span><span class="pr num">ran &#10003; tests passed</span></div>
+        <a class="rname" href="reviews/guillaumemeyer-watermarks-remover.html">guillaumemeyer/watermarks-remover</a>
+        <p class="blurb">watermarks-remover is a Python project by guillaumemeyer with 8678 GitHub stars and climbing. It claims to strip AI provenance marks across a wide set of formats: PNG, JPEG, SVG, PDF…</p>
+        <div class="meta"><span class="lang">Python</span><span class="stars num">&#9733; 8.7k</span><span class="pr num">ran &#10003; tests passed</span><a class="readmore" href="reviews/guillaumemeyer-watermarks-remover.html">Read the full review &rarr;</a></div>
       </div>
     </li><li class="repo">
       <div class="rank num">04</div>
       <div class="meat">
-        <a class="rname" href="https://github.com/FareedKhan-dev/kimi-k3-in-c" rel="noopener">FareedKhan-dev/kimi-k3-in-c</a>
-        <p class="blurb">Kimi-k3-in-c is a C99 project claiming to run a 2.78-trillion-parameter Kimi K3 model on a single CPU in 8.24 GB of RAM, with no BLAS, no framework, and no GPU. The README pitches portability above all else.
-
-We did not run it. Our setup targets Python entrypoints and this repo is primarily C with a Makefile-based build. We lack the C toolchain and model weights to attempt inference here, so this is a static read only.
-
-One concrete signal: zero test files across 289 files and 17,516 lines. The C portion is 10,832 lines, with Shell at 762 and Python at 5,922. CI is configured, but with no tests it can only check compilation, not correctness. Apache-2.0 license is clean. The claim is extraordinary and unverified by us.</p>
-        <div class="meta"><span class="lang">C</span><span class="stars num">&#9733; 5.5k</span><span class="pr num">static review</span></div>
+        <a class="rname" href="reviews/zzzlc0405-photo-abstract-editorial.html">ZzzLc0405/photo-abstract-editorial</a>
+        <p class="blurb">This is a Codex Skill that turns a photo into a vertical editorial piece combining the original photo region with abstract panels and poetic English titles. It extracts spatial and…</p>
+        <div class="meta"><span class="stars num">&#9733; 3.7k</span><span class="pr num">static review</span><a class="readmore" href="reviews/zzzlc0405-photo-abstract-editorial.html">Read the full review &rarr;</a></div>
       </div>
     </li><li class="repo">
       <div class="rank num">05</div>
       <div class="meat">
-        <a class="rname" href="https://github.com/imsai-sh/zhuzhiliao" rel="noopener">imsai-sh/zhuzhiliao</a>
-        <p class="blurb">I cloned imsai-sh/zhuzhiliao today, a repo with 2705 stars and rising. It describes itself as a web simulation of a traditional Chinese toy called Bamboo Cicada, a spinner that cries when rotated. The README pitches zero dependencies, a single file, real audio samples, and mobile-first design. The author is explicit that this is not open source, the source code is shared only for learning, and the sole official deployment lives at zhuzhiliao.icu. They have already found unauthorized copies, including one where someone swapped the original hand-drawn cicada for a real person&#x27;s face.
-
-Running it told a clear story. The repo has no entry points, no CLI, no build step. The only usage hint in the README is `python3 -m http.server 8123`, which is Python&#x27;s built-in static server and has nothing to do with this repo&#x27;s code. I confirmed this directly: the repo contains only README.md, LICENSE, CLAUDE.md, and robots.txt. No Python source, no JavaScript entry point to import, nothing to run. A `node -e require(&#x27;./index.js&#x27;)` smoke test exited with code 1.
-
-The signals are mixed but readable. The primary language is JavaScript with 2103 lines across 18 files, which suggests the actual project lives somewhere other than what we pulled, or the file inventory is incomplete relative to the star count. Tests: zero files. CI: none. License: unknown, and the README is firm that redistribution and public deployment are not permitted. There is a live demo at zhuzhiliao.icu, which is where the author wants you to play with it.
-
-My verdict: this is a toy project in the literal sense, a single-file web simulation meant to be experienced at its official URL, not cloned and run by developers. The repo as it stands has nothing to execute. If you want to try Bamboo Cicada, visit the site. If you want code to study or fork, the license forbids that and the repo gives you little to work with anyway. It delivers as a web toy, not as a development asset.</p>
-        <div class="meta"><span class="lang">JavaScript</span><span class="stars num">&#9733; 2.7k</span><span class="pr num">ran &#10003; node -e require(&#x27;./index.js&#x27;) exit 1</span></div>
+        <a class="rname" href="reviews/anywhere-labs-deepseek-harness-desktop.html">anywhere-labs/deepseek-harness-desktop</a>
+        <p class="blurb">DeepSeek Harness (dsh) is an open-source agent framework from DeepSeek AI with a desktop app layer on top. The repo is TypeScript-heavy at 566,484 lines with some Python SDK code…</p>
+        <div class="meta"><span class="lang">TypeScript</span><span class="stars num">&#9733; 3.2k</span><span class="pr num">ran &#10003; npm test exit 127</span><a class="readmore" href="reviews/anywhere-labs-deepseek-harness-desktop.html">Read the full review &rarr;</a></div>
       </div>
     </li><li class="repo">
       <div class="rank num">06</div>
       <div class="meat">
-        <a class="rname" href="https://github.com/LaoFeng-mouse/flyingmouse-format" rel="noopener">LaoFeng-mouse/flyingmouse-format</a>
-        <p class="blurb">I cloned LaoFeng-mouse/flyingmouse-format, a 2689-star rising repo that markets itself as a mouse-themed offline Windows file converter. The description lists built-in FFmpeg, LibreOffice, Poppler, and Tesseract for interconverting images, documents, spreadsheets, PPT, PDF, audio/video, WPS formats, and OCR with batch conversion. It is primarily JavaScript, 17681 lines across 142 files, with 36 test files and CI configured.
-
-The npm install completed, but `npm test` exited with code 1, so the test suite fails. I then tried to actually run the tool. The repo has `&quot;main&quot;: &quot;electron-main.js&quot;` and a `bin/` directory containing only `avs3`. There is no Python module, no CLI entry point, and no importable library. The README itself points users to the Release build or bin/ bundles. The output confirmed: &quot;This is an Electron GUI app (FlyingMouse Format). The repo excludes the FFmpeg/LibreOffice/Poppler/Tesseract bundles. No CLI or library entry exists. Cannot run it from source without the full Electron toolchain and bin/ resources.&quot; So I could not run it as a converter from source. The demo script ran, but it ran to prove the absence of a runnable entry point, not to convert a file.
-
-The signals are mixed. 142 files and 17K lines suggest a substantial codebase. 36 test files and CI exist, yet the test suite fails on a clean install, which is a red flag. The license is unknown, and the author explicitly bans commercial resale, citing knockoffs on Xianyu and Taobao. That non-commercial stance is unusual and worth noting before you depend on it.
-
-Verdict: this is an Electron desktop app for Windows users who want a bundled offline converter. If you want a library or CLI, it is not that. The failing tests mean I cannot confirm it works from source. You would need to download the Release build with its bundled dependencies to actually use it.</p>
-        <div class="meta"><span class="lang">JavaScript</span><span class="stars num">&#9733; 2.7k</span><span class="pr num">ran &#10003; npm test exit 1</span></div>
+        <a class="rname" href="reviews/laofeng-mouse-flyingmouse-format.html">LaoFeng-mouse/flyingmouse-format</a>
+        <p class="blurb">FlyingMouse Format is a Windows desktop file converter by LaoFeng, written mostly in JavaScript with some Python and Shell. It bundles FFmpeg, LibreOffice, Poppler, and Tesseract to…</p>
+        <div class="meta"><span class="lang">JavaScript</span><span class="stars num">&#9733; 3.1k</span><span class="pr num">ran &#10003; npm test exit 1</span><a class="readmore" href="reviews/laofeng-mouse-flyingmouse-format.html">Read the full review &rarr;</a></div>
       </div>
     </li>
     </ul>
   </section>
 
-  <section class="cluster"><h2><span class="o">New &amp; rising</span> <span class="cnt num">11</span></h2><p class="cdesc">Fresh on the board since the last run, and repos climbing fast.</p><ul class="repos"><li class="repo"><div class="rank num">01</div><div class="meat"><a class="rname" href="https://github.com/deepseek-ai/deepseek-harness" rel="noopener">deepseek-ai/deepseek-harness</a><p class="blurb">DeepSeek Harness: Everything is a Plugin.</p><div class="meta"><span class="lang">TypeScript</span><span class="stars num">&#9733; 75.6k</span><span class="pr num">new</span></div></div></li><li class="repo"><div class="rank num">02</div><div class="meat"><a class="rname" href="https://github.com/xoreaxeaxeax/skitter-creek-bath-salts" rel="noopener">xoreaxeaxeax/skitter-creek-bath-salts</a><p class="blurb">Unlocking _everything_ on the CPU with DRAM scrambling</p><div class="meta"><span class="lang">C</span><span class="stars num">&#9733; 1.2k</span><span class="pr num">new</span></div></div></li><li class="repo"><div class="rank num">03</div><div class="meat"><a class="rname" href="https://github.com/Leutenegger/book-to-skill" rel="noopener">Leutenegger/book-to-skill</a><p class="blurb">Turn any technical book PDF into a Claude Code skill — ready to study, reference, and use while you work.</p><div class="meta"><span class="lang">Python</span><span class="stars num">&#9733; 1.0k</span><span class="pr num">new</span></div></div></li><li class="repo"><div class="rank num">04</div><div class="meat"><a class="rname" href="https://github.com/cordiverse/paper" rel="noopener">cordiverse/paper</a><p class="blurb">A Programming Paradigm for Spatiotemporal Composability</p><div class="meta"><span class="stars num">&#9733; 955</span><span class="pr num">new</span></div></div></li><li class="repo"><div class="rank num">05</div><div class="meat"><a class="rname" href="https://github.com/zhu1090093659/dsh-web-ui" rel="noopener">zhu1090093659/dsh-web-ui</a><p class="blurb">Plugin and skin collection for DeepSeek Harness (DSH) Web UI - task board, git graph, right-side panel, remote mobile UI, pet, live token stats, and skin center.</p><div class="meta"><span class="lang">TypeScript</span><span class="stars num">&#9733; 1.2k</span><span class="pr num">new</span></div></div></li><li class="repo"><div class="rank num">06</div><div class="meat"><a class="rname" href="https://github.com/Anionex/agent-vision-toolkit" rel="noopener">Anionex/agent-vision-toolkit</a><p class="blurb">A vision toolkit and skill set designed for text-only models to &quot;see&quot; images. Supports multi-image understanding, visual Q&amp;A, UI restoration, GUI automation, and direct paste recognition. Optionally integrates seamlessly with mainstream agents.</p><div class="meta"><span class="lang">Python</span><span class="stars num">&#9733; 720</span><span class="pr num">new</span></div></div></li><li class="repo"><div class="rank num">07</div><div class="meat"><a class="rname" href="https://github.com/guillaumemeyer/watermarks-remover" rel="noopener">guillaumemeyer/watermarks-remover</a><p class="blurb">Strip multi-vendor AI provenance marks: Unicode text hygiene, statistical rewrite hooks, and C2PA/metadata from PNG/JPEG/SVG/PDF/DOCX/HTML/MD</p><div class="meta"><span class="lang">Python</span><span class="stars num">&#9733; 6.0k</span><span class="pr num">&#9650; from #4</span></div></div></li><li class="repo"><div class="rank num">08</div><div class="meat"><a class="rname" href="https://github.com/LaoFeng-mouse/flyingmouse-format" rel="noopener">LaoFeng-mouse/flyingmouse-format</a><p class="blurb">FlyingMouse Format - Universal Windows file converter (Offline, built-in FFmpeg/LibreOffice/Poppler/Tesseract). Interconvert images, documents, spreadsheets, PPT, PDF, audio/video, and WPS formats + OCR + Batch conversion.</p><div class="meta"><span class="lang">JavaScript</span><span class="stars num">&#9733; 2.7k</span><span class="pr num">&#9650; from #12</span></div></div></li><li class="repo"><div class="rank num">09</div><div class="meat"><a class="rname" href="https://github.com/pathwaycom/arc-task-gen" rel="noopener">pathwaycom/arc-task-gen</a><p class="blurb">Generates original ARC-AGI-1-style tasks distribution-matched to the public eval set.</p><div class="meta"><span class="lang">Python</span><span class="stars num">&#9733; 1.8k</span><span class="pr num">&#9650; from #19</span></div></div></li><li class="repo"><div class="rank num">10</div><div class="meat"><a class="rname" href="https://github.com/gvzdv/claudish-to-english" rel="noopener">gvzdv/claudish-to-english</a><p class="blurb">&nbsp;</p><div class="meta"><span class="lang">Shell</span><span class="stars num">&#9733; 964</span><span class="pr num">&#9650; from #35</span></div></div></li><li class="repo"><div class="rank num">11</div><div class="meat"><a class="rname" href="https://github.com/milind-soni/OpenMausBot" rel="noopener">milind-soni/OpenMausBot</a><p class="blurb">&nbsp;</p><div class="meta"><span class="lang">TypeScript</span><span class="stars num">&#9733; 860</span><span class="pr num">&#9650; from #40</span></div></div></li></ul></section>
+  <section class="cluster"><h2><span class="o">New &amp; rising</span> <span class="cnt num">22</span></h2><p class="cdesc">Fresh on the board since the last run, and repos climbing fast.</p><ul class="repos"><li class="repo"><div class="rank num">01</div><div class="meat"><a class="rname" href="https://github.com/anywhere-labs/deepseek-harness-desktop" rel="noopener">anywhere-labs/deepseek-harness-desktop</a><p class="blurb">A modern desktop experience built for the DeepSeek Harness (DSH) ecosystem</p><div class="meta"><span class="lang">TypeScript</span><span class="stars num">&#9733; 3.2k</span><span class="pr num">new</span></div></div></li><li class="repo"><div class="rank num">02</div><div class="meat"><a class="rname" href="https://github.com/awesome-dsh-plugin/awesome-dsh-plugin" rel="noopener">awesome-dsh-plugin/awesome-dsh-plugin</a><p class="blurb">A curated list of plugins for DeepSeek Harness (dsh)</p><div class="meta"><span class="lang">Python</span><span class="stars num">&#9733; 1.7k</span><span class="pr num">new</span></div></div></li><li class="repo"><div class="rank num">03</div><div class="meat"><a class="rname" href="https://github.com/xiaobright/dsh-anchored-standard" rel="noopener">xiaobright/dsh-anchored-standard</a><p class="blurb">Two-phase DeepSeek Harness preset: Minimal-aligned bootstrap, then full Standard tools (Project2 98/99)</p><div class="meta"><span class="lang">JavaScript</span><span class="stars num">&#9733; 1.1k</span><span class="pr num">new</span></div></div></li><li class="repo"><div class="rank num">04</div><div class="meat"><a class="rname" href="https://github.com/dmmulroy/anti-slop" rel="noopener">dmmulroy/anti-slop</a><p class="blurb">Opinionated Oxlint rules for rejecting low-evidence TypeScript and JavaScript patterns</p><div class="meta"><span class="lang">TypeScript</span><span class="stars num">&#9733; 858</span><span class="pr num">new</span></div></div></li><li class="repo"><div class="rank num">05</div><div class="meat"><a class="rname" href="https://github.com/AdamPlatin123/awesome-dsh-plugins" rel="noopener">AdamPlatin123/awesome-dsh-plugins</a><p class="blurb">Front Index Repo (Radar): All dsh plugin candidates discovered via automatic scanning; qualified ones are moved to the curated directory repo.</p><div class="meta"><span class="lang">Python</span><span class="stars num">&#9733; 889</span><span class="pr num">new</span></div></div></li><li class="repo"><div class="rank num">06</div><div class="meat"><a class="rname" href="https://github.com/ccch1mneyyy/dsh-TUI" rel="noopener">ccch1mneyyy/dsh-TUI</a><p class="blurb">Fills the gap left by DSH&#x27;s lack of an official terminal TUI, dedicated to CLI-loving geeks. A Claude Code-style full-screen interactive plugin featuring a pixel whale top bar, real-time status line, streaming thoughts, double-tap Esc rollback, and context progress + TPS gauge. One-command npm install.</p><div class="meta"><span class="lang">TypeScript</span><span class="stars num">&#9733; 1.0k</span><span class="pr num">new</span></div></div></li><li class="repo"><div class="rank num">07</div><div class="meat"><a class="rname" href="https://github.com/Hisn00w/ASu-skills" rel="noopener">Hisn00w/ASu-skills</a><p class="blurb">Resume Polishing</p><div class="meta"><span class="lang">HTML</span><span class="stars num">&#9733; 738</span><span class="pr num">new</span></div></div></li><li class="repo"><div class="rank num">08</div><div class="meat"><a class="rname" href="https://github.com/omdsh-dev/DSH-better-sidebar" rel="noopener">omdsh-dev/DSH-better-sidebar</a><p class="blurb">A complete sidebar workbench supporting third-party extensions to register new sidebar pages. Includes built-in file rendering/editing, terminal, Git, and sub-proxy.</p><div class="meta"><span class="lang">TypeScript</span><span class="stars num">&#9733; 870</span><span class="pr num">new</span></div></div></li><li class="repo"><div class="rank num">09</div><div class="meat"><a class="rname" href="https://github.com/deepseek-ai/deepseek-harness" rel="noopener">deepseek-ai/deepseek-harness</a><p class="blurb">DeepSeek Harness: Everything is a Plugin.</p><div class="meta"><span class="lang">TypeScript</span><span class="stars num">&#9733; 102.3k</span><span class="pr num">&#9650; from #1</span></div></div></li><li class="repo"><div class="rank num">10</div><div class="meat"><a class="rname" href="https://github.com/guillaumemeyer/watermarks-remover" rel="noopener">guillaumemeyer/watermarks-remover</a><p class="blurb">Strip multi-vendor AI provenance marks: Unicode text hygiene, statistical rewrite hooks, and C2PA/metadata from PNG/JPEG/SVG/PDF/DOCX/HTML/MD</p><div class="meta"><span class="lang">Python</span><span class="stars num">&#9733; 8.7k</span><span class="pr num">&#9650; from #3</span></div></div></li><li class="repo"><div class="rank num">11</div><div class="meat"><a class="rname" href="https://github.com/LaoFeng-mouse/flyingmouse-format" rel="noopener">LaoFeng-mouse/flyingmouse-format</a><p class="blurb">FlyingMouse Format - Universal Windows file converter (Offline, built-in FFmpeg/LibreOffice/Poppler/Tesseract). Interconvert images, documents, spreadsheets, PPT, PDF, audio/video, and WPS formats + OCR + Batch conversion.</p><div class="meta"><span class="lang">JavaScript</span><span class="stars num">&#9733; 3.1k</span><span class="pr num">&#9650; from #8</span></div></div></li><li class="repo"><div class="rank num">12</div><div class="meat"><a class="rname" href="https://github.com/pathwaycom/arc-task-gen" rel="noopener">pathwaycom/arc-task-gen</a><p class="blurb">Generates original ARC-AGI-1-style tasks distribution-matched to the public eval set.</p><div class="meta"><span class="lang">Python</span><span class="stars num">&#9733; 2.0k</span><span class="pr num">&#9650; from #12</span></div></div></li><li class="repo"><div class="rank num">13</div><div class="meat"><a class="rname" href="https://github.com/zhu1090093659/dsh-web-ui" rel="noopener">zhu1090093659/dsh-web-ui</a><p class="blurb">Plugin and skin collection for DeepSeek Harness (DSH) Web UI - task board, git graph, right-side panel, remote mobile UI, pet, live token stats, and skin center.</p><div class="meta"><span class="lang">TypeScript</span><span class="stars num">&#9733; 2.2k</span><span class="pr num">&#9650; from #25</span></div></div></li><li class="repo"><div class="rank num">14</div><div class="meat"><a class="rname" href="https://github.com/xoreaxeaxeax/skitter-creek-bath-salts" rel="noopener">xoreaxeaxeax/skitter-creek-bath-salts</a><p class="blurb">Unlocking _everything_ on the CPU with DRAM scrambling</p><div class="meta"><span class="lang">C</span><span class="stars num">&#9733; 1.6k</span><span class="pr num">&#9650; from #19</span></div></div></li><li class="repo"><div class="rank num">15</div><div class="meat"><a class="rname" href="https://github.com/eternityspring/shuohao-skills" rel="noopener">eternityspring/shuohao-skills</a><p class="blurb">Agent skills for AI short-drama production: character breakdowns, outlines, scene/prop settings, screenplays, and storyboards. Runs in Claude Code &amp; codex.</p><div class="meta"><span class="lang">JavaScript</span><span class="stars num">&#9733; 1.5k</span><span class="pr num">&#9650; from #17</span></div></div></li><li class="repo"><div class="rank num">16</div><div class="meat"><a class="rname" href="https://github.com/cordiverse/paper" rel="noopener">cordiverse/paper</a><p class="blurb">A Programming Paradigm for Spatiotemporal Composability</p><div class="meta"><span class="stars num">&#9733; 1.4k</span><span class="pr num">&#9650; from #23</span></div></div></li><li class="repo"><div class="rank num">17</div><div class="meat"><a class="rname" href="https://github.com/jd-opensource/JoyAI-Video-Edit" rel="noopener">jd-opensource/JoyAI-Video-Edit</a><p class="blurb">[Official Repo] JoyAI-Video-Edit: Real-Time Open-Ended Video Editing with Autoregressive Diffusion</p><div class="meta"><span class="lang">Python</span><span class="stars num">&#9733; 1.2k</span><span class="pr num">&#9650; from #30</span></div></div></li><li class="repo"><div class="rank num">18</div><div class="meat"><a class="rname" href="https://github.com/gvzdv/claudish-to-english" rel="noopener">gvzdv/claudish-to-english</a><p class="blurb">&nbsp;</p><div class="meta"><span class="lang">Shell</span><span class="stars num">&#9733; 1.1k</span><span class="pr num">&#9650; from #24</span></div></div></li><li class="repo"><div class="rank num">19</div><div class="meat"><a class="rname" href="https://github.com/google-gemma/gemma-translator" rel="noopener">google-gemma/gemma-translator</a><p class="blurb">&nbsp;</p><div class="meta"><span class="lang">JavaScript</span><span class="stars num">&#9733; 1.1k</span><span class="pr num">&#9650; from #32</span></div></div></li><li class="repo"><div class="rank num">20</div><div class="meat"><a class="rname" href="https://github.com/MengTo/kage" rel="noopener">MengTo/kage</a><p class="blurb">An interactive five-chapter night walk through a Kyoto mountain temple, rendered live in Three.js.</p><div class="meta"><span class="lang">HTML</span><span class="stars num">&#9733; 974</span><span class="pr num">&#9650; from #34</span></div></div></li><li class="repo"><div class="rank num">21</div><div class="meat"><a class="rname" href="https://github.com/xoreaxeaxeax/asm-hall-of-shame" rel="noopener">xoreaxeaxeax/asm-hall-of-shame</a><p class="blurb">Racing to the bottom of CPU performance</p><div class="meta"><span class="lang">C</span><span class="stars num">&#9733; 885</span><span class="pr num">&#9650; from #38</span></div></div></li><li class="repo"><div class="rank num">22</div><div class="meat"><a class="rname" href="https://github.com/milind-soni/OpenMausBot" rel="noopener">milind-soni/OpenMausBot</a><p class="blurb">&nbsp;</p><div class="meta"><span class="lang">TypeScript</span><span class="stars num">&#9733; 947</span><span class="pr num">&#9650; from #40</span></div></div></li></ul></section>
 <section class="cluster">
-    <h2><span class="o">AI-ML</span> <span class="cnt num">17</span></h2>
+    <h2><span class="o">AI-ML</span> <span class="cnt num">19</span></h2>
     <p class="cdesc">Models, agents, and the tooling around them.</p>
     <ul class="repos">
     <li class="repo">
       <div class="rank num">01</div>
       <div class="meat">
-        <a class="rname" href="https://github.com/guillaumemeyer/watermarks-remover" rel="noopener">guillaumemeyer/watermarks-remover</a>
-        <p class="blurb">Strip multi-vendor AI provenance marks: Unicode text hygiene, statistical rewrite hooks, and C2PA/metadata from PNG/JPEG/SVG/PDF/DOCX/HTML/MD</p>
-        <div class="meta"><span class="lang">Python</span><span class="stars num">&#9733; 6.0k</span></div>
+        <a class="rname" href="https://github.com/deepseek-ai/deepseek-harness" rel="noopener">deepseek-ai/deepseek-harness</a>
+        <p class="blurb">DeepSeek Harness: Everything is a Plugin.</p>
+        <div class="meta"><span class="lang">TypeScript</span><span class="stars num">&#9733; 102.3k</span></div>
       </div>
     </li><li class="repo">
       <div class="rank num">02</div>
       <div class="meat">
-        <a class="rname" href="https://github.com/FareedKhan-dev/kimi-k3-in-c" rel="noopener">FareedKhan-dev/kimi-k3-in-c</a>
-        <p class="blurb">A 2.78-trillion-parameter Kimi K3 running inference on a single CPU in 8.24 GB of RAM. Portable C99: no BLAS, no framework, no GPU.</p>
-        <div class="meta"><span class="lang">C</span><span class="stars num">&#9733; 5.5k</span></div>
+        <a class="rname" href="https://github.com/guillaumemeyer/watermarks-remover" rel="noopener">guillaumemeyer/watermarks-remover</a>
+        <p class="blurb">Strip multi-vendor AI provenance marks: Unicode text hygiene, statistical rewrite hooks, and C2PA/metadata from PNG/JPEG/SVG/PDF/DOCX/HTML/MD</p>
+        <div class="meta"><span class="lang">Python</span><span class="stars num">&#9733; 8.7k</span></div>
       </div>
     </li><li class="repo">
       <div class="rank num">03</div>
@@ -195,149 +166,184 @@ Verdict: this is an Electron desktop app for Windows users who want a bundled of
     </li><li class="repo">
       <div class="rank num">04</div>
       <div class="meat">
-        <a class="rname" href="https://github.com/imsai-sh/zhuzhiliao" rel="noopener">imsai-sh/zhuzhiliao</a>
-        <p class="blurb">Bamboo Cicada — A web simulation of the traditional toy that cries when spun. Zero-dependency single file, real audio samples, mobile-first. <span class="tl">translated from Chinese</span></p>
-        <div class="meta"><span class="lang">HTML</span><span class="stars num">&#9733; 2.7k</span></div>
+        <a class="rname" href="https://github.com/thebuggeddev/anatomy" rel="noopener">thebuggeddev/anatomy</a>
+        <p class="blurb">An interactive 3D human anatomy explorer built using threejs with GPT 5.6 Sol</p>
+        <div class="meta"><span class="lang">TypeScript</span><span class="stars num">&#9733; 2.4k</span></div>
       </div>
     </li><li class="repo">
       <div class="rank num">05</div>
       <div class="meat">
-        <a class="rname" href="https://github.com/thebuggeddev/anatomy" rel="noopener">thebuggeddev/anatomy</a>
-        <p class="blurb">An interactive 3D human anatomy explorer built using threejs with GPT 5.6 Sol</p>
-        <div class="meta"><span class="lang">TypeScript</span><span class="stars num">&#9733; 2.4k</span></div>
+        <a class="rname" href="https://github.com/eternityspring/shuohao-skills" rel="noopener">eternityspring/shuohao-skills</a>
+        <p class="blurb">Agent skills for AI short-drama production: character breakdowns, outlines, scene/prop settings, screenplays, and storyboards. Runs in Claude Code &amp; codex. <span class="tl">translated from Chinese</span></p>
+        <div class="meta"><span class="lang">JavaScript</span><span class="stars num">&#9733; 1.5k</span></div>
       </div>
     </li><li class="repo">
       <div class="rank num">06</div>
       <div class="meat">
         <a class="rname" href="https://github.com/ShawnPana/phone-harness" rel="noopener">ShawnPana/phone-harness</a>
         <p class="blurb">let your agent control your phone</p>
-        <div class="meta"><span class="lang">Python</span><span class="stars num">&#9733; 1.7k</span></div>
+        <div class="meta"><span class="lang">Python</span><span class="stars num">&#9733; 1.8k</span></div>
       </div>
     </li><li class="repo">
       <div class="rank num">07</div>
       <div class="meat">
         <a class="rname" href="https://github.com/antirez/h3.c" rel="noopener">antirez/h3.c</a>
         <p class="blurb">MiniMax H3 inference engine for Mac computers</p>
-        <div class="meta"><span class="lang">C</span><span class="stars num">&#9733; 1.8k</span></div>
+        <div class="meta"><span class="lang">C</span><span class="stars num">&#9733; 1.9k</span></div>
       </div>
     </li><li class="repo">
       <div class="rank num">08</div>
-      <div class="meat">
-        <a class="rname" href="https://github.com/eternityspring/shuohao-skills" rel="noopener">eternityspring/shuohao-skills</a>
-        <p class="blurb">Agent skills for AI short-drama production: character breakdowns, outlines, scene/prop settings, screenplays, and storyboards. Runs in Claude Code &amp; codex. <span class="tl">translated from Chinese</span></p>
-        <div class="meta"><span class="lang">JavaScript</span><span class="stars num">&#9733; 1.3k</span></div>
-      </div>
-    </li><li class="repo">
-      <div class="rank num">09</div>
       <div class="meat">
         <a class="rname" href="https://github.com/Binaryify/open-kimi-ppt-skill" rel="noopener">Binaryify/open-kimi-ppt-skill</a>
         <p class="blurb">Unofficial Kimi Slides Skill: Enables AI agents to generate editable PPTD and PPTX files with a local browser editor. <span class="tl">translated from Chinese</span></p>
         <div class="meta"><span class="stars num">&#9733; 1.6k</span></div>
       </div>
     </li><li class="repo">
+      <div class="rank num">09</div>
+      <div class="meat">
+        <a class="rname" href="https://github.com/jd-opensource/JoyAI-Video-Edit" rel="noopener">jd-opensource/JoyAI-Video-Edit</a>
+        <p class="blurb">[Official Repo] JoyAI-Video-Edit: Real-Time Open-Ended Video Editing with Autoregressive Diffusion</p>
+        <div class="meta"><span class="lang">Python</span><span class="stars num">&#9733; 1.2k</span></div>
+      </div>
+    </li><li class="repo">
       <div class="rank num">10</div>
       <div class="meat">
         <a class="rname" href="https://github.com/Leutenegger/book-to-skill" rel="noopener">Leutenegger/book-to-skill</a>
         <p class="blurb">Turn any technical book PDF into a Claude Code skill — ready to study, reference, and use while you work.</p>
-        <div class="meta"><span class="lang">Python</span><span class="stars num">&#9733; 1.0k</span></div>
+        <div class="meta"><span class="lang">Python</span><span class="stars num">&#9733; 1.1k</span></div>
       </div>
     </li><li class="repo">
       <div class="rank num">11</div>
+      <div class="meat">
+        <a class="rname" href="https://github.com/xiaobright/dsh-anchored-standard" rel="noopener">xiaobright/dsh-anchored-standard</a>
+        <p class="blurb">Two-phase DeepSeek Harness preset: Minimal-aligned bootstrap, then full Standard tools (Project2 98/99)</p>
+        <div class="meta"><span class="lang">JavaScript</span><span class="stars num">&#9733; 1.1k</span></div>
+      </div>
+    </li><li class="repo">
+      <div class="rank num">12</div>
       <div class="meat">
         <a class="rname" href="https://github.com/Accio-org/RealReplicaBench" rel="noopener">Accio-org/RealReplicaBench</a>
         <p class="blurb">RealReplicaBench: Benchmarking Long-Horizon Agents in High-Fidelity, Stateful, and Reproducible Replicas of Real Online Services</p>
         <div class="meta"><span class="lang">HTML</span><span class="stars num">&#9733; 1.1k</span></div>
       </div>
     </li><li class="repo">
-      <div class="rank num">12</div>
+      <div class="rank num">13</div>
       <div class="meat">
         <a class="rname" href="https://github.com/SaladDay/pi-from-scratch" rel="noopener">SaladDay/pi-from-scratch</a>
         <p class="blurb">A super-mini pi written in 600 lines of TypeScript, allowing you to easily build your own pi-agent from scratch. <span class="tl">translated from Chinese</span></p>
-        <div class="meta"><span class="lang">TypeScript</span><span class="stars num">&#9733; 925</span></div>
+        <div class="meta"><span class="lang">TypeScript</span><span class="stars num">&#9733; 987</span></div>
       </div>
     </li><li class="repo">
-      <div class="rank num">13</div>
+      <div class="rank num">14</div>
       <div class="meat">
         <a class="rname" href="https://github.com/magicrew/doc7" rel="noopener">magicrew/doc7</a>
         <p class="blurb">Turn documents into AI-ready Markdown with visual understanding</p>
         <div class="meta"><span class="lang">Go</span><span class="stars num">&#9733; 1.1k</span></div>
       </div>
     </li><li class="repo">
-      <div class="rank num">14</div>
-      <div class="meat">
-        <a class="rname" href="https://github.com/jd-opensource/JoyAI-Video-Edit" rel="noopener">jd-opensource/JoyAI-Video-Edit</a>
-        <p class="blurb">[Official Repo] JoyAI-Video-Edit: Real-Time Open-Ended Video Editing with Autoregressive Diffusion</p>
-        <div class="meta"><span class="lang">Python</span><span class="stars num">&#9733; 1.1k</span></div>
-      </div>
-    </li><li class="repo">
       <div class="rank num">15</div>
       <div class="meat">
-        <a class="rname" href="https://github.com/MengTo/kage" rel="noopener">MengTo/kage</a>
-        <p class="blurb">An interactive five-chapter night walk through a Kyoto mountain temple, rendered live in Three.js.</p>
-        <div class="meta"><span class="lang">HTML</span><span class="stars num">&#9733; 902</span></div>
+        <a class="rname" href="https://github.com/dmmulroy/anti-slop" rel="noopener">dmmulroy/anti-slop</a>
+        <p class="blurb">Opinionated Oxlint rules for rejecting low-evidence TypeScript and JavaScript patterns</p>
+        <div class="meta"><span class="lang">TypeScript</span><span class="stars num">&#9733; 858</span></div>
       </div>
     </li><li class="repo">
       <div class="rank num">16</div>
       <div class="meat">
-        <a class="rname" href="https://github.com/Anionex/agent-vision-toolkit" rel="noopener">Anionex/agent-vision-toolkit</a>
-        <p class="blurb">A vision toolkit and skill set designed for text-only models to &quot;see&quot; images. Supports multi-image understanding, visual Q&amp;A, UI restoration, GUI automation, and direct paste recognition. Optionally integrates seamlessly with mainstream agents. <span class="tl">translated from Chinese</span></p>
-        <div class="meta"><span class="lang">Python</span><span class="stars num">&#9733; 720</span></div>
+        <a class="rname" href="https://github.com/MengTo/kage" rel="noopener">MengTo/kage</a>
+        <p class="blurb">An interactive five-chapter night walk through a Kyoto mountain temple, rendered live in Three.js.</p>
+        <div class="meta"><span class="lang">HTML</span><span class="stars num">&#9733; 974</span></div>
       </div>
     </li><li class="repo">
       <div class="rank num">17</div>
       <div class="meat">
+        <a class="rname" href="https://github.com/ccch1mneyyy/dsh-TUI" rel="noopener">ccch1mneyyy/dsh-TUI</a>
+        <p class="blurb">Fills the gap left by DSH&#x27;s lack of an official terminal TUI, dedicated to CLI-loving geeks. A Claude Code-style full-screen interactive plugin featuring a pixel whale top bar, real-time status line, streaming thoughts, double-tap Esc rollback, and context progress + TPS gauge. One-command npm install. <span class="tl">translated from Chinese</span></p>
+        <div class="meta"><span class="lang">TypeScript</span><span class="stars num">&#9733; 1.0k</span></div>
+      </div>
+    </li><li class="repo">
+      <div class="rank num">18</div>
+      <div class="meat">
+        <a class="rname" href="https://github.com/Hisn00w/ASu-skills" rel="noopener">Hisn00w/ASu-skills</a>
+        <p class="blurb">Resume Polishing <span class="tl">translated from Chinese</span></p>
+        <div class="meta"><span class="lang">HTML</span><span class="stars num">&#9733; 738</span></div>
+      </div>
+    </li><li class="repo">
+      <div class="rank num">19</div>
+      <div class="meat">
         <a class="rname" href="https://github.com/mikiarlo3/awesome-growth-hacking-skills" rel="noopener">mikiarlo3/awesome-growth-hacking-skills</a>
         <p class="blurb">Find agentic growth hacking skills for Claude, ChatGPT, Manus | by enso.bot</p>
-        <div class="meta"><span class="lang">Shell</span><span class="stars num">&#9733; 825</span></div>
+        <div class="meta"><span class="lang">Shell</span><span class="stars num">&#9733; 830</span></div>
       </div>
     </li>
     </ul>
   </section>
 <section class="cluster">
-    <h2><span class="o">DevTools</span> <span class="cnt num">6</span></h2>
+    <h2><span class="o">DevTools</span> <span class="cnt num">9</span></h2>
     <p class="cdesc">What you install to build faster.</p>
     <ul class="repos">
     <li class="repo">
       <div class="rank num">01</div>
       <div class="meat">
-        <a class="rname" href="https://github.com/deepseek-ai/deepseek-harness" rel="noopener">deepseek-ai/deepseek-harness</a>
-        <p class="blurb">DeepSeek Harness: Everything is a Plugin.</p>
-        <div class="meta"><span class="lang">TypeScript</span><span class="stars num">&#9733; 75.6k</span></div>
+        <a class="rname" href="https://github.com/firecrawl/anydoc" rel="noopener">firecrawl/anydoc</a>
+        <p class="blurb">Convert Word, PowerPoint, Excel, OpenDocument, RTF, EPUB, CSV, and PDF to clean Markdown. Built in Rust, with Node.js and Python bindings.</p>
+        <div class="meta"><span class="lang">Rust</span><span class="stars num">&#9733; 16.1k</span></div>
       </div>
     </li><li class="repo">
       <div class="rank num">02</div>
       <div class="meat">
-        <a class="rname" href="https://github.com/firecrawl/anydoc" rel="noopener">firecrawl/anydoc</a>
-        <p class="blurb">Convert Word, PowerPoint, Excel, OpenDocument, RTF, EPUB, CSV, and PDF to clean Markdown. Built in Rust, with Node.js and Python bindings.</p>
-        <div class="meta"><span class="lang">Rust</span><span class="stars num">&#9733; 15.9k</span></div>
+        <a class="rname" href="https://github.com/LaoFeng-mouse/flyingmouse-format" rel="noopener">LaoFeng-mouse/flyingmouse-format</a>
+        <p class="blurb">FlyingMouse Format - Universal Windows file converter (Offline, built-in FFmpeg/LibreOffice/Poppler/Tesseract). Interconvert images, documents, spreadsheets, PPT, PDF, audio/video, and WPS formats + OCR + Batch conversion. <span class="tl">translated from Chinese</span></p>
+        <div class="meta"><span class="lang">JavaScript</span><span class="stars num">&#9733; 3.1k</span></div>
       </div>
     </li><li class="repo">
       <div class="rank num">03</div>
       <div class="meat">
-        <a class="rname" href="https://github.com/LaoFeng-mouse/flyingmouse-format" rel="noopener">LaoFeng-mouse/flyingmouse-format</a>
-        <p class="blurb">FlyingMouse Format - Universal Windows file converter (Offline, built-in FFmpeg/LibreOffice/Poppler/Tesseract). Interconvert images, documents, spreadsheets, PPT, PDF, audio/video, and WPS formats + OCR + Batch conversion. <span class="tl">translated from Chinese</span></p>
-        <div class="meta"><span class="lang">JavaScript</span><span class="stars num">&#9733; 2.7k</span></div>
+        <a class="rname" href="https://github.com/anywhere-labs/deepseek-harness-desktop" rel="noopener">anywhere-labs/deepseek-harness-desktop</a>
+        <p class="blurb">A modern desktop experience built for the DeepSeek Harness (DSH) ecosystem <span class="tl">translated from Chinese</span></p>
+        <div class="meta"><span class="lang">TypeScript</span><span class="stars num">&#9733; 3.2k</span></div>
       </div>
     </li><li class="repo">
       <div class="rank num">04</div>
       <div class="meat">
-        <a class="rname" href="https://github.com/gvzdv/claudish-to-english" rel="noopener">gvzdv/claudish-to-english</a>
-        <p class="blurb">&nbsp;</p>
-        <div class="meta"><span class="lang">Shell</span><span class="stars num">&#9733; 964</span></div>
+        <a class="rname" href="https://github.com/zhu1090093659/dsh-web-ui" rel="noopener">zhu1090093659/dsh-web-ui</a>
+        <p class="blurb">Plugin and skin collection for DeepSeek Harness (DSH) Web UI - task board, git graph, right-side panel, remote mobile UI, pet, live token stats, and skin center.</p>
+        <div class="meta"><span class="lang">TypeScript</span><span class="stars num">&#9733; 2.2k</span></div>
       </div>
     </li><li class="repo">
       <div class="rank num">05</div>
       <div class="meat">
-        <a class="rname" href="https://github.com/zhu1090093659/dsh-web-ui" rel="noopener">zhu1090093659/dsh-web-ui</a>
-        <p class="blurb">Plugin and skin collection for DeepSeek Harness (DSH) Web UI - task board, git graph, right-side panel, remote mobile UI, pet, live token stats, and skin center.</p>
-        <div class="meta"><span class="lang">TypeScript</span><span class="stars num">&#9733; 1.2k</span></div>
+        <a class="rname" href="https://github.com/awesome-dsh-plugin/awesome-dsh-plugin" rel="noopener">awesome-dsh-plugin/awesome-dsh-plugin</a>
+        <p class="blurb">A curated list of plugins for DeepSeek Harness (dsh) <span class="tl">translated from Chinese</span></p>
+        <div class="meta"><span class="lang">Python</span><span class="stars num">&#9733; 1.7k</span></div>
       </div>
     </li><li class="repo">
       <div class="rank num">06</div>
       <div class="meat">
+        <a class="rname" href="https://github.com/gvzdv/claudish-to-english" rel="noopener">gvzdv/claudish-to-english</a>
+        <p class="blurb">&nbsp;</p>
+        <div class="meta"><span class="lang">Shell</span><span class="stars num">&#9733; 1.1k</span></div>
+      </div>
+    </li><li class="repo">
+      <div class="rank num">07</div>
+      <div class="meat">
+        <a class="rname" href="https://github.com/AdamPlatin123/awesome-dsh-plugins" rel="noopener">AdamPlatin123/awesome-dsh-plugins</a>
+        <p class="blurb">Front Index Repo (Radar): All dsh plugin candidates discovered via automatic scanning; qualified ones are moved to the curated directory repo. <span class="tl">translated from Chinese</span></p>
+        <div class="meta"><span class="lang">Python</span><span class="stars num">&#9733; 889</span></div>
+      </div>
+    </li><li class="repo">
+      <div class="rank num">08</div>
+      <div class="meat">
         <a class="rname" href="https://github.com/sohaibdevv/youtube-music" rel="noopener">sohaibdevv/youtube-music</a>
         <p class="blurb">A lightweight, ad‑free client for streaming music from YouTube Music. No subscription required. Supports background playback, search, and custom playlists via the reverse‑engineered API.</p>
-        <div class="meta"><span class="lang">TypeScript</span><span class="stars num">&#9733; 855</span></div>
+        <div class="meta"><span class="lang">TypeScript</span><span class="stars num">&#9733; 857</span></div>
+      </div>
+    </li><li class="repo">
+      <div class="rank num">09</div>
+      <div class="meat">
+        <a class="rname" href="https://github.com/omdsh-dev/DSH-better-sidebar" rel="noopener">omdsh-dev/DSH-better-sidebar</a>
+        <p class="blurb">A complete sidebar workbench supporting third-party extensions to register new sidebar pages. Includes built-in file rendering/editing, terminal, Git, and sub-proxy. <span class="tl">translated from Chinese</span></p>
+        <div class="meta"><span class="lang">TypeScript</span><span class="stars num">&#9733; 870</span></div>
       </div>
     </li>
     </ul>
@@ -351,13 +357,13 @@ Verdict: this is an Electron desktop app for Windows users who want a bundled of
       <div class="meat">
         <a class="rname" href="https://github.com/Flaminis/Dalaran" rel="noopener">Flaminis/Dalaran</a>
         <p class="blurb">Dalaran — Apache-2.0, robotics-first visualization and data infrastructure for multimodal time-series. ROS 2 native, reads existing .rrd recordings. A hard fork of Rerun.</p>
-        <div class="meta"><span class="lang">Rust</span><span class="stars num">&#9733; 943</span></div>
+        <div class="meta"><span class="lang">Rust</span><span class="stars num">&#9733; 963</span></div>
       </div>
     </li>
     </ul>
   </section>
 <section class="cluster">
-    <h2><span class="o">Web</span> <span class="cnt num">3</span></h2>
+    <h2><span class="o">Web</span> <span class="cnt num">1</span></h2>
     <p class="cdesc">Frontend, browsers, the things users touch.</p>
     <ul class="repos">
     <li class="repo">
@@ -367,25 +373,11 @@ Verdict: this is an Electron desktop app for Windows users who want a bundled of
         <p class="blurb">Create smooth, responsive interactive web animations.</p>
         <div class="meta"><span class="lang">Python</span><span class="stars num">&#9733; 1.7k</span></div>
       </div>
-    </li><li class="repo">
-      <div class="rank num">02</div>
-      <div class="meat">
-        <a class="rname" href="https://github.com/guillermolg00/morphicons" rel="noopener">guillermolg00/morphicons</a>
-        <p class="blurb">Any icon morphs into any other — universal morphing for stroke-based icons with spring physics. Zero dependencies, ~7 KB gzip.</p>
-        <div class="meta"><span class="lang">TypeScript</span><span class="stars num">&#9733; 1.0k</span></div>
-      </div>
-    </li><li class="repo">
-      <div class="rank num">03</div>
-      <div class="meat">
-        <a class="rname" href="https://github.com/yuhuangerdi/InduSecAgent" rel="noopener">yuhuangerdi/InduSecAgent</a>
-        <p class="blurb">&nbsp;</p>
-        <div class="meta"><span class="lang">Vue</span><span class="stars num">&#9733; 982</span></div>
-      </div>
     </li>
     </ul>
   </section>
 <section class="cluster">
-    <h2><span class="o">Other</span> <span class="cnt num">13</span></h2>
+    <h2><span class="o">Other</span> <span class="cnt num">10</span></h2>
     <p class="cdesc">Everything that resists a box.</p>
     <ul class="repos">
     <li class="repo">
@@ -393,14 +385,14 @@ Verdict: this is an Electron desktop app for Windows users who want a bundled of
       <div class="meat">
         <a class="rname" href="https://github.com/ZzzLc0405/photo-abstract-editorial" rel="noopener">ZzzLc0405/photo-abstract-editorial</a>
         <p class="blurb">&nbsp;</p>
-        <div class="meta"><span class="stars num">&#9733; 3.6k</span></div>
+        <div class="meta"><span class="stars num">&#9733; 3.7k</span></div>
       </div>
     </li><li class="repo">
       <div class="rank num">02</div>
       <div class="meat">
-        <a class="rname" href="https://github.com/Zeejay0/gathered-scenes-zine-skill" rel="noopener">Zeejay0/gathered-scenes-zine-skill</a>
-        <p class="blurb">&nbsp;</p>
-        <div class="meta"><span class="stars num">&#9733; 3.4k</span></div>
+        <a class="rname" href="https://github.com/pathwaycom/arc-task-gen" rel="noopener">pathwaycom/arc-task-gen</a>
+        <p class="blurb">Generates original ARC-AGI-1-style tasks distribution-matched to the public eval set.</p>
+        <div class="meta"><span class="lang">Python</span><span class="stars num">&#9733; 2.0k</span></div>
       </div>
     </li><li class="repo">
       <div class="rank num">03</div>
@@ -412,72 +404,51 @@ Verdict: this is an Electron desktop app for Windows users who want a bundled of
     </li><li class="repo">
       <div class="rank num">04</div>
       <div class="meat">
-        <a class="rname" href="https://github.com/pathwaycom/arc-task-gen" rel="noopener">pathwaycom/arc-task-gen</a>
-        <p class="blurb">Generates original ARC-AGI-1-style tasks distribution-matched to the public eval set.</p>
-        <div class="meta"><span class="lang">Python</span><span class="stars num">&#9733; 1.8k</span></div>
+        <a class="rname" href="https://github.com/xoreaxeaxeax/skitter-creek-bath-salts" rel="noopener">xoreaxeaxeax/skitter-creek-bath-salts</a>
+        <p class="blurb">Unlocking _everything_ on the CPU with DRAM scrambling</p>
+        <div class="meta"><span class="lang">C</span><span class="stars num">&#9733; 1.6k</span></div>
       </div>
     </li><li class="repo">
       <div class="rank num">05</div>
       <div class="meat">
-        <a class="rname" href="https://github.com/DannyMac180/sol-advisor" rel="noopener">DannyMac180/sol-advisor</a>
-        <p class="blurb">Codex-native architect orchestration with Luna and Terra implementation lanes and mandatory fresh Sol review.</p>
-        <div class="meta"><span class="lang">TypeScript</span><span class="stars num">&#9733; 1.9k</span></div>
+        <a class="rname" href="https://github.com/cordiverse/paper" rel="noopener">cordiverse/paper</a>
+        <p class="blurb">A Programming Paradigm for Spatiotemporal Composability</p>
+        <div class="meta"><span class="stars num">&#9733; 1.4k</span></div>
       </div>
     </li><li class="repo">
       <div class="rank num">06</div>
       <div class="meat">
-        <a class="rname" href="https://github.com/xoreaxeaxeax/skitter-creek-bath-salts" rel="noopener">xoreaxeaxeax/skitter-creek-bath-salts</a>
-        <p class="blurb">Unlocking _everything_ on the CPU with DRAM scrambling</p>
-        <div class="meta"><span class="lang">C</span><span class="stars num">&#9733; 1.2k</span></div>
+        <a class="rname" href="https://github.com/google-gemma/gemma-translator" rel="noopener">google-gemma/gemma-translator</a>
+        <p class="blurb">&nbsp;</p>
+        <div class="meta"><span class="lang">JavaScript</span><span class="stars num">&#9733; 1.1k</span></div>
       </div>
     </li><li class="repo">
       <div class="rank num">07</div>
       <div class="meat">
-        <a class="rname" href="https://github.com/cordiverse/paper" rel="noopener">cordiverse/paper</a>
-        <p class="blurb">A Programming Paradigm for Spatiotemporal Composability</p>
-        <div class="meta"><span class="stars num">&#9733; 955</span></div>
+        <a class="rname" href="https://github.com/openTrinity/mycontext" rel="noopener">openTrinity/mycontext</a>
+        <p class="blurb">MyContext is a local-first desktop app for everyday communication and knowledge work</p>
+        <div class="meta"><span class="lang">TypeScript</span><span class="stars num">&#9733; 923</span></div>
       </div>
     </li><li class="repo">
       <div class="rank num">08</div>
       <div class="meat">
-        <a class="rname" href="https://github.com/openTrinity/mycontext" rel="noopener">openTrinity/mycontext</a>
-        <p class="blurb">MyContext is a local-first desktop app for everyday communication and knowledge work</p>
-        <div class="meta"><span class="lang">TypeScript</span><span class="stars num">&#9733; 917</span></div>
+        <a class="rname" href="https://github.com/sophiamyang/finger-frame-effect-ai" rel="noopener">sophiamyang/finger-frame-effect-ai</a>
+        <p class="blurb">&nbsp;</p>
+        <div class="meta"><span class="lang">JavaScript</span><span class="stars num">&#9733; 924</span></div>
       </div>
     </li><li class="repo">
       <div class="rank num">09</div>
       <div class="meat">
-        <a class="rname" href="https://github.com/google-gemma/gemma-translator" rel="noopener">google-gemma/gemma-translator</a>
-        <p class="blurb">&nbsp;</p>
-        <div class="meta"><span class="lang">JavaScript</span><span class="stars num">&#9733; 1.0k</span></div>
+        <a class="rname" href="https://github.com/xoreaxeaxeax/asm-hall-of-shame" rel="noopener">xoreaxeaxeax/asm-hall-of-shame</a>
+        <p class="blurb">Racing to the bottom of CPU performance</p>
+        <div class="meta"><span class="lang">C</span><span class="stars num">&#9733; 885</span></div>
       </div>
     </li><li class="repo">
       <div class="rank num">10</div>
       <div class="meat">
-        <a class="rname" href="https://github.com/wumingqi60/lingxi" rel="noopener">wumingqi60/lingxi</a>
-        <p class="blurb">Lingxi Cross-Border - Open Source Community Edition <span class="tl">translated from Chinese</span></p>
-        <div class="meta"><span class="lang">TypeScript</span><span class="stars num">&#9733; 1.1k</span></div>
-      </div>
-    </li><li class="repo">
-      <div class="rank num">11</div>
-      <div class="meat">
-        <a class="rname" href="https://github.com/sophiamyang/finger-frame-effect-ai" rel="noopener">sophiamyang/finger-frame-effect-ai</a>
-        <p class="blurb">&nbsp;</p>
-        <div class="meta"><span class="lang">JavaScript</span><span class="stars num">&#9733; 911</span></div>
-      </div>
-    </li><li class="repo">
-      <div class="rank num">12</div>
-      <div class="meat">
-        <a class="rname" href="https://github.com/xoreaxeaxeax/asm-hall-of-shame" rel="noopener">xoreaxeaxeax/asm-hall-of-shame</a>
-        <p class="blurb">Racing to the bottom of CPU performance</p>
-        <div class="meta"><span class="lang">C</span><span class="stars num">&#9733; 863</span></div>
-      </div>
-    </li><li class="repo">
-      <div class="rank num">13</div>
-      <div class="meat">
         <a class="rname" href="https://github.com/milind-soni/OpenMausBot" rel="noopener">milind-soni/OpenMausBot</a>
         <p class="blurb">&nbsp;</p>
-        <div class="meta"><span class="lang">TypeScript</span><span class="stars num">&#9733; 860</span></div>
+        <div class="meta"><span class="lang">TypeScript</span><span class="stars num">&#9733; 947</span></div>
       </div>
     </li>
     </ul>
