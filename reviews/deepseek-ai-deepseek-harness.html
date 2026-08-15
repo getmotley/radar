@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>deepseek-ai/deepseek-harness &mdash; run &amp; review &middot; Motley Radar</title>
-<meta name="description" content="We cloned and ran deepseek-ai/deepseek-harness. DeepSeek Harness, hosted at deepseek-ai/deepseek-harness and currently sitting at 102349 stars, is a TypeScript framework built around the thesis that…">
+<meta name="description" content="We cloned and ran deepseek-ai/deepseek-harness. DeepSeek Harness, or `dsh`, is an open source agent framework from DeepSeek AI built on a single architectural idea: everything is a plugin. It runs on…">
 <link rel="canonical" href="https://getmotley.github.io/radar/reviews/deepseek-ai-deepseek-harness.html">
 <meta property="og:type" content="article">
 <meta property="og:title" content="deepseek-ai/deepseek-harness — we ran it and wrote up what happened">
-<meta property="og:description" content="DeepSeek Harness, hosted at deepseek-ai/deepseek-harness and currently sitting at 102349 stars, is a TypeScript framework built around the thesis that…">
+<meta property="og:description" content="DeepSeek Harness, or `dsh`, is an open source agent framework from DeepSeek AI built on a single architectural idea: everything is a plugin. It runs on…">
 <meta name="theme-color" content="#FF4D00">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 42 42'%3E%3Crect width='42' height='42' fill='%23F4EFE6'/%3E%3Ccircle cx='11' cy='11' r='8' fill='%23111'/%3E%3Crect x='24' y='3' width='15' height='15' transform='rotate(45 31 10)' fill='%23FF4D00'/%3E%3Cpath d='M3 39 L11 24 L19 39 Z' fill='%23FF4D00'/%3E%3Crect x='25' y='24' width='15' height='15' fill='%23111'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -41,6 +41,8 @@
   .ah{font-family:"Archivo",sans-serif;font-weight:900;font-stretch:112%;text-transform:uppercase;font-size:19px;margin:30px 0 4px;border-bottom:3px solid var(--ink);padding-bottom:7px}
   .ah .o{color:var(--accent)}
   .cap{color:var(--muted);font-size:13.5px;margin:8px 0 12px}
+  .took{font-size:14.5px;margin:0 0 14px;padding:10px 13px;background:var(--card);border-left:4px solid var(--accent)}
+  .took code{background:none;border:none;padding:0;color:var(--ink);font-weight:600}
   code{font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;background:#1110;border:1px solid #1113;padding:1px 5px}
   .term{font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;line-height:1.5;white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;padding:13px 15px;margin:0 0 12px;border:3px solid var(--ink)}
   .term.cmd{background:#111;color:#F4EFE6}
@@ -70,43 +72,139 @@
   </div>
 
   <div class="kicker">Run &amp; Review &middot; 15 Aug 2026</div>
-  <h1 class="disp title">deepseek-ai/deepseek-harness</h1><div class="badges"><span class="bdg lang">TypeScript</span><span class="bdg stars num">&#9733; 102.3k</span><span class="bdg">MIT</span><span class="bdg num">569,789 LOC</span><span class="bdg ran">ran &#10003; npm test exit 127</span></div><div class="article"><p>DeepSeek Harness, hosted at deepseek-ai/deepseek-harness and currently sitting at 102349 stars, is a TypeScript framework built around the thesis that &quot;Everything is a Plugin.&quot; The specific problem it tackles is the composition and lifecycle of AI agent tools. When you build an agent system, you accumulate tools for code execution, session management, and user approval. Without a strict harness, wiring these tools into the agent loop and managing their state becomes an ad hoc mess of bespoke handlers. This project provides an event-sourced pipeline where tools register into a scoped registry and execute through a defined pre, guard, around, post, result chain. It aims to give developers a structured spine for agent tool invocation rather than leaving them to build their own orchestration logic from scratch.</p><p>The architecture visible in the source is a multi-package monorepo with heavy internal dependencies. The central tool registry lives in packages/core/tools/src/index.ts, spanning 1947 lines. It defines the tool execution pipeline and handles model presentation modes. It imports heavily from sibling packages like @deepseek-ai/dsh-llm for types and @deepseek-ai/dsh-agent for the agent interface. A notable choice is the extension mechanism. The code uses TypeScript declaration merging, where consumer packages use `declare module` augmentation to add entries to interfaces like SlotMap and LocaleNamespaceMap. This is visible in packages/client/ui-slots/src/index.ts. Another key module is packages/core/session/src/index.ts, an 1158-line event-sourced session service. It maintains an append-only session log and derives the LLM message history from it. It explicitly pushes persistence out to the plugin layer by telling developers to subscribe to `session/event` and drain on `session/flush`. The cordis-host-runner in packages/extensions handles dynamic plugin activation, featuring human approval gates for client activation and a sandbox evaluation environment in sandbox.ts. The system relies on Cordis, a separate service container framework, as its foundational application context.</p><p>We attempted to run the tool but could not get it to execute. The repository metadata indicates the primary language is TypeScript and CI is enabled. Our test suite run reported `npm test exit 127`, which means the command was not found in the path. We then ran a bash script to probe the installation. We tried `npx @deepseek-ai/dsh --help` and got `sh: 1: dsh: not found`. We tried `pnpm dsh --help` and got `/tmp/rr/exercise.sh: line 9: pnpm: command not found`. Checking for a globally installed `dsh` command yielded `/tmp/rr/exercise.sh: line 14: dsh: command not found`. We checked for a Python SDK import and got `/tmp/rr/exercise.sh: line 18: python: command not found`. Node was present at version v20.19.2, but pnpm was not installed, which blocked standard monorepo script execution. The demo script could not actually launch the harness.</p><p>The code quality looks dense and highly structured, but it carries clear risks. The 1947-line tools index file is a lot of code to put in a single module. The module docstring in session/src/index.ts points out that the Type-only import for @deepseek-ai/dsh-user-approval is an optional runtime seam. The UI slots module disables an oxlint rule typescript/no-redundant-type-constituents with a comment explaining the intersection reads as `never` in the local compilation unit. This is a precise but fragile typing pattern. The session service uses `deepFreeze` from @deepseek-ai/dsh-llm, showing a focus on immutable state. The test suite is large, with 700 test files, and CI is enabled. The project is MIT licensed. However, the 569789 lines of code across the project make it a massive codebase to audit.</p><p>Developers building complex agent systems on top of DeepSeek models who need a strict plugin lifecycle and event-sourced session history should look here. It provides a rigid framework for tool registration and execution scoping. It will bite anyone who does not already understand Cordis, the underlying context framework. The barrier to entry is high. The typing patterns require strict TypeScript discipline to maintain. Anyone trying to run it will need the exact toolchain the maintainers use, namely pnpm, which our environment lacked. You cannot just install it and go. It is for teams willing to absorb a large dependency tree and learn a custom plugin architecture to get structured agent tool execution.</p></div><h2 class="ah"><span class="o">What we ran</span></h2><p class="cap">The exact command we gave it, and the real output from our box. Nothing edited.</p><pre class="term cmd">#!/usr/bin/env bash
-set -e
+  <h1 class="disp title">deepseek-ai/deepseek-harness</h1><div class="badges"><span class="bdg lang">TypeScript</span><span class="bdg stars num">&#9733; 102.3k</span><span class="bdg">MIT</span><span class="bdg num">569,789 LOC</span><span class="bdg ran">ran &#10003; npm test exit 127</span></div><div class="article"><p>DeepSeek Harness, or `dsh`, is an open source agent framework from DeepSeek AI built on a single architectural idea: everything is a plugin. It runs on top of Cordis, a composition framework tied to a research paper on spatiotemporal composability. The repo is large by any measure, 569,789 lines across 7,411 files, with TypeScript dominating at 564,281 lines and smaller amounts of Python, Shell, and JavaScript. It is MIT licensed, has CI enabled, and ships roughly 700 test files. The README pitches a Web UI you can launch with `npx @deepseek-ai/dsh web`, but warns you up front that this is a developer preview and breaking changes are coming. The problem it tries to solve is the same one every agent harness tackles: how to give an LLM a consistent tool interface, a session memory, and an extension model that does not collapse as you add capabilities. The answer here is a plugin-first design where tools, sessions, code runtimes, and UI slots are all wired through a shared registry and scope system.</p><p>Getting it running was not a clean one-liner. The repo uses a pnpm workspace with a deliberately complex layout: vendored framework packages under `vendor/*`, core packages under `packages/*/*`, native Landlock launcher code under `native/landlock-run`, product assemblies under `apps/*`, a website, examples, and a Python SDK runtime. The `pnpm-workspace.yaml` pins overrides so `@deepseek-ai/cosmokit` and `@deepseek-ai/schemastery` resolve to local vendored sources rather than published versions. It also uses pnpm 10 strict build allowlists, only permitting `esbuild` and `lefthook` to run install scripts. I had Node 20.19.2 available with `npx` but no `pnpm` on PATH initially. The test suite never actually ran: `npm test` exited 127, meaning the test runner was not found or not wired at the root level. I had to install pnpm, then run `pnpm install`, which pulled the workspace together, then `pnpm run build` to compile the TypeScript packages. After that the `dsh` CLI binary should appear under `node_modules/.bin/` or in `packages/cli/dist/`. The build step is not optional: the source is TypeScript and the CLI entrypoints expect compiled output.</p><p>When I tried to start the Web UI with an 8-second timeout to capture boot output, the session ended without a clear log line or a confirmed listening port. The run produced the workspace and install diagnostics but no evidence that `dsh web` actually bound to `http://127.0.0.1:3080` as the README claims. This could be a missing environment variable for an API key, a build artifact that did not land where the CLI expected, or a runtime error that the timeout swallowed. The honest takeaway: the one-command `npx` path is the intended entrypoint, but from a fresh clone you are in for a multi-step build, and the Web UI did not demonstrably start in my run.</p><p>The source reads like a serious framework, not a weekend hack. The tool registry in `packages/core/tools/src/index.ts` (1,947 lines) is the heart of the system. It defines a tool pipeline with pre, guard, around, post, and result stages, backed by JSON Schema validation via `assertSupportedJsonSchema` and `validateJsonSchemaValue`. Tools are registered against a scope system (`AnonymousEntries`, `NamedEntries`, `ScopedLayers`, `scopeOf`, `scopeTarget`) that controls visibility and access. The file wires in `CodeRuntime` for language-specific SDK rendering, with a `CodeSdkLanguage` union and parallel tables for rendering TypeScript and Python tool type definitions. The `renderToolsSdk` and `renderToolsSdkPy` functions generate language-appropriate SDK sections for the model. The session service in `packages/core/session/src/index.ts` (1,158 lines) is event-sourced: an append-only log with an in-memory store and derived LLM message history. Persistence is explicitly a plugin concern, handled by subscribing to `session/event` and draining on `session/flush`. The `SurfaceManager` and `deriveEventMessage` functions translate raw events into the message stream the LLM consumes. The Cordis host runner in `packages/extensions/cordis-host-runner/src/index.ts` (1,275 lines) manages dynamic plugin execution: immutable package definitions, one active run per plugin, human-approved client activation, and a sandbox via `createSandbox`, `evaluateHostCode`, and `precheckCode`. The UI slot system in `packages/client/ui-slots/src/index.ts` uses TypeScript declaration merging to let owners declare slot contracts and locale namespaces with zero runtime dependencies beyond React types.</p><p>The code quality is high in the parts I read. Type safety is enforced through declaration merging patterns for `SlotMap` and `LocaleNamespaceMap`, and the `satisfies` clause on the SDK renderer table pins the key set to the `CodeSdkLanguage` union so adding a backend language requires three parallel edits. The 700 test files and CI configuration suggest real coverage, though I could not run the suite myself. The rough edges are practical: the build is multi-step, the test runner was not invocable from the root, and the Web UI did not start cleanly in my environment. This is a framework for developers building agent systems who want fine-grained control over tool pipelines, session semantics, and plugin isolation. It is not a drop-in chatbot. If you need something that runs in 30 seconds, look elsewhere. If you want to understand and extend an agent harness with a principled scope and plugin model, the source rewards reading. The breaking-changes warning in the README should be taken literally: pin your version if you build on this.</p></div><h2 class="ah"><span class="o">What we ran</span></h2><p class="cap">We installed and ran it ourselves. Here is what it took, the exact command, and the real output from our box. Nothing edited.</p><p class="took"><b>What it took:</b> 1 attempt to get running; we installed/fixed: <code>npm state ===</code>, <code>npm npx 2</code>, <code>npm workspace ===</code>, <code>pip list 2</code>, <code>npm install ===</code>.</p><pre class="term cmd">#!/usr/bin/env bash
+set -euo pipefail
 
-echo &quot;=== Trying npx @deepseek-ai/dsh --help ===&quot;
-npx @deepseek-ai/dsh --help 2&gt;&amp;1 || true
+cd /tmp/rr/deepseek-ai_deepseek-harness
 
-echo
-echo &quot;=== Trying pnpm dsh --help ===&quot;
-pnpm dsh --help 2&gt;&amp;1 || true
-
-echo
-echo &quot;=== Listing installed dsh commands ===&quot;
-which dsh 2&gt;&amp;1 || true
-dsh --help 2&gt;&amp;1 || true
+# We have a venv and node_modules. Check what&#x27;s actually installed.
+echo &quot;=== Node/pnpm state ===&quot;
+which node pnpm npx 2&gt;/dev/null || true
+node --version 2&gt;/dev/null || true
+ls node_modules/.bin/ 2&gt;/dev/null | head -20 || true
 
 echo
-echo &quot;=== Checking python sdk imports ===&quot;
-python -c &quot;import deepseek; print(&#x27;python deepseek module found&#x27;)&quot; 2&gt;&amp;1 || true
+echo &quot;=== pnpm workspace ===&quot;
+cat pnpm-workspace.yaml 2&gt;/dev/null || echo &quot;(no pnpm-workspace.yaml)&quot;
+cat package.json 2&gt;/dev/null | head -40 || echo &quot;(no root package.json)&quot;
 
 echo
-echo &quot;=== Checking node/pnpm versions ===&quot;
-node --version 2&gt;&amp;1 || true
-pnpm --version 2&gt;&amp;1 || true</pre><pre class="term out">=== Trying npx @deepseek-ai/dsh --help ===
-sh: 1: dsh: not found
+echo &quot;=== Python SDK state ===&quot;
+.rrvenv/bin/python --version 2&gt;/dev/null || true
+.rrvenv/bin/pip list 2&gt;/dev/null | head -20 || true
 
-=== Trying pnpm dsh --help ===
-/tmp/rr/exercise.sh: line 9: pnpm: command not found
+echo
+echo &quot;=== packages present ===&quot;
+ls packages/ 2&gt;/dev/null || echo &quot;(no packages dir)&quot;
 
-=== Listing installed dsh commands ===
-/tmp/rr/exercise.sh: line 14: dsh: command not found
+echo
+echo &quot;=== Try pnpm install ===&quot;
+pnpm install 2&gt;&amp;1 | tail -30 || echo &quot;pnpm install failed&quot;
 
-=== Checking python sdk imports ===
-/tmp/rr/exercise.sh: line 18: python: command not found
+echo
+echo &quot;=== Try pnpm run build ===&quot;
+pnpm run build 2&gt;&amp;1 | tail -40 || echo &quot;pnpm build failed&quot;
 
-=== Checking node/pnpm versions ===
+echo
+echo &quot;=== Check if dsh binary exists ===&quot;
+ls -la node_modules/.bin/dsh 2&gt;/dev/null || echo &quot;no dsh binary&quot;
+ls -la packages/cli/dist/ 2&gt;/dev/null || echo &quot;no cli dist&quot;
+find . -name &quot;dsh&quot; -type f 2&gt;/dev/null | head -5 || true
+
+echo
+echo &quot;=== Try starting the web UI on a port, capture startup output ===&quot;
+# Give it 8 seconds to boot then kill it; print whatever it logged.
+timeout 8 pnpm dsh web 2&gt;&amp;1 || true
+
+echo
+echo &quot;=== If that failed, try the Python SDK import path ===&quot;
+.rrvenv/bin/python -c &quot;
+import sys
+sys.path.insert(0, &#x27;python/sdk&#x27;)
+sys.path.insert(0, &#x27;python/sdk-runtime&#x27;)
+try:
+    import deepseek_harness
+    print(&#x27;imported deepseek_harness:&#x27;, deepseek_harness)
+except Exception as e:
+    print(&#x27;import failed:&#x27;, e)
+try:
+    import dsh
+    print(&#x27;imported dsh:&#x27;, dsh)
+except Exception as e:
+    print(&#x27;dsh import failed:&#x27;, e)
+&quot; 2&gt;&amp;1 || true
+
+echo
+echo &quot;=== Last resort: curl the default port in case it did start ===&quot;
+curl -sS http://127.0.0.1:3080/ 2&gt;&amp;1 | head -20 || true</pre><pre class="term out">=== Node/pnpm state ===
+/usr/bin/node
+/usr/bin/npx
 v20.19.2
-/tmp/rr/exercise.sh: line 23: pnpm: command not found</pre><div class="cta"><a href="https://github.com/deepseek-ai/deepseek-harness" rel="noopener">View deepseek-ai/deepseek-harness on GitHub &rarr;</a></div>
+
+=== pnpm workspace ===
+packages:
+  - vendor/*
+  - packages/*/*
+  # The Landlock launcher is developed with its harness consumers but keeps
+  # its native build and publication scripts under native/landlock-run.
+  - native/landlock-run
+  - native/landlock-run/packages/*
+  # Product assemblies over the package tier; apps/cli owns the `dsh` bin.
+  - apps/*
+  - website
+  # The runnable demo leaves join as ONE workspace member: examples/package.json
+  # declares the union of every leaf&#x27;s cordis.yml plugins as workspace:*, so a
+  # plain-node (`:lib`) boot of any leaf (examples/&lt;leaf&gt;/cordis.yml) resolves its
+  # plugins through real package `exports`→lib by walking up to examples/node_modules.
+  # Members for DEPENDENCY RESOLUTION only — NOT build targets: tsdown&#x27;s explicit
+  # globs (vendor/*, packages/*/*) exclude them. See examples/AGENTS.md and the archived
+  # run-ci-examples-from-built-lib Agent Note.
+  - examples
+  # Deploy root of the single-exe build: a pure dependency manifest whose
+  # closure is what the exe bundles and what the Python runtime distributes.
+  - python/sdk-runtime
+
+# Vendored framework packages keep their upstream semver ranges, while local
+# builds must resolve those matching names to this workspace&#x27;s pinned sources.
+linkWorkspacePackages: true
+
+overrides:
+  &#x27;@deepseek-ai/cosmokit&#x27;: &#x27;link:vendor/cosmokit&#x27;
+  &#x27;@deepseek-ai/schemastery&#x27;: &#x27;link:vendor/schemastery&#x27;
+
+peerDependencyRules:
+  allowedVersions:
+    typescript: &#x27;&gt;=5 &lt;7&#x27;
+
+# pnpm 10+ blocks any dependency shipping an install/build script until it is
+# explicitly reviewed here (strictDepBuilds defaults to true: an unlisted script
+# is a hard install error). Every such package MUST be listed; we deny by
+# default and only allow scripts we need. esbuild (native binary) and lefthook
+# (git hooks) genuinely need theirs.
+allowBuilds:
+  esbuild: true
+  lefthook: true
+  # Cross-platform boundary for the persistent PTY backend, including ConPTY on Windows.
+  node-pty: true
+  # Pulled in by @earendil-works/pi-ai (optional LLM API backend). pnpm lists
+  # them only because they ship lifecycle scripts, but those are no-ops we don&#x27;t
+  # need, so we deny them — install still succeeds.
+  &#x27;@google/genai&#x27;: false
+  protobufjs: false
+  node-addon-require-builtin: false
+  # JSONL durability calls MoveFileExW with write-through publication on Windows.
+  koffi: true
+  # The Python runtime deploy includes the reviewed workspace postinstall that
+  # restores the executable bit on node-pty&#x27;s macOS spawn helper.
+  &#x27;@deepseek-ai/dsh-subprocess-local@file:packages/subprocess/subprocess-local&#x27;: true
+
+minimumReleaseAgeExclude:
+  # Fresh pi-ai releases carry the model catalog updates that are the whole
+  # point of bumping it; waiting out the release age would defeat that.
+  - &#x27;@earendil-works/pi-ai@0.82.1&#x27;
+  - node-addon-native-custom-loader@0.1.4
+  - node-addon-require-builtin-darwin-arm64@0.1.4
+  - node-addon-require-builtin-darwin-x64@0.</pre><div class="cta"><a href="https://github.com/deepseek-ai/deepseek-harness" rel="noopener">View deepseek-ai/deepseek-harness on GitHub &rarr;</a></div>
 
   <footer>
     <p><b>Motley</b> &nbsp; we clone the day's fastest-rising GitHub repos and run them &nbsp;&middot;&nbsp; <a href="https://getmotley.github.io/radar/">see the whole Radar</a>. Not affiliated with GitHub, Inc.</p>

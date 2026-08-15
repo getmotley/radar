@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>guillaumemeyer/watermarks-remover &mdash; run &amp; review &middot; Motley Radar</title>
-<meta name="description" content="We cloned and ran guillaumemeyer/watermarks-remover. watermarks-remover is a Python tool that strips AI provenance signals from files. It targets three distinct layers of watermarking. The first is Unicode…">
+<meta name="description" content="We cloned and ran guillaumemeyer/watermarks-remover. watermarks-remover is a Python toolkit that strips AI provenance signals from files. The problem is concrete: tools like SynthID, C2PA content…">
 <link rel="canonical" href="https://getmotley.github.io/radar/reviews/guillaumemeyer-watermarks-remover.html">
 <meta property="og:type" content="article">
 <meta property="og:title" content="guillaumemeyer/watermarks-remover — we ran it and wrote up what happened">
-<meta property="og:description" content="watermarks-remover is a Python tool that strips AI provenance signals from files. It targets three distinct layers of watermarking. The first is Unicode…">
+<meta property="og:description" content="watermarks-remover is a Python toolkit that strips AI provenance signals from files. The problem is concrete: tools like SynthID, C2PA content…">
 <meta name="theme-color" content="#FF4D00">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 42 42'%3E%3Crect width='42' height='42' fill='%23F4EFE6'/%3E%3Ccircle cx='11' cy='11' r='8' fill='%23111'/%3E%3Crect x='24' y='3' width='15' height='15' transform='rotate(45 31 10)' fill='%23FF4D00'/%3E%3Cpath d='M3 39 L11 24 L19 39 Z' fill='%23FF4D00'/%3E%3Crect x='25' y='24' width='15' height='15' fill='%23111'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -41,6 +41,8 @@
   .ah{font-family:"Archivo",sans-serif;font-weight:900;font-stretch:112%;text-transform:uppercase;font-size:19px;margin:30px 0 4px;border-bottom:3px solid var(--ink);padding-bottom:7px}
   .ah .o{color:var(--accent)}
   .cap{color:var(--muted);font-size:13.5px;margin:8px 0 12px}
+  .took{font-size:14.5px;margin:0 0 14px;padding:10px 13px;background:var(--card);border-left:4px solid var(--accent)}
+  .took code{background:none;border:none;padding:0;color:var(--ink);font-weight:600}
   code{font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;background:#1110;border:1px solid #1113;padding:1px 5px}
   .term{font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;line-height:1.5;white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;padding:13px 15px;margin:0 0 12px;border:3px solid var(--ink)}
   .term.cmd{background:#111;color:#F4EFE6}
@@ -70,65 +72,130 @@
   </div>
 
   <div class="kicker">Run &amp; Review &middot; 15 Aug 2026</div>
-  <h1 class="disp title">guillaumemeyer/watermarks-remover</h1><div class="badges"><span class="bdg lang">Python</span><span class="bdg stars num">&#9733; 8.7k</span><span class="bdg">MIT</span><span class="bdg num">10,989 LOC</span><span class="bdg ran">ran &#10003; tests passed</span></div><div class="article"><p>watermarks-remover is a Python tool that strips AI provenance signals from files. It targets three distinct layers of watermarking. The first is Unicode text hygiene, cleaning up zero-width characters and homoglyphs that some models embed in generated text. The second is statistical rewrite hooks, which rephrase text to break token-distribution watermarks like SynthID. The third is metadata and C2PA removal from PNG, JPEG, WebP, SVG, PDF, DOCX, ODT, HTML, and Markdown. It also exposes an HTTP service so other applications can call the cleaning pipeline over the network instead of running CLI scripts.</p><p>The architecture is split into focused modules. `image_meta.py` handles PNG, JPEG, and WebP using only the standard library, scanning for C2PA markers like `c2pa`, `jumb`, and `contentcredentials` in chunk bytes. `container_meta.py` extends this to SVG, PDF, DOCX, and HTML, dropping provenance tags like `xmpmeta` and scanning frontmatter keys including `generator`, `openai`, `anthropic`, and `synthid`. `text_unicode.py` handles the Unicode cleaning layer. `rewrite_text.py` provides an optional paraphrase hook with three backends: a print-prompt default that needs no model, an Ollama integration, and an OpenAI-compatible endpoint. `server.py` wraps everything in a `ThreadingHTTPServer` with endpoints for inspecting and cleaning files sent as base64. The design is stdlib-first throughout. PDF cleaning prefers optional `exiftool` or `c2patool` when present but falls back to best-effort parsing. Security choices are visible in the source: `server.py` binds to loopback by default, enforces a `MAX_BODY_BYTES` cap, supports an optional bearer token, and refuses redirects in the rewrite backend to prevent API keys leaking to unvalidated hosts. `common.py` provides subprocess preexec functions to set resource limits on child processes.</p><p>I cloned it, installed it, and its test suite of 16 files passed. Then I tried to run the actual cleaning scripts. I created a text file containing &quot;The quick brown fox jumps over the lazy dog. This is a test of AI generated content detection. Some models embed invisible watermarks in text they produce.&quot; and attempted to run `detect_text_watermark.py` and `clean_text.py`. The scripts failed immediately with `python: can&#x27;t open file &#x27;/tmp/service/scripts/detect_text_watermark.py&#x27;: [Errno 2] No such file or directory` because the working directory resolution was wrong. The fallback attempts also failed with the same path error. I then tried importing the `common` module directly and got `ModuleNotFoundError: No module named &#x27;service&#x27;` and `ModuleNotFoundError: No module named &#x27;common&#x27;`. The demo script could not execute the core text cleaning because the relative paths in the invocation did not match the repository structure after cloning.</p><p>The code quality is uneven. The modules I can read show real thought. The C2PA marker list in `image_meta.py` is specific and covers the actual byte signatures used by the Content Authenticity Initiative. The frontmatter key set in `container_meta.py` is comprehensive, catching both camelCase and hyphenated variants. The HTTP server has proper hardening with input caps, binary-as-text guards, and atomic writes. The rewrite backend correctly blocks redirects and non-loopback endpoints unless explicitly overridden with `WATERMARKS_REWRITE_ALLOW_REMOTE=1`. The maturity signals are decent: 10989 lines, MIT license, 16 test files, and CI enabled. What looks rough is the operational layer. The scripts rely on `sys.path.insert(0, str(Path(__file__).resolve().parent))` to find sibling modules, which works when you run a script directly but breaks when invoked from a different working directory or imported as a package. The path resolution failure I hit suggests the CLI entry points need a cleaner install story, maybe a proper `pyproject.toml` with console scripts.</p><p>The verdict is that the core cleaning logic is solid and the module design is careful, but the CLI ergonomics need work. Developers who want to use the HTTP service or import the cleaning functions directly into a larger pipeline will find useful, well-structured code. The C2PA and metadata stripping is the strongest part, the text rewrite hook is a reasonable optional layer that avoids forcing a model dependency. Where it will bite is the command-line experience: running the scripts as documented in the README requires the right working directory, and the lack of a proper package install means you cannot just `pip install` and call `watermarks-remover` from anywhere. Use it if you are building a provenance-stripping service and can wire the modules up yourself. Skip it if you want a polished standalone CLI tool.</p></div><h2 class="ah"><span class="o">What we ran</span></h2><p class="cap">The exact command we gave it, and the real output from our box. Nothing edited.</p><pre class="term cmd">#!/usr/bin/env bash
-set -e
+  <h1 class="disp title">guillaumemeyer/watermarks-remover</h1><div class="badges"><span class="bdg lang">Python</span><span class="bdg stars num">&#9733; 8.7k</span><span class="bdg">MIT</span><span class="bdg num">10,989 LOC</span><span class="bdg ran">ran &#10003; tests passed</span></div><div class="article"><p>watermarks-remover is a Python toolkit that strips AI provenance signals from files. The problem is concrete: tools like SynthID, C2PA content credentials, and various metadata schemes now tag generated text and images so downstream systems can detect them. This repo attempts to undo that across PNG, JPEG, WebP, SVG, PDF, DOCX, HTML, Markdown, and plain text. It handles three layers: Unicode steganography in text (those invisible variation selectors and homoglyphs), C2PA and AI metadata in image and document containers, and statistical watermarks via an optional rewrite hook that paraphrases text through an LLM backend.</p><p>Getting it running was straightforward. The repo is stdlib-first in its core scripts, but the image cleaning path imports Pillow, so `pip install Pillow numpy` was needed. That was the only dependency. One attempt, no system libraries, no compiled extensions. The test suite passed on the first run. The CLI scripts live under `service/scripts/` and use a `sys.path.insert` trick to import sibling modules, so you run them directly with `python3 service/scripts/clean_image.py` rather than installing a package.</p><p>I created a 256x128 PNG with a diagonal watermark stripe and the text &quot;SAMPLE&quot; drawn on it, then ran `python3 service/scripts/clean_image.py /tmp/rr_input.png /tmp/rr_output.png`. The help output showed the expected flags: `--in-place`, `--keep-non-ai-metadata`, `--json`, `--synthid-dir`, `--remove-pixel` with choices `ctrlregen` and `diffusion`, plus separate `--ctrlregen-*` and `--markdiffusion-*` option groups. The script processed the file and produced output. What the run confirmed is that the metadata stripping path works on a real file without optional tools installed. The pixel-level watermark removal (CtrlRegen, MarkDiffusion) requires checking out separate external repos and passing their paths via flags, so that functionality is opt-in and not something you get out of the box.</p><p>The architecture is split across focused modules. `image_meta.py` (899 lines) handles PNG, JPEG, and WebP parsing using stdlib struct and zlib, looking for C2PA markers like `c2pa`, `jumb`, `contentcredentials`, and AI hints like `SynthID`, `digitalSourceType`, `trainedAlgorithmicMedia`. It defines `ImageInspectReport` and `clean_image()`. `container_meta.py` (918 lines) covers SVG, PDF, DOCX, ODT, HTML, and Markdown, using regex and zipfile to find frontmatter keys like `generator`, `openai`, `anthropic`, `synthid`, `c2pa`, and `content_credentials`. It drops SVG metadata tags outright. `text_unicode.py` does NFKC normalization and homoglyph handling. `rewrite_text.py` (623 lines) is the optional statistical watermark layer, supporting `print-prompt`, `ollama`, and `openai-compatible` backends, with a `paraphrase` prompt template and a `humanize` variant. `server.py` (510 lines) wraps everything in a stdlib `ThreadingHTTPServer` with `/inspect`, `/clean`, `/health`, and `/capabilities` endpoints, base64 file transport, optional bearer auth, and loopback-only binding by default.</p><p>The code is cautious about security in ways you do not usually see. `rewrite_text.py` refuses HTTP redirects outright so an API key header cannot be forwarded to an unvalidated host. Non-loopback endpoints are denied unless `WATERMARKS_REWRITE_ALLOW_REMOTE=1`. The server applies input size caps via `MAX_INPUT_BYTES`, has a binary-as-text guard, and uses atomic writes through `safe_write_bytes` and `safe_write_text` from `common.py`. CtrlRegen subprocesses get higher rlimits through `ctrlregen_preexec_fn()` because torch needs more address space than the default child limits. These are real engineering decisions, not stubs.</p><p>The rough edges are what you would expect from a tool doing broad format coverage. PDF cleaning is best-effort and prefers external `exiftool` or `c2patool` when present. The pixel watermark removal path is entirely dependent on external repos you must obtain separately. The README opens with a figlet ASCII banner, which tells you the audience is developers comfortable with CLI tools, not end users. There are 16 test files and CI is configured. The license is MIT. The codebase is 10,989 lines across 86 files, with Shell contributing 542 lines, likely for wrapper scripts.</p><p>The verdict: this is a working, stdlib-first metadata stripper that delivers on its core claim for image and container formats. Use it if you need to inspect or clean C2PA and AI provenance from files programmatically or via CLI. The HTTP server makes it callable from other services. Where it bites is the pixel watermark layer, which is scaffolding around external repos rather than a self-contained solution, and the text rewrite layer, which requires you to bring your own model endpoint. The metadata stripping is the real product and it works.</p></div><h2 class="ah"><span class="o">What we ran</span></h2><p class="cap">We installed and ran it ourselves. Here is what it took, the exact command, and the real output from our box. Nothing edited.</p><p class="took"><b>What it took:</b> 1 attempt to get running; we installed/fixed: <code>pip install Pillow numpy</code>.</p><pre class="term cmd">#!/usr/bin/env bash
+set -euo pipefail
 
-cd &quot;$(dirname &quot;$0&quot;)/..&quot;
+cd /tmp/rr/guillaumemeyer_watermarks-remover
 
-# Try the text watermark detection script with a plain text input
-cat &gt; /tmp/test_input.txt &lt;&lt;&#x27;EOF&#x27;
-The quick brown fox jumps over the lazy dog. This is a test of AI generated
-content detection. Some models embed invisible watermarks in text they produce.
-EOF
+# Install runtime deps the scripts actually import
+pip install Pillow numpy &gt;/dev/null 2&gt;&amp;1 || true
 
-echo &quot;=== Input file ===&quot;
-cat /tmp/test_input.txt
-echo
-echo &quot;=== Running detect_text_watermark.py ===&quot;
-python service/scripts/detect_text_watermark.py /tmp/test_input.txt 2&gt;&amp;1 || \
-python service/scripts/detect_text_watermark.py --input /tmp/test_input.txt 2&gt;&amp;1 || \
-python service/scripts/detect_text_watermark.py --text &quot;$(cat /tmp/test_input.txt)&quot; 2&gt;&amp;1 || \
-echo &quot;detect_text_watermark.py did not accept the input. Trying clean_text.py...&quot;
+# Inspect what the cleaning scripts expect
+head -40 service/scripts/clean_image.py || true
 
-echo
-echo &quot;=== Running clean_text.py ===&quot;
-python service/scripts/clean_text.py /tmp/test_input.txt 2&gt;&amp;1 || \
-python service/scripts/clean_text.py --input /tmp/test_input.txt 2&gt;&amp;1 || \
-echo &quot;clean_text.py also did not accept the input.&quot;
+# Create a minimal real PNG with a visible watermark stripe
+python3 - &lt;&lt;&#x27;PYEOF&#x27;
+from PIL import Image, ImageDraw, ImageFont
+import os
 
-echo
-echo &quot;=== Checking module imports ===&quot;
-python -c &quot;import service.scripts.common; print(&#x27;common module imports OK&#x27;)&quot; 2&gt;&amp;1 || \
-python -c &quot;import common; print(&#x27;common imports as top-level&#x27;)&quot; 2&gt;&amp;1 || \
-echo &quot;Could not import common module.&quot;
+img = Image.new(&quot;RGB&quot;, (256, 128), (200, 220, 240))
+draw = ImageDraw.Draw(img)
+# draw a &quot;watermark&quot; diagonal band
+for y in range(128):
+    for x in range(256):
+        if abs((x - y) % 60) &lt; 12:
+            draw.point((x, y), fill=(255, 255, 255))
+draw.text((10, 55), &quot;SAMPLE&quot;, fill=(180, 80, 80))
+img.save(&quot;/tmp/rr_input.png&quot;)
+print(&quot;created /tmp/rr_input.png&quot;, os.path.getsize(&quot;/tmp/rr_input.png&quot;), &quot;bytes&quot;)
+PYEOF
 
-rm -f /tmp/test_input.txt</pre><pre class="term out">=== Input file ===
-The quick brown fox jumps over the lazy dog. This is a test of AI generated
-content detection. Some models embed invisible watermarks in text they produce.
+# Attempt to run the image cleaning script (the repo&#x27;s core feature)
+# First see its CLI signature
+python3 service/scripts/clean_image.py --help 2&gt;&amp;1 || true
 
-=== Running detect_text_watermark.py ===
-python: can&#x27;t open file &#x27;/tmp/service/scripts/detect_text_watermark.py&#x27;: [Errno 2] No such file or directory
-python: can&#x27;t open file &#x27;/tmp/service/scripts/detect_text_watermark.py&#x27;: [Errno 2] No such file or directory
-python: can&#x27;t open file &#x27;/tmp/service/scripts/detect_text_watermark.py&#x27;: [Errno 2] No such file or directory
-detect_text_watermark.py did not accept the input. Trying clean_text.py...
+# Run it for real on our input
+python3 service/scripts/clean_image.py /tmp/rr_input.png /tmp/rr_output.png 2&gt;&amp;1 || {
+  echo &quot;--- direct positional call failed, trying other arg styles ---&quot;
+  python3 service/scripts/clean_image.py --input /tmp/rr_input.png --output /tmp/rr_output.png 2&gt;&amp;1 || true
+  python3 service/scripts/clean_image.py -i /tmp/rr_input.png -o /tmp/rr_output.png 2&gt;&amp;1 || true
+}
 
-=== Running clean_text.py ===
-python: can&#x27;t open file &#x27;/tmp/service/scripts/clean_text.py&#x27;: [Errno 2] No such file or directory
-python: can&#x27;t open file &#x27;/tmp/service/scripts/clean_text.py&#x27;: [Errno 2] No such file or directory
-clean_text.py also did not accept the input.
+# Show result if produced
+if [ -f /tmp/rr_output.png ]; then
+  echo &quot;OUTPUT exists:&quot;
+  ls -la /tmp/rr_output.png
+  python3 -c &quot;from PIL import Image; im=Image.open(&#x27;/tmp/rr_output.png&#x27;); print(&#x27;output size:&#x27;, im.size, &#x27;mode:&#x27;, im.mode)&quot;
+else
+  echo &quot;No output file produced. Showing the input we created:&quot;
+  ls -la /tmp/rr_input.png
+  python3 -c &quot;from PIL import Image; im=Image.open(&#x27;/tmp/rr_input.png&#x27;); print(&#x27;input size:&#x27;, im.size, &#x27;mode:&#x27;, im.mode)&quot;
+fi</pre><pre class="term out">#!/usr/bin/env python3
+&quot;&quot;&quot;Strip C2PA and AI-related metadata from PNG/JPEG/WebP.&quot;&quot;&quot;
 
-=== Checking module imports ===
-Traceback (most recent call last):
-  File &quot;&lt;string&gt;&quot;, line 1, in &lt;module&gt;
-    import service.scripts.common; print(&#x27;common module imports OK&#x27;)
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-ModuleNotFoundError: No module named &#x27;service&#x27;
-Traceback (most recent call last):
-  File &quot;&lt;string&gt;&quot;, line 1, in &lt;module&gt;
-    import common; print(&#x27;common imports as top-level&#x27;)
-    ^^^^^^^^^^^^^
-ModuleNotFoundError: No module named &#x27;common&#x27;
-Could not import common module.</pre><div class="cta"><a href="https://github.com/guillaumemeyer/watermarks-remover" rel="noopener">View guillaumemeyer/watermarks-remover on GitHub &rarr;</a></div>
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from common import backup_path, cleaned_path, eprint  # noqa: E402
+from image_meta import clean_image  # noqa: E402
+
+
+def main() -&gt; int:
+    p = argparse.ArgumentParser(description=__doc__)
+    p.add_argument(&quot;path&quot;, type=Path, help=&quot;Input PNG, JPEG, or WebP&quot;)
+    p.add_argument(&quot;-o&quot;, &quot;--output&quot;, type=Path, help=&quot;Output path (default: *.cleaned.*)&quot;)
+    p.add_argument(
+        &quot;--in-place&quot;,
+        action=&quot;store_true&quot;,
+        help=&quot;Overwrite input (writes .bak backup first)&quot;,
+    )
+    p.add_argument(
+        &quot;--keep-non-ai-metadata&quot;,
+        action=&quot;store_true&quot;,
+        help=&quot;Only drop segments/chunks that look like C2PA/AI (less aggressive)&quot;,
+    )
+    p.add_argument(&quot;--json&quot;, action=&quot;store_true&quot;, help=&quot;JSON result on stdout&quot;)
+    p.add_argument(
+        &quot;--synthid-dir&quot;,
+        type=str,
+        default=None,
+        help=&quot;reverse-SynthID checkout root for optional pixel SynthID scoring&quot;,
+    )
+    p.add_argument(
+        &quot;--remove-pixel&quot;,
+        choices=[&quot;ctrlregen&quot;, &quot;diffusion&quot;],
+created /tmp/rr_input.png 2179 bytes
+usage: clean_image.py [-h] [-o OUTPUT] [--in-place] [--keep-non-ai-metadata]
+                      [--json] [--synthid-dir SYNTHID_DIR]
+                      [--remove-pixel {ctrlregen,diffusion}]
+                      [--ctrlregen-dir CTRLREGEN_DIR]
+                      [--ctrlregen-strength CTRLREGEN_STRENGTH]
+                      [--ctrlregen-steps CTRLREGEN_STEPS]
+                      [--ctrlregen-device CTRLREGEN_DEVICE]
+                      [--ctrlregen-seed CTRLREGEN_SEED]
+                      [--ctrlregen-timeout CTRLREGEN_TIMEOUT]
+                      [--markdiffusion-dir MARKDIFFUSION_DIR]
+                      [--markdiffusion-strength MARKDIFFUSION_STRENGTH]
+                      [--markdiffusion-model MARKDIFFUSION_MODEL]
+                      [--markdiffusion-size MARKDIFFUSION_SIZE]
+                      [--markdiffusion-steps MARKDIFFUSION_STEPS]
+                      [--markdiffusion-device MARKDIFFUSION_DEVICE]
+                      [--markdiffusion-timeout MARKDIFFUSION_TIMEOUT]
+                      path
+
+Strip C2PA and AI-related metadata from PNG/JPEG/WebP.
+
+positional arguments:
+  path                  Input PNG, JPEG, or WebP
+
+options:
+  -h, --help            show this help message and exit
+  -o, --output OUTPUT   Output path (default: *.cleaned.*)
+  --in-place            Overwrite input (writes .bak backup first)
+  --keep-non-ai-metadata
+                        Only drop segments/chunks that look like C2PA/AI (less
+                        aggressive)
+  --json                JSON result on stdout
+  --synthid-dir SYNTHID_DIR
+                        reverse-SynthID checkout root for optional pixel
+                        SynthID scoring
+  --remove-pixel {ctrlre</pre><div class="cta"><a href="https://github.com/guillaumemeyer/watermarks-remover" rel="noopener">View guillaumemeyer/watermarks-remover on GitHub &rarr;</a></div>
 
   <footer>
     <p><b>Motley</b> &nbsp; we clone the day's fastest-rising GitHub repos and run them &nbsp;&middot;&nbsp; <a href="https://getmotley.github.io/radar/">see the whole Radar</a>. Not affiliated with GitHub, Inc.</p>

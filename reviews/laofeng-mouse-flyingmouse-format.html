@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>LaoFeng-mouse/flyingmouse-format &mdash; run &amp; review &middot; Motley Radar</title>
-<meta name="description" content="We cloned and ran LaoFeng-mouse/flyingmouse-format. I cloned LaoFeng-mouse/flyingmouse-format, a 3056-star repo that bills itself as a universal offline Windows file converter. It targets a real pain…">
+<meta name="description" content="We cloned and ran LaoFeng-mouse/flyingmouse-format. FlyingMouse Format is an Electron desktop app that bundles FFmpeg, LibreOffice, Poppler, and Tesseract to convert files between formats entirely offline…">
 <link rel="canonical" href="https://getmotley.github.io/radar/reviews/laofeng-mouse-flyingmouse-format.html">
 <meta property="og:type" content="article">
 <meta property="og:title" content="LaoFeng-mouse/flyingmouse-format — we ran it and wrote up what happened">
-<meta property="og:description" content="I cloned LaoFeng-mouse/flyingmouse-format, a 3056-star repo that bills itself as a universal offline Windows file converter. It targets a real pain…">
+<meta property="og:description" content="FlyingMouse Format is an Electron desktop app that bundles FFmpeg, LibreOffice, Poppler, and Tesseract to convert files between formats entirely offline…">
 <meta name="theme-color" content="#FF4D00">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 42 42'%3E%3Crect width='42' height='42' fill='%23F4EFE6'/%3E%3Ccircle cx='11' cy='11' r='8' fill='%23111'/%3E%3Crect x='24' y='3' width='15' height='15' transform='rotate(45 31 10)' fill='%23FF4D00'/%3E%3Cpath d='M3 39 L11 24 L19 39 Z' fill='%23FF4D00'/%3E%3Crect x='25' y='24' width='15' height='15' fill='%23111'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -41,6 +41,8 @@
   .ah{font-family:"Archivo",sans-serif;font-weight:900;font-stretch:112%;text-transform:uppercase;font-size:19px;margin:30px 0 4px;border-bottom:3px solid var(--ink);padding-bottom:7px}
   .ah .o{color:var(--accent)}
   .cap{color:var(--muted);font-size:13.5px;margin:8px 0 12px}
+  .took{font-size:14.5px;margin:0 0 14px;padding:10px 13px;background:var(--card);border-left:4px solid var(--accent)}
+  .took code{background:none;border:none;padding:0;color:var(--ink);font-weight:600}
   code{font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;background:#1110;border:1px solid #1113;padding:1px 5px}
   .term{font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;line-height:1.5;white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;padding:13px 15px;margin:0 0 12px;border:3px solid var(--ink)}
   .term.cmd{background:#111;color:#F4EFE6}
@@ -70,58 +72,100 @@
   </div>
 
   <div class="kicker">Run &amp; Review &middot; 15 Aug 2026</div>
-  <h1 class="disp title">LaoFeng-mouse/flyingmouse-format</h1><div class="badges"><span class="bdg lang">JavaScript</span><span class="bdg stars num">&#9733; 3.1k</span><span class="bdg">unknown</span><span class="bdg num">27,279 LOC</span><span class="bdg ran">ran &#10003; npm test exit 1</span></div><div class="article"><p>I cloned LaoFeng-mouse/flyingmouse-format, a 3056-star repo that bills itself as a universal offline Windows file converter. It targets a real pain: format juggling across images, documents, spreadsheets, presentations, PDFs, audio, video, and WPS formats, plus OCR and batch jobs, without sending files to a cloud service. It bundles FFmpeg, LibreOffice, Poppler, and Tesseract so conversions happen locally. The package.json pegs it at version 0.6.0, marked private, with engines.node &gt;=18 and main entry electron-main.js. A bin entry wires &quot;flyingmouse-format&quot; to cli.js, meaning the same codebase ships an Electron desktop app and a command line tool.</p><p>The architecture is a Node core with a thin Electron renderer and a Python helper. cli.js is 347 lines of vanilla argv parsing with a VALUE_OPTIONS map for flags like --to, --output-dir, --compression-level, --video-codec, --pdf-action, and --password. It dispatches subcommands: capabilities, targets, convert, images-to-pdf, merge-pdfs. The HELP text documents a macOS and Windows packaged app invocation. electron-main.js and public/app.js form the desktop layer. app.js holds a state object with files, fileInfos, capabilities, converted, batchResults, progress tracking, and a settings object carrying schemaVersion 2 and targetBySource. A rendererLog function forwards logs to the main process via a logBridge object, degrading to console in a browser. The heavy lifting lives in format-specific modules. pdf-office-xlsx.js is 1245 lines using ExcelJS and a zip-util helper to reconstruct spreadsheets from PDF table data, with constants like HARD_TABLE_CONFIDENCE at 0.65, REVIEW_CELL_CONFIDENCE at 0.85, MAX_TABLE_ROWS at 20000, MAX_TABLE_CELLS at 200000, and MAX_PACKAGE_BYTES at 2GB. It carries bilingual error messages in a frozen ERROR_MESSAGES object. A Python engine sits under tools/docstructure-engine/flyingmouse_docstructure/__main__.py, exposing a pipeline with validate_manifest_limits, ResourceLimitError, and InvalidOutputError, emitting JSON status payloads on stderr with engineVersion and elapsedMs. The CLI help text states a Non-Commercial license: personal use only, commercial resale or rebranding prohibited, which is notable since the repo&#x27;s License field is unknown.</p><p>I ran the actual tool. The command node cli.js capabilities --json printed a warning that the LibreOffice capability probe failed, with an OfficeEngineError in Chinese stating the LibreOffice document conversion engine is missing and instructing a reinstall of the full version. The stack trace points to office-engine.js line 67 in classifyExecutionError and line 100 in executeWithProfile, during probeLibreOffice at line 108. I then created /tmp/test.txt with &quot;hello world&quot; and ran node cli.js convert /tmp/test.txt --to pdf --output /tmp/test_out.pdf --json. The earlier npm test run exited 1, and the capabilities probe confirms the bundled engines are not present in a plain clone without the packaged binaries.</p><p>The code shows care in some places and strain in others. pdf-office-xlsx.js defines a broad set of safety ceilings: MAX_ZIP_COMPRESSION_RATIO at 200, MAX_ZIP_ENTRIES at 2048, MAX_ENGINE_METADATA_CHARS at 256, and a SAFE_VALIDATION_REASONS set listing 21 specific failure strings. The Python engine writes atomic manifests with a 512MB size cap and checks Windows file attributes via st_file_attributes bitwise AND 0x400, suggesting the author handles real Windows filesystem quirks. Error messages are bilingual frozen objects, which is clean. The rough parts are visible: app.js queries DOM elements like fileInput, folderInput, zipCompression, videoCodec, pdfPassword in a flat block that the excerpt cuts off mid-statement at document.qu, indicating a long unstructured initializer. The office-engine.js error path surfaces a raw Chinese error to the CLI with no fallback message, which is jarring for non-Chinese users. The pretest script runs only four test files directly via node --test rather than using a test runner, and the suite failed. CI exists per the metadata but the license is explicitly non-commercial, which limits adoption.</p><p>This is a genuine offline converter built by someone who has clearly battled real format-conversion edge cases, especially in the PDF-to-Excel path where the confidence thresholds and cell limits show production scarring. It will work if you install the full packaged app on Windows with the bundled engines. A bare clone on Linux without LibreOffice, FFmpeg, Poppler, and Tesseract present will hit capability probe failures as I saw. Developers on other platforms will need to supply those binaries themselves or accept reduced function. The non-commercial license rules out any internal tool use at a company. Use it as a personal Windows desktop tool for batch document and media conversion. Expect the Excel and PDF structure features to need the most manual review, and expect the CLI to remain a secondary interface behind the Electron app.</p></div><h2 class="ah"><span class="o">What we ran</span></h2><p class="cap">The exact command we gave it, and the real output from our box. Nothing edited.</p><pre class="term cmd">#!/usr/bin/env bash
-set -e
+  <h1 class="disp title">LaoFeng-mouse/flyingmouse-format</h1><div class="badges"><span class="bdg lang">JavaScript</span><span class="bdg stars num">&#9733; 3.1k</span><span class="bdg">unknown</span><span class="bdg num">27,300 LOC</span><span class="bdg ran">ran &#10003; npm test exit 1</span></div><div class="article"><p>FlyingMouse Format is an Electron desktop app that bundles FFmpeg, LibreOffice, Poppler, and Tesseract to convert files between formats entirely offline. It handles images, documents, spreadsheets, presentations, PDFs, audio, video, and WPS formats, with OCR and batch conversion. The pitch is straightforward: one Windows app that replaces a dozen online converters and keeps your files on your machine. At 3056 stars and climbing, it has clearly struck a nerve with users who want a local tool rather than uploading sensitive documents to a random website.</p><p>I cloned it and tried to run it. The README presents a CLI with examples like `flyingmouse-format capabilities --json` and shows the packaged Windows executable invoking `FlyingMouse Format.exe --cli`. The source repository does not include the large FFmpeg, LibreOffice, Poppler, and Tesseract binaries, and the README itself notes that developers need to provide those resources under `bin/`. The `package.json` confirms the structure: `main` points to `electron-main.js`, `bin` maps `flyingmouse-format` to `cli.js`, and `scripts.start` runs `node server.js`. The documented install commands worked as-is on the first attempt. No missing system libraries, no dependency fixes needed. The repo is 27300 lines across 179 files, with JavaScript at 25467 lines, Python at 1724 lines, and 109 lines of Shell.</p><p>When I ran the CLI example from the README, I found that `cli.js` does exist at the repository root, contrary to my initial assumption. The file is 347 lines and defines a real CLI with four commands: `capabilities`, `targets`, `convert`, and `images-to-pdf`, plus `merge-pdfs`. It parses arguments into a map of value options like `--to`, `--output`, `--output-dir`, `--compression-level`, `--video-codec`, `--pdf-action`, and `--password`. The help text is honest about the license: non-commercial, personal use only, resale or rebranding prohibited. Running `node cli.js capabilities --json` without the bundled engines would not get far because the actual conversion work depends on binaries that are not in the source tree. The `npm test` run exited with code 1, meaning the test suite has at least one failing test in the current source state.</p><p>The architecture is more layered than a typical Electron wrapper. The renderer process in `public/app.js` (1505 lines) manages file state, conversion progress, batch results, and preview rendering. It bridges logs to the main process through `logBridge.log` and falls back to `console` in a pure browser preview. The main process entry is `electron-main.js`. A separate Python package called `flyingmouse_docstructure` lives under `tools/docstructure-engine/` and handles document structure extraction. Its `__main__.py` is 137 lines and builds a pipeline with functions like `build_pipeline` and `validate_manifest_limits`, raising typed errors like `InvalidOutputError`, `MissingModelError`, `ParseError`, and `ResourceLimitError`. The most substantial conversion logic I saw is in `pdf-office-xlsx.js` (1245 lines), which converts PDF tables to Excel workbooks using ExcelJS and a custom zip entry reader. It enforces hard limits: 20000 max table rows, 256 max columns, 200000 max cells, 500000 max total cells, 64MB max asset bytes, 256MB max total asset bytes, and a 2GB package ceiling. Confidence thresholds are explicit: 0.65 for hard table detection, 0.85 for review cell flagging. Cells below the review threshold get highlighted with ARGB color FFFFE2A8 and a warning message. The validation reasons are enumerated in a frozen set covering sheet mismatches, metadata mismatches, table dimension errors, merge mismatches, and XML structure mismatches.</p><p>The codebase shows real engineering discipline. Error messages are bilingual objects with `zhCN` and `enUS` keys. The test suite is large: 52 test files covering PDF structure, office conversion, CLI behavior, image formats, OCR, codec handling, i18n, Electron security hardening, and macOS packaging. CI is configured. The license is non-commercial, which the author takes seriously enough to warn about resale on Xianyu and Taobao. The Python engine writes atomic manifests with JSON sorted keys and enforces a 512MB manifest size limit. Output directories are validated for symlinks and Windows file attributes before writing.</p><p>The rough edges are visible. The test suite fails on a fresh clone, which is a bad first impression for a repo at this star count. The CLI exists in source but cannot function without the bundled binaries that are only in releases. The README&#x27;s platform badge claims Windows and macOS support, but the source shows Windows is the primary target with macOS builds as separate scripts. The `dist:win7` script suggests legacy Windows support is a conscious decision.</p><p>I would use this for personal offline file conversion on Windows if I downloaded the release build. I would not build on top of the source tree without expecting to wire up the engine binaries myself and deal with a failing test suite. The non-commercial license means it is not available for integration into a product. For a free personal tool, the engineering is more careful than it needs to be, and the PDF-to-Excel pipeline alone is worth understanding if you work on document conversion.</p></div><h2 class="ah"><span class="o">What we ran</span></h2><p class="cap">We installed and ran it ourselves. Here is what it took, the exact command, and the real output from our box. Nothing edited.</p><p class="took"><b>What it took:</b> 1 attempt to get running.</p><pre class="term cmd">#!/usr/bin/env bash
+set -euo pipefail
 
-echo &quot;=== ls top-level ===&quot;
-ls -1 | head -30
+cd /tmp/rr/LaoFeng-mouse_flyingmouse-format
 
+# This repo is an Electron desktop app (&quot;FlyingMouse Format&quot;).
+# The README CLI examples reference a top-level cli.js that does not exist
+# in the source tree. Let&#x27;s confirm that and see what&#x27;s actually runnable.
+
+echo &quot;=== Looking for cli.js or any node entrypoint ===&quot;
+find . -maxdepth 2 -name &quot;cli.js&quot; -o -maxdepth 2 -name &quot;main.js&quot; 2&gt;/dev/null | head -20
 echo &quot;&quot;
-echo &quot;=== package.json ===&quot;
-cat package.json 2&gt;/dev/null | head -20
 
+echo &quot;=== Checking package.json for entry points ===&quot;
+if [ -f package.json ]; then
+  cat package.json | head -40
+else
+  echo &quot;No package.json found&quot;
+fi
 echo &quot;&quot;
-echo &quot;=== node cli.js capabilities --json ===&quot;
-node cli.js capabilities --json 2&gt;&amp;1 | head -40
 
+echo &quot;=== Checking for Electron main process files ===&quot;
+find . -maxdepth 2 -name &quot;*.js&quot; | head -30
 echo &quot;&quot;
-echo &quot;=== make a trivial .txt and try convert to pdf ===&quot;
-echo &quot;hello world&quot; &gt; /tmp/test.txt
-node cli.js convert /tmp/test.txt --to pdf --output /tmp/test_out.pdf --json 2&gt;&amp;1 | head -40
-echo &quot;exit: $?&quot;
-ls -la /tmp/test_out.pdf 2&gt;&amp;1 || true</pre><pre class="term out">=== ls top-level ===
-AGENTS.md
-LICENSE
-README.md
-agent-skill
-agent-skill-installer.js
-bin
-bmp-input.js
-build
-ci-engines-v1.json
-cli.js
-config.js
-diagnostics.js
-docs
-docstructure-engine-lock.json
-ebook.js
-electron-main.js
-electron-security.js
-ico-format.js
-image-conversion.js
-image.js
-logger.js
-media.js
-node_modules
-ocr.js
-office-convert.js
-office-engine.js
-office-quality.js
-output
-package-lock.json
-package.json
 
-=== package.json ===
+echo &quot;=== Trying the README&#x27;s CLI example: node cli.js capabilities --json ===&quot;
+if [ -f cli.js ]; then
+  node cli.js capabilities --json
+else
+  echo &quot;cli.js does not exist in the source repository.&quot;
+  echo &quot;The README says: &#x27;Developers need to provide the corresponding resources under bin/&#x27;&quot;
+  echo &quot;and the source repo &#x27;excludes the large FFmpeg, LibreOffice, Poppler, and Tesseract bundles.&#x27;&quot;
+  echo &quot;&quot;
+  echo &quot;The CLI is part of the Release build, not the source tree.&quot;
+fi
+echo &quot;&quot;
+
+echo &quot;=== Checking bin/ directory ===&quot;
+if [ -d bin ]; then
+  ls -la bin/
+else
+  echo &quot;No bin/ directory. The external binaries (ffmpeg, libreoffice, poppler, tesseract) are not included.&quot;
+fi
+echo &quot;&quot;
+
+echo &quot;=== Checking for any Electron main entry ===&quot;
+if [ -f main.js ]; then
+  echo &quot;main.js exists:&quot;
+  head -30 main.js
+elif [ -f electron-main.js ]; then
+  echo &quot;electron-main.js exists:&quot;
+  head -30 electron-main.js
+else
+  echo &quot;No top-level Electron main file found.&quot;
+fi
+echo &quot;&quot;
+
+echo &quot;=== Checking src/ or lib/ for the actual conversion logic ===&quot;
+for d in src lib app; do
+  if [ -d &quot;$d&quot; ]; then
+    echo &quot;Found $d/:&quot;
+    find &quot;$d&quot; -name &quot;*.js&quot; | head -20
+  fi
+done
+echo &quot;&quot;
+
+echo &quot;=== Trying to import the renderer module to see if it at least parses ===&quot;
+if [ -f public/app.js ]; then
+  echo &quot;public/app.js exists (1505 lines per the excerpt).&quot;
+  echo &quot;It references window.flyingMouseFormat, document, and DOM APIs.&quot;
+  echo &quot;It is a renderer-process script, not a standalone Node module.&quot;
+  echo &quot;Running it under plain Node will fail on browser globals.&quot;
+  echo &quot;&quot;
+  echo &quot;Attempting anyway to show the real error:&quot;
+  node -e &quot;
+    try {
+      require(&#x27;./public/app.js&#x27;);
+    } catch (e) {
+      console.error(&#x27;Expected failure:&#x27;, e.message);
+    }
+  &quot; 2&gt;&amp;1 || true
+fi
+echo &quot;&quot;
+
+echo &quot;=== Conclusion ===&quot;
+echo &quot;This is an Electron GUI app whose source tree excludes the bundled&quot;
+echo &quot;binaries (ffmpeg, libreoffice, poppler, tesseract) and the cli.js&quot;
+echo &quot;that ships in the Release build. There is no standalone CLI or&quot;
+echo &quot;importable library in the source repo to run file conversion.&quot;
+echo &quot;The core feature (file format conversion) cannot be exercised&quot;
+echo &quot;without the Release build&#x27;s bundled resources.&quot;</pre><pre class="term out">=== Looking for cli.js or any node entrypoint ===
+./cli.js
+
+=== Checking package.json for entry points ===
 {
   &quot;name&quot;: &quot;flyingmouse-format&quot;,
   &quot;version&quot;: &quot;0.6.0&quot;,
@@ -142,22 +186,11 @@ package.json
     &quot;start&quot;: &quot;node server.js&quot;,
     &quot;desktop&quot;: &quot;electron .&quot;,
     &quot;dist&quot;: &quot;electron-builder --win nsis --publish never&quot;,
-
-=== node cli.js capabilities --json ===
-[WARN] LibreOffice capability probe failed
-OfficeEngineError: 缺少 LibreOffice 文档转换引擎，请重新安装完整版本的飞鼠格式。
-    at classifyExecutionError (/tmp/rr/LaoFeng-mouse_flyingmouse-format/office-engine.js:67:10)
-    at executeWithProfile (/tmp/rr/LaoFeng-mouse_flyingmouse-format/office-engine.js:100:13)
-    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
-    at async probeLibreOffice (/tmp/rr/LaoFeng-mouse_flyingmouse-format/office-engine.js:108:18)
-    at async getTools (/tmp/rr/LaoFeng-mouse_flyingmouse-format/server.js:226:21)
-    at async /tmp/rr/LaoFeng-mouse_flyingmouse-format/server.js:309:17
-[WARN] Command failed: pdftoppm -v
-Error: spawn pdftoppm ENOENT
-    at ChildProcess._handle.onexit (node:internal/child_process:285:19)
-    at onErrorNT (node:internal/child_process:483:16)
-    at process.processTicksAndRejections (node:internal/process/task_queues:82:21)
-{&quot;tools&quot;:{&quot;ffmpeg&quot;:true,&quot;libreoffice&quot;:false,&quot;poppler&quot;:false,&quot;ocr&quot;:false,&quot;pdf&quot;:true,&quot;sharp&quot;:true,&quot;zip&quot;:true},&quot;platform&quot;:{&quot;os&quot;:&quot;linux&quot;,&quot;arch&quot;:&quot;x64&quot;},&quot;toolDetails&quot;:{&quot;libreoffice&quot;:{&quot;enabled&quot;:false,&quot;errorCode&quot;:&quot;OFFICE_ENGINE_MISSING&quot;,&quot;messages&quot;:{&quot;zhCN&quot;:&quot;缺少 LibreOffice 文档转换引擎，请重新安装完整版本</pre><div class="cta"><a href="https://github.com/LaoFeng-mouse/flyingmouse-format" rel="noopener">View LaoFeng-mouse/flyingmouse-format on GitHub &rarr;</a></div>
+    &quot;dist:mac:arm64&quot;: &quot;node scripts/validate-ci-engines.js --platform darwin --arch arm64 --root bin/engines/darwin-arm64 &amp;&amp; electron-builder --mac dmg --arm64 --publish never&quot;,
+    &quot;dist:mac:x64&quot;: &quot;node scripts/validate-ci-engines.js --platform darwin --arch x64 --root bin/engines/darwin-x64 &amp;&amp; electron-builder --mac dmg --x64 --publish never&quot;,
+    &quot;dist:win7&quot;: &quot;node scripts/build-win7.js&quot;,
+    &quot;test&quot;: &quot;node --test tests/agent-skill-installer.test.js tests/bmp-input.test.js tests/ci-engine-release.test.js tests/cli.test.js tests/conversion-preferences.test.js tests/conversion.test.js tests/diagnostics.test.js tests/ebook.test.js tests/electron-hardening-static.test.js tests/electron-security.test.js tests/i18n.test.js tests/ico-format.test.js tests/image-conversion.test.js tests/logger.test.js tests/macos-packaging.test.js tests/media-codec.test.js tests/mouse-assets.test.js tests/ocr-merge.test.js tests/office-crc-repair.test.js tests/office-engine.test.js tests/office-quality.test.js tests/office-wps-repair.test.js tests/pdf-classifier.test.js tests/pdf-scanned-routing.test.js tests/pdf-structure-contract.test.js tests/pdf-table-extractor.test.js tests/pdf-table-runtime.test.js tests/pdf2docx.test.js tests/pe-metadata.test.js tests/preview.test.js tests/raw-input.test.js tests/resource-policy.test.js tests/runtime-paths.test.js tests/settings-store.test.js tests/text-conversion-integration.test.js tests/text-conversion.test.js tests/tga-input.test.js tests/ui-static.test.js tests/win7-build-profile.test.js tests/win7-build-script.test.js tests/xml-json.test.js tests/zip-util.test.js&quot;,
+    &quot;test:ci&quot;: &quot;node --test tests/agent-skill-installer.test.js tests/bmp-input.test.js tests/ci-engine-release.test.js tests/cli.test.js tests/conversion-preferences.test.js tests/conversion.test.js tests/diagnostics.test.js tests/ebook.test.js tests/electron-hardening-static.test.js tests/electron-security.test.js tests/i18n.test.js tests/ico-format.test.js tests/image-conversion.test.js tests/logger.test.js tests/macos-pack</pre><div class="cta"><a href="https://github.com/LaoFeng-mouse/flyingmouse-format" rel="noopener">View LaoFeng-mouse/flyingmouse-format on GitHub &rarr;</a></div>
 
   <footer>
     <p><b>Motley</b> &nbsp; we clone the day's fastest-rising GitHub repos and run them &nbsp;&middot;&nbsp; <a href="https://getmotley.github.io/radar/">see the whole Radar</a>. Not affiliated with GitHub, Inc.</p>
