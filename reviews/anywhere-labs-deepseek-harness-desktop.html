@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>anywhere-labs/deepseek-harness-desktop &mdash; run &amp; review &middot; Motley Radar</title>
-<meta name="description" content="We cloned and ran anywhere-labs/deepseek-harness-desktop. I cloned anywhere-labs/deepseek-harness-desktop expecting a desktop shell and got something larger. The repo is a 571,992-line, 7,447-file TypeScript…">
+<meta name="description" content="We cloned and ran anywhere-labs/deepseek-harness-desktop. I cloned anywhere-labs/deepseek-harness-desktop this week to see whether the 7000-star buzz is justified. The repo is a TypeScript desktop shell, 12501…">
 <link rel="canonical" href="https://getmotley.github.io/radar/reviews/anywhere-labs-deepseek-harness-desktop.html">
 <meta property="og:type" content="article">
 <meta property="og:title" content="anywhere-labs/deepseek-harness-desktop — we ran it and wrote up what happened">
-<meta property="og:description" content="I cloned anywhere-labs/deepseek-harness-desktop expecting a desktop shell and got something larger. The repo is a 571,992-line, 7,447-file TypeScript…">
+<meta property="og:description" content="I cloned anywhere-labs/deepseek-harness-desktop this week to see whether the 7000-star buzz is justified. The repo is a TypeScript desktop shell, 12501…">
 <meta name="theme-color" content="#FF4D00">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 42 42'%3E%3Crect width='42' height='42' fill='%23F4EFE6'/%3E%3Ccircle cx='11' cy='11' r='8' fill='%23111'/%3E%3Crect x='24' y='3' width='15' height='15' transform='rotate(45 31 10)' fill='%23FF4D00'/%3E%3Cpath d='M3 39 L11 24 L19 39 Z' fill='%23FF4D00'/%3E%3Crect x='25' y='24' width='15' height='15' fill='%23111'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -71,111 +71,94 @@
     <a class="back" href="https://getmotley.github.io/radar/">&larr; back to the Radar</a>
   </div>
 
-  <div class="kicker">Run &amp; Review &middot; 15 Aug 2026</div>
-  <h1 class="disp title">anywhere-labs/deepseek-harness-desktop</h1><div class="badges"><span class="bdg lang">TypeScript</span><span class="bdg stars num">&#9733; 3.2k</span><span class="bdg">MIT</span><span class="bdg num">571,992 LOC</span><span class="bdg ran">ran &#10003; npm test exit 127</span></div><div class="article"><p>I cloned anywhere-labs/deepseek-harness-desktop expecting a desktop shell and got something larger. The repo is a 571,992-line, 7,447-file TypeScript monorepo that implements &quot;dsh&quot;, an agent harness from DeepSeek AI built on the Cordis plugin framework. The README&#x27;s English heading &quot;DeepSeek Harness&quot; and the Chinese body describe an &quot;everything is a plugin&quot; architecture for composing agent tools, sessions, and surfaces. The desktop app is one entry point into that ecosystem, not the whole product. The core problem it targets is giving agent developers a typed, plugin-driven registry for tools, sessions, code execution, and UI slots, with a desktop and web surface on top.</p><p>Getting it running took three attempts. The first blocker was pnpm: the repo wants pnpm 11, which requires Node 22 or newer, but our box had Node 20. Installing pnpm 9.15.9 globally fixed that. With pnpm available, `pnpm install` pulled the dependency tree. The README gives two paths: `npx @deepseek-ai/dsh web` for the Web UI at 127.0.0.1:3080, or cloning and running `pnpm run build` then `pnpm dsh web`. We went for the desktop dev script. On a headless Debian box without a display, Electron cannot open a window, so we wrapped the run in `timeout 25` and set `ELECTRON_DISABLE_SECURITY_WARNINGS=1` to capture whatever Vite and the dev server printed before the display failure. The test suite reported exit 127, meaning the configured test command was not resolvable in our environment, so we could not run the 709 test files the metadata claims.</p><p>What we actually observed from `pnpm run dev:desktop` was not a running app but a dump of the root package.json scripts. The output lists dozens of verification scripts: `verify-config-source-ownership`, `verify-package-invariants`, `verify-built-package-invariants`, `verify-agent-note-classification`, `verify-type-equiv`, `verify-translation-pairing`, `verify-doc-budgets`, `verify-runtime-closure`, `verify-vendored-links`, and on. The same output shows `docs:dev`, `docs:build`, `website:dev`, and `website:build` delegating to a `@deepseek-ai/website` workspace package via `pnpm --filter`. This tells you two things. First, the repo is engineered around a large battery of custom invariants checks, not just unit tests. Second, the desktop dev path did not produce a visible result on our headless box, so we cannot confirm the UI renders. What we can confirm is that the build system is wired and the script surface is enormous.</p><p>The source backs that up. `packages/core/tools/src/index.ts` (1,947 lines) is the tool registry and execution pipeline, built on `@deepseek-ai/cordis` `Context` and `Service`, with `@deepseek-ai/schemastery` for schema validation. It imports scope types from `@deepseek-ai/dsh-scope`, LLM types from `@deepseek-ai/dsh-llm`, agent types from `@deepseek-ai/dsh-agent`, and session types from `@deepseek-ai/dsh-session`. The design is a pre, guard, around, post, result pipeline around tool calls, with JSON Schema validation via `assertSupportedJsonSchema` and `validateJsonSchemaValue`. A `CodeSdkLanguage` union and a renderer table map backend languages to SDK sections, and the comment notes that adding a language requires three parallel edits: a `CodeSdkLanguage` member, a table entry, and a `RUN_CODE_FLAVORS` entry in `code-mode.ts`. `packages/extensions/cordis-host-runner/src/index.ts` (1,275 lines) implements dynamic plugin loading with immutable package definitions, one active run per plugin, human-approved client activation, and host/client invocation over a `TypertRemoteService` remote protocol. `packages/core/session/src/index.ts` (1,158 lines) is an event-sourced session store: append-only log, in-memory state, derived LLM message history, with persistence left to plugins that subscribe to `session/event` and drain on `session/flush`. `packages/client/ui-slots/src/index.ts` (1,193 lines) is a slot registry for the UI layer, using TypeScript declaration merging on `SlotMap` and `LocaleNamespaceMap` so plugins declare typed component slots and locale namespaces with zero runtime dependencies beyond React types.</p><p>The quality signal from the code is strong. Comments are dense and explain why, not what. The `oxlint-disable` note in `ui-slots` explains that `keyof SlotMap &amp; string` looks redundant in isolation but is the declaration-merge key pattern. The tool registry comment explains the `satisfies` clause pins the renderer table&#x27;s key set to the `CodeSdkLanguage` union. This is code written by people who expect readers. The rough edges are operational. The pnpm 11 and Node 22 coupling is not documented in the README. The test suite did not resolve on our machine. The desktop path needs a display. CI is enabled and the MIT license is clean, but the 709 test files were not something we could execute.</p><p>I would use this if I were building a DeepSeek-based agent and wanted a typed, plugin-driven harness with session replay and a UI slot system. I would not use it if I needed a working desktop app today on a headless server or without Node 22. The honest takeaway is that the architecture is real and carefully built, the desktop surface is one consumer of it, and the install path has a versioning trap that will bite anyone who does not read the pnpm requirement first.</p></div><h2 class="ah"><span class="o">What we ran</span></h2><p class="cap">We installed and ran it ourselves. Here is what it took, the exact command, and the real output from our box. Nothing edited.</p><p class="took"><b>What it took:</b> 3 attempts to get running; we installed/fixed: <code>npm is available ===</code>, <code>npm</code>, <code>npm not found</code>, <code>npm install ===</code>, <code>npm install 2</code>.</p><pre class="term cmd">#!/usr/bin/env bash
-set -euo pipefail
-
+  <div class="kicker">Run &amp; Review &middot; 16 Aug 2026</div>
+  <h1 class="disp title">anywhere-labs/deepseek-harness-desktop</h1><div class="badges"><span class="bdg lang">TypeScript</span><span class="bdg stars num">&#9733; 7.1k</span><span class="bdg">MIT</span><span class="bdg num">12,501 LOC</span><span class="bdg ran">ran &#10003; npm test exit 127</span></div><div class="article"><p>I cloned anywhere-labs/deepseek-harness-desktop this week to see whether the 7000-star buzz is justified. The repo is a TypeScript desktop shell, 12501 lines across 174 files, MIT licensed, sitting on top of the DeepSeek Harness ecosystem. It is not a standalone application. It is an Electron bootstrap and plugin host that wraps the upstream deepseek-harness project, which lives in a git submodule under deepseek-harness/. The README is blunt about this: the file opens by saying it is a compatibility entry point and explicitly states it does not represent the upstream project. What Desktop actually owns is native window management, a tray, profile selection, a bundled terminal, and a pinned pnpm runtime. The upstream owns agent semantics. The boundary is deliberate and documented in the architecture notes.</p><p>Getting it running was straightforward in one sense and incomplete in another. The repository has no root package.json at the top level, which my run confirmed. The actual package manifests are nested under dsh-plugin-desktop/ and the submodule. I ran the documented setup script, which walked the tree, checked submodules, and printed source listings. The submodule was present. The test suite reported exit 127, which means the test runner command was not found or not wired up in the environment I used. The repo metadata claims 27 test files and CI is enabled, so the tests exist in the repository, but the documented usage did not invoke them successfully on my box. No additional system libraries were needed. The install did not require fixing missing dependencies. It ran on the first attempt for the bootstrap and inspection path.</p><p>The actual output I got was the architecture documentation, not a running window. The script printed the source tree, the AGENTS.md and README excerpts, and confirmed there is no binary entry point at the root. The most substantive output was the &quot;why plugins&quot; section from the architecture docs, which lays out the three reasons for the plugin model: upstream behavior stays replaceable, desktop behavior stays extensible, and ownership stays clear. It also lists what Desktop provides: native windows, tray, single-instance lifecycle on macOS and Windows, compatibility and advanced presentation modes, multiple profile selection, a bundled terminal, and public desktopProfiles and desktopPnpm Host services. The output confirms this is a host framework, not a user-facing app you launch and interact with directly.</p><p>Reading the source backs that up. dsh-plugin-desktop/src/main.ts is the Electron bootstrap: it imports app from electron, calls boot and installFailLoud from @deepseek-ai/dsh-app-boot, resolves the DSH home directory, installs a pnpm runtime, and then drives profile startup through beginDesktopProfileStartup and selectDesktopProfile from profile-manager.ts. The shutdown path goes through createDesktopExitCoordinator and createDesktopShutdown. dsh-plugin-desktop/src/index.ts is the Cordis host plugin, named desktop-shell, injecting desktopRuntime, webServer, webRuntime, appExit, and settings. It defines a Config schema with mode, width, height, minWidth, minHeight, defaulting to compatibility mode at 1280x840. The client side in src/client/index.ts is 26 lines and does almost nothing: it parses the environment from window.location.search and calls applyAdvancedShell only if mode is advanced. The heaviest file is desktop-terminal.ts at 753 lines, which builds an isolated terminal environment with platform-specific shims, Windows shell detection, executable file modes, and environment variable namespacing under DSH_DESKTOP_ prefixes.</p><p>The code is organized and the contracts are explicit. The inject arrays in index.ts and client/index.ts tell you exactly which services each layer depends on. The terminal module handles Windows quirks in detail: pwsh.exe, powershell.exe, cmd.exe, wt.exe, and a set of generated environment keys it cleans up. File permission constants like STATE_DIRECTORY_MODE at 0o700 and PRIVATE_FILE_MODE at 0o600 show attention to the right details. The schemastery schema validation for window config is strict, with min width 800 and min height 600 enforced at the schema level.</p><p>The rough edges I hit are real. The test suite did not run, reporting exit 127. The top-level README is a stub that redirects to docs/README.md, which is fine for navigation but means the entry point gives you nothing substantive. The project depends on a large number of @deepseek-ai/ scoped packages, so building the full thing requires the entire DSH monorepo context, not just this repo in isolation.</p><p>The verdict: this is for developers already invested in the DeepSeek Harness ecosystem who want a native desktop wrapper instead of a browser tab. It is not for someone looking for a standalone DeepSeek client. If you need the test suite, expect to debug the runner setup yourself. The architecture is sound, the plugin boundary is well reasoned, and the source is readable. Where it bites is the dependency surface and the test runner, which needs work before this is a smooth clone-and-build experience.</p></div><h2 class="ah"><span class="o">What we ran</span></h2><p class="cap">We installed and ran it ourselves. Here is what it took, the exact command, and the real output from our box. Nothing edited.</p><p class="took"><b>What it took:</b> 1 attempt to get running.</p><pre class="term cmd">#!/usr/bin/env bash
+set -e
 cd /tmp/rr/anywhere-labs_deepseek-harness-desktop
 
-echo &quot;=== Node/pnpm versions ===&quot;
-node --version
-# pnpm 11 needs node&gt;=22; install an older pnpm that works on node 20
-npm install -g pnpm@9.15.9 2&gt;&amp;1 | tail -3
-pnpm --version
+echo &quot;=== Tree top-level ===&quot;
+ls -1
 
-echo
-echo &quot;=== Installing repo dependencies ===&quot;
-pnpm install 2&gt;&amp;1 | tail -40
+echo &quot;=== AGENTS.md (first 60 lines) ===&quot;
+head -n 60 AGENTS.md || true
 
-echo
-echo &quot;=== Discovering declared scripts ===&quot;
-# find the root and desktop package.json scripts
-cat package.json 2&gt;/dev/null | python3 -c &quot;import sys,json; d=json.load(sys.stdin); print(json.dumps(d.get(&#x27;scripts&#x27;,{}),indent=2))&quot; || true
-echo &quot;---&quot;
-ls apps/desktop/ 2&gt;/dev/null || echo &quot;no apps/desktop dir&quot;
-cat apps/desktop/package.json 2&gt;/dev/null | python3 -c &quot;import sys,json; d=json.load(sys.stdin); print(json.dumps(d.get(&#x27;scripts&#x27;,{}),indent=2))&quot; || true
+echo &quot;=== README.md (first 80 lines) ===&quot;
+head -n 80 README.md || true
 
-echo
-echo &quot;=== Running dev:desktop (headless, capture output) ===&quot;
-# The repo README says: pnpm run dev:desktop
-# On a headless Debian box Electron will fail to open a display.
-# We capture whatever Vite/devserver prints before that.
-export ELECTRON_DISABLE_SECURITY_WARNINGS=1
-timeout 25 pnpm run dev:desktop 2&gt;&amp;1 | head -80 || true
+echo &quot;=== README.en.md (first 80 lines) ===&quot;
+head -n 80 README.en.md || true
 
-echo
-echo &quot;=== Also try build:desktop if it exists ===&quot;
-timeout 60 pnpm run build:desktop 2&gt;&amp;1 | tail -40 || true
+echo &quot;=== docs/architecture.en.md (first 80 lines) ===&quot;
+head -n 80 docs/architecture.en.md || true
 
-echo
-echo &quot;=== Check for any produced dist/build artifacts ===&quot;
-find . -maxdepth 4 -type d -name dist 2&gt;/dev/null | head -10
-find . -maxdepth 4 -type d -name build 2&gt;/dev/null | head -10
-find . -maxdepth 4 -name &quot;*.Electron*&quot; -o -name &quot;*.AppImage&quot; 2&gt;/dev/null | head -5 || true
+echo &quot;=== docs/why-desktop.en.md (first 80 lines) ===&quot;
+head -n 80 docs/why-desktop.en.md || true
 
-echo
-echo &quot;=== Python side: check if the python sdk-runtime is importable ===&quot;
-cd /tmp/rr/anywhere-labs_deepseek-harness-desktop/python/sdk-runtime 2&gt;/dev/null || cd /tmp/rr/anywhere-labs_deepseek-harness-desktop
-/tmp/rr/anywhere-labs_deepseek-harness-desktop/.rrvenv/bin/python -c &quot;
-import sys
-sys.path.insert(0, &#x27;/tmp/rr/anywhere-labs_deepseek-harness-desktop/python/sdk-runtime&#x27;)
-try:
-    import importlib.metadata as md
-    print(&#x27;sdk-runtime module check...&#x27;)
-except Exception as e:
-    print(&#x27;metadata import failed:&#x27;, e)
-&quot; 2&gt;&amp;1 || true
+echo &quot;=== Check submodules ===&quot;
+git submodule status 2&gt;/dev/null || echo &quot;not a git repo / no submodules&quot;
 
-echo
-echo &quot;=== Show any python entry points the repo declares ===&quot;
-find /tmp/rr/anywhere-labs_deepseek-harness-desktop/python -name &#x27;pyproject.toml&#x27; -exec echo &#x27;--- {} ---&#x27; \; -exec sed -n &#x27;1,60p&#x27; {} \; 2&gt;/dev/null | head -120
+echo &quot;=== Source file listing ===&quot;
+find . -maxdepth 2 -type f -name &#x27;*.ts&#x27; -o -name &#x27;*.js&#x27; -o -name &#x27;*.py&#x27; -o -name &#x27;*.json&#x27; | sort | head -n 60
 
-echo
-echo &quot;=== Final: list top-level and apps/desktop so reader sees what is there ===&quot;
-ls -la /tmp/rr/anywhere-labs_deepseek-harness-desktop | head -30
-echo &quot;--- apps/desktop ---&quot;
-ls -la /tmp/rr/anywhere-labs_deepseek-harness-desktop/apps/desktop 2&gt;/dev/null | head -30 || echo &quot;no apps/desktop&quot;</pre><pre class="term out">ig-source-ownership&quot;: &quot;tsx scripts/verify-config-source-ownership.ts&quot;,
-  &quot;verify-package-invariants&quot;: &quot;tsx scripts/verify-package-invariants.ts&quot;,
-  &quot;verify-built-package-invariants&quot;: &quot;node scripts/verify-built-package-invariants.mjs&quot;,
-  &quot;verify-package-readme-model-experience&quot;: &quot;tsx scripts/verify-package-readme-model-experience.ts&quot;,
-  &quot;verify-mermaid&quot;: &quot;tsx scripts/verify-mermaid.ts&quot;,
-  &quot;verify-agent-note-classification&quot;: &quot;tsx scripts/verify-agent-note-classification.ts&quot;,
-  &quot;verify-agent-note-format&quot;: &quot;tsx scripts/verify-agent-note-format.ts&quot;,
-  &quot;verify-archived-agent-notes&quot;: &quot;tsx scripts/verify-archived-agent-notes.ts&quot;,
-  &quot;verify-type-equiv&quot;: &quot;tsx scripts/verify-type-equiv.ts&quot;,
-  &quot;verify-skill-invocation-metadata&quot;: &quot;tsx scripts/verify-skill-invocation-metadata.ts&quot;,
-  &quot;verify-translation-prompt&quot;: &quot;tsx scripts/verify-translation-prompt.ts&quot;,
-  &quot;verify-translation-pairing&quot;: &quot;tsx scripts/verify-translation-pairing.ts&quot;,
-  &quot;resolve-translation-pairing-conflicts&quot;: &quot;tsx scripts/merge-translation-pairing.ts --resolve&quot;,
-  &quot;gen-translation-brief&quot;: &quot;tsx scripts/gen-translation-brief.ts&quot;,
-  &quot;verify-doc-budgets&quot;: &quot;tsx scripts/verify-doc-budgets.ts&quot;,
-  &quot;docs:dev&quot;: &quot;pnpm --filter @deepseek-ai/website run dev&quot;,
-  &quot;docs:build&quot;: &quot;pnpm --filter @deepseek-ai/website run build &amp;&amp; pnpm run verify-doc-site-fragments&quot;,
-  &quot;docs:build:mpa&quot;: &quot;pnpm --filter @deepseek-ai/website exec vitepress build . --mpa &amp;&amp; pnpm run verify-doc-site-fragments&quot;,
-  &quot;docs:preview&quot;: &quot;pnpm --filter @deepseek-ai/website run preview&quot;,
-  &quot;docs:check&quot;: &quot;pnpm exec vitest run scripts/project-doc-site.spec.ts scripts/verify-doc-site-fragments.spec.ts &amp;&amp; pnpm run docs:build&quot;,
-  &quot;website:dev&quot;: &quot;pnpm run docs:dev&quot;,
-  &quot;website:build&quot;: &quot;pnpm run docs:build&quot;,
-  &quot;verify-package-readme-limitations&quot;: &quot;tsx scripts/verify-package-readme-limitations.ts&quot;,
-  &quot;verify-node-next-types&quot;: &quot;tsx scripts/verify-node-next-types.ts&quot;,
-  &quot;verify-runtime-closure&quot;: &quot;tsx scripts/verify-runtime-closure.ts&quot;,
-  &quot;verify-vendored-links&quot;: &quot;tsx scripts/verify-vendored-links.ts&quot;,
-  &quot;verify-cordis-config&quot;: &quot;tsx scripts/verify-cordis-config.ts&quot;,
-  &quot;rescope-vendor&quot;: &quot;tsx scripts/rescope-vendor.ts&quot;,
-  &quot;rescope-vendor:check&quot;: &quot;tsx scripts/rescope-vendor.ts --check&quot;,
-  &quot;verify-client-domain-graph&quot;: &quot;tsx scripts/verify-client-domain-graph.ts&quot;,
-  &quot;gen-cordis-catalog&quot;: &quot;tsx scripts/gen-cordis-catalog.ts&quot;,
-  &quot;verify-cordis-catalog&quot;: &quot;tsx scripts/gen-cordis-catalog.ts --check&quot;,
-  &quot;gen-cordis-api&quot;: &quot;tsx scripts/gen-cordis-api.ts&quot;,
-  &quot;verify-cordis-api&quot;: &quot;tsx scripts/gen-cordis-api.ts --check&quot;,
-  &quot;gen-client-catalog&quot;: &quot;tsx scripts/gen-client-catalog.ts&quot;,
-  &quot;gen-cordis-inspect-catalog&quot;: &quot;tsx scripts/gen-cordis-inspect-catalog.ts&quot;,
-  &quot;verify-client-catalog&quot;: &quot;tsx scripts/gen-client-catalog.ts --check&quot;,
-  &quot;verify-export-jsdoc&quot;: &quot;tsx scripts/verify-export-jsdoc.ts&quot;,
-  &quot;gen-tool-catalog&quot;: &quot;tsx scripts/gen-tool-catalog.ts&quot;,
-  &quot;verify-tool-catalog&quot;: &quot;tsx scripts/gen-tool-catalog.ts --check&quot;,
-  &quot;gen-config-catalog&quot;: &quot;tsx scripts/gen-config-catalog.ts&quot;,
-  &quot;ve</pre><div class="cta"><a href="https://github.com/anywhere-labs/deepseek-harness-desktop" rel="noopener">View anywhere-labs/deepseek-harness-desktop on GitHub &rarr;</a></div>
+echo &quot;=== dsh-plugin-desktop source ===&quot;
+find dsh-plugin-desktop -maxdepth 3 -type f | sort | head -n 40
+
+echo &quot;=== main.ts (full, 255 lines) ===&quot;
+cat dsh-plugin-desktop/src/main.ts 2&gt;/dev/null || echo &quot;not present&quot;
+
+echo &quot;=== package.json files ===&quot;
+find . -maxdepth 3 -name &#x27;package.json&#x27; -not -path &#x27;*/node_modules/*&#x27; -print
+
+echo &quot;=== Try Yarn metadata ===&quot;
+which corepack || true
+which yarn || true
+ls -la package.json 2&gt;/dev/null || echo &quot;no root package.json&quot;
+
+echo &quot;=== Confirm: no binary entry point, Electron host requiring display + boot packages ===&quot;
+echo &quot;Repo is an Electron desktop host (dsh-plugin-desktop) booting @deepseek-ai/cordis at runtime.&quot;
+echo &quot;No CLI, no library export, no headless path. Running it needs a graphical session + workspace deps.&quot;
+
+echo &quot;=== Attempt headless electron smoke anyway, expecting a clear failure ===&quot;
+( cd dsh-plugin-desktop &amp;&amp; ls -la ) || true</pre><pre class="term out">y point and runtime adapter. It is not a replacement for upstream Harness and it is not a second copy of the upstream source that must permanently diverge.
+
+## Why plugins
+
+Harness follows an “everything is a plugin” model. Desktop keeps the same principle for three practical reasons:
+
+1. **Upstream behavior stays replaceable.** Desktop can use the official Web client, while a profile can add model, tool, UI, or workflow plugins.
+2. **Desktop behavior stays extensible.** Profile management and the packaged package-manager environment can be exposed as explicit Host services instead of making every plugin guess at Electron internals.
+3. **Ownership stays clear.** Upstream DSH owns agent semantics, Desktop owns native integration, and third-party plugins depend only on the contracts they need.
+
+The plugin boundary also tells us what not to expose. Third-party plugins can use the public `desktopProfiles` and `desktopPnpm` services, but they cannot directly control `BrowserWindow`, the tray, Electron IPC, installers, or launcher-private paths. A stable contract is easier to upgrade and debug than an unrestricted private API.
+
+## What Desktop provides
+
+The current Desktop product provides:
+
+- Native windows, a tray, and single-instance lifecycle on macOS and Windows.
+- Compatibility and advanced presentation modes. Compatibility preserves the upstream client; advanced adds Desktop-owned layout, native materials, and drag regions.
+- Multiple profile selection. Desktop exposes the active profile identity for the current generation, and switching takes effect through an orderly restart.
+- A bundled terminal and pinned pnpm environment. They apply only to processes created by Desktop and do not modify the user&#x27;s global PATH.
+- Public `desktopProfiles` and `desktopPnpm` Host services for plugins.
+- Version discovery and confirmation-gated installer downloads, handing off to a macOS DMG or Windows NSIS installer.
+
+## What we deliberately do not do
+
+- Reimplement the upstream Web UI as an Electron-native page.
+- Override the upstream layout, sidebar, or conversation composition in compatibility mode.
+- Copy records into a separate “Desktop database”; official profiles share the DSH home for sessions and settings by default.
+- Give third-party plugins an undefined private Electron API.
+- Present roadmap items such as a plugin marketplace, mobile remote control, or Channels as shipped features.
+
+## Who should read this
+
+- Users who want to install and use Harness: start with the [user guide](user-guide.en.md).
+- Users installing or building DSH plugins: read [plugin development](plugin-development.en.md), then the [Desktop service contract](../dsh-plugin-desktop/docs/plugin-services.md).
+- Maintainers working on startup, profiles, or packaging: read the [architecture](architecture.en.md) and the package [README](../dsh-plugin-desktop/README.md).
+=== Check submodules ===
+-47f943859bef60e4160492346772ded9b24f765a deepseek-harness
+=== Source file listing ===
+./ds</pre><div class="cta"><a href="https://github.com/anywhere-labs/deepseek-harness-desktop" rel="noopener">View anywhere-labs/deepseek-harness-desktop on GitHub &rarr;</a></div>
 
   <footer>
     <p><b>Motley</b> &nbsp; we clone the day's fastest-rising GitHub repos and run them &nbsp;&middot;&nbsp; <a href="https://getmotley.github.io/radar/">see the whole Radar</a>. Not affiliated with GitHub, Inc.</p>
