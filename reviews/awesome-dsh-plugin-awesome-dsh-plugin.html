@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>awesome-dsh-plugin/awesome-dsh-plugin &mdash; run &amp; review &middot; Motley Radar</title>
-<meta name="description" content="We cloned and ran awesome-dsh-plugin/awesome-dsh-plugin. I cloned awesome-dsh-plugin today expecting a plugin directory and found something more specific. It is a curated list of community plugins for DeepSeek…">
+<meta name="description" content="We cloned and ran awesome-dsh-plugin/awesome-dsh-plugin. I cloned awesome-dsh-plugin today and could not run it. The venv and pytest setup failed on my machine, so everything below is a static read of the…">
 <link rel="canonical" href="https://getmotley.github.io/radar/reviews/awesome-dsh-plugin-awesome-dsh-plugin.html">
 <meta property="og:type" content="article">
 <meta property="og:title" content="awesome-dsh-plugin/awesome-dsh-plugin — we ran it and wrote up what happened">
-<meta property="og:description" content="I cloned awesome-dsh-plugin today expecting a plugin directory and found something more specific. It is a curated list of community plugins for DeepSeek…">
+<meta property="og:description" content="I cloned awesome-dsh-plugin today and could not run it. The venv and pytest setup failed on my machine, so everything below is a static read of the…">
 <meta name="theme-color" content="#FF4D00">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 42 42'%3E%3Crect width='42' height='42' fill='%23F4EFE6'/%3E%3Ccircle cx='11' cy='11' r='8' fill='%23111'/%3E%3Crect x='24' y='3' width='15' height='15' transform='rotate(45 31 10)' fill='%23FF4D00'/%3E%3Cpath d='M3 39 L11 24 L19 39 Z' fill='%23FF4D00'/%3E%3Crect x='25' y='24' width='15' height='15' fill='%23111'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -71,144 +71,8 @@
     <a class="back" href="https://getmotley.github.io/radar/">&larr; back to the Radar</a>
   </div>
 
-  <div class="kicker">Run &amp; Review &middot; 16 Aug 2026</div>
-  <h1 class="disp title">awesome-dsh-plugin/awesome-dsh-plugin</h1><div class="badges"><span class="bdg lang">Python</span><span class="bdg stars num">&#9733; 3.5k</span><span class="bdg">unknown</span><span class="bdg num">6,417 LOC</span><span class="bdg ran">ran &#10003; import failed</span></div><div class="article"><p>I cloned awesome-dsh-plugin today expecting a plugin directory and found something more specific. It is a curated list of community plugins for DeepSeek Harness, the agent framework DeepSeek open sourced where everything from models and tools to sandboxing and session storage is a plugin. The repo lists entries installable via `dsh plugin add`, each declaring a `dsh.bundle` manifest. The problem it solves is discovery: as the harness ecosystem grows, developers need a single place to find plugins that extend or replace core harness components. What is less obvious from the README is that the repo itself ships a site generator and maintenance scripts, not just a markdown file.</p><p>Getting it running took two attempts. The first try failed because I had overwritten `site/locales.mjs` and `scripts/build-site.mjs` with broken stubs while poking around. The fix was restoring those files from git with `git checkout -- site/locales.mjs scripts/build-site.mjs README.md README.zh.md`. Once the real files were back, I needed to extract the actual English category keys from `locales.mjs` before I could call the reorder script, because `scripts/reorder-categories.py` takes a comma-separated category list as `sys.argv[1]` and validates it against the locale file with a hard assert. The repo reports 6417 lines of Python across 109 files with 10 test files and CI enabled, though its own test suite reported an import failure on our box. Python 3.13.5 is what we ran with.</p><p>The command that finally worked was `python3 scripts/reorder-categ` with the category keys extracted from the locales file. The output was the script source itself printed to stdout followed by the contents of `site/locales.mjs`, which begins with `export const locales = { en: { categories:`. The script reads `site/locales.mjs`, extracts two category blocks via regex, asserts the English and Chinese keys match each other and the target list, then rewrites `scripts/build-site.mjs` to update the `CAT_IDS` array, reorders the locale entries, and reorganizes section headers and list items in both `README.md` and `README.zh.md`. On success it prints each filename with &quot;reordered&quot; and the final `CAT_IDS` value. What this tells you is that the repo is not just a list. It is a small build system that keeps the README files, the locale strings, and the site generator in sync when you reorder categories. The tool delivers on that narrow claim.</p><p>The architecture centers on `scripts/reorder-categories.py`, a 46-line script that does string surgery across four files. It uses `re.findall` to pull category blocks from `locales.mjs`, constructs English and Chinese name dictionaries, then rewrites the `CAT_IDS` constant in `scripts/build-site.mjs` with a regex substitution. For the README files it splits on lines, finds `### ` headers, matches them back to category names, and reassembles the sections in the target order. It also reorders table-of-contents entries matching `^  - \[`. The assert checks are strict: if the English keys, Chinese keys, and target list disagree, the script exits with a set difference. This is a maintenance script, not a runtime component, and it reflects a design where the awesome list and its supporting website are generated from shared definitions.</p><p>The license is unknown, which is a real issue for anyone wanting to fork or redistribute. The test suite exists with 10 files but we could not get imports to resolve on our box, so I cannot speak to coverage or what the tests actually validate. CI is enabled per the metadata. The reorder script itself is fragile by construction: it depends on exact regex patterns matching the locale file format, and if someone edits `locales.mjs` in a way that breaks the `categories: \{(.*?)\n    \},` pattern, the script will fail its assert. The first-attempt failure on our end came from corrupting those depended-on files, which is a user error but also shows the script has no graceful degradation when its inputs are wrong.</p><p>This repo is for developers already working with DeepSeek Harness who want to find community plugins or contribute their own. If you maintain the list, the reorder script does its job once the input files are intact. Where it bites is the missing license, the import failures in the test suite, and the regex-fragile coupling between the script and the locale file format. For browsing the plugin list, the README files work fine on their own.</p></div><h2 class="ah"><span class="o">What we ran</span></h2><p class="cap">We installed and ran it ourselves. Here is what it took, the exact command, and the real output from our box. Nothing edited.</p><p class="took"><b>What it took:</b> 2 attempts to get running.</p><pre class="term cmd">#!/usr/bin/env bash
-set -e
-
-cd /tmp/rr/awesome-dsh-plugin_awesome-dsh-plugin
-
-python3 --version
-
-# Show the real script so the reader can see what it does
-cat scripts/reorder-categories.py
-
-# It needs site/locales.mjs, scripts/build-site.mjs, README.md, README.zh.md
-# Check what actually exists in the repo
-echo &quot;=== site/locales.mjs ===&quot;
-cat site/locales.mjs 2&gt;/dev/null || echo &quot;MISSING&quot;
-echo &quot;=== scripts/build-site.mjs ===&quot;
-cat scripts/build-site.mjs 2&gt;/dev/null || echo &quot;MISSING&quot;
-
-# The repo ships these files; the previous attempt overwrote them with broken stubs.
-# Restore from git so the real content is there.
-git checkout -- site/locales.mjs scripts/build-site.mjs README.md README.zh.md 2&gt;/dev/null || true
-
-# Verify the files exist now
-echo &quot;=== file check ===&quot;
-ls -la site/locales.mjs scripts/build-site.mjs README.md README.zh.md
-
-# Extract the actual category names from locales.mjs so we pass the right TARGET
-EN_CATS=$(python3 -c &quot;
-import re
-loc = open(&#x27;site/locales.mjs&#x27;, encoding=&#x27;utf-8&#x27;).read()
-blocks = re.findall(r&#x27;categories: \{(.*?)\n    \},&#x27;, loc, re.S)
-en_block = blocks[0]
-names = dict(re.findall(r\&quot;(\w+): &#x27;([^&#x27;]+)&#x27;\&quot;, en_block))
-print(&#x27;,&#x27;.join(names.keys()))
-&quot;)
-
-echo &quot;EN_CATS=${EN_CATS}&quot;
-
-# Run the real script with the real category list
-python3 scripts/reorder-categories.py &quot;$EN_CATS&quot;
-
-echo &quot;=== reorder-categories.py completed successfully ===&quot;
-
-# Show the rewritten CAT_IDS line to prove it ran
-grep &#x27;CAT_IDS&#x27; scripts/build-site.mjs | head -1
-
-# Show reordered categories in locales.mjs (en block)
-echo &quot;=== locales.mjs en categories (after reorder) ===&quot;
-python3 -c &quot;
-import re
-loc = open(&#x27;site/locales.mjs&#x27;, encoding=&#x27;utf-8&#x27;).read()
-blocks = re.findall(r&#x27;categories: \{(.*?)\n    \},&#x27;, loc, re.S)
-print(blocks[0])
-&quot;
-
-# Show README.md section headers to confirm reorder
-echo &quot;=== README.md ### headers (after reorder) ===&quot;
-grep &#x27;^### &#x27; README.md
-
-# Show README.zh.md section headers
-echo &quot;=== README.zh.md ### headers (after reorder) ===&quot;
-grep &#x27;^### &#x27; README.zh.md</pre><pre class="term out">Python 3.13.5
-&quot;&quot;&quot;Reorder plugin categories everywhere from one target list (line-based).&quot;&quot;&quot;
-import re, sys
-
-TARGET = sys.argv[1].split(&#x27;,&#x27;)
-
-loc = open(&#x27;site/locales.mjs&#x27;, encoding=&#x27;utf-8&#x27;).read()
-blocks = re.findall(r&#x27;categories: \{(.*?)\n    \},&#x27;, loc, re.S)
-assert len(blocks) == 2
-names = [dict(re.findall(r&quot;(\w+): &#x27;([^&#x27;]+)&#x27;&quot;, b)) for b in blocks]
-EN, ZH = names
-assert set(EN) == set(TARGET) == set(ZH), set(EN) ^ set(TARGET)
-
-p = &#x27;scripts/build-site.mjs&#x27;; s = open(p, encoding=&#x27;utf-8&#x27;).read()
-s2 = re.sub(r&quot;^const CAT_IDS = \[[^\]]*\]&quot;,
-            &quot;const CAT_IDS = [&quot; + &#x27;, &#x27;.join(f&quot;&#x27;{c}&#x27;&quot; for c in TARGET) + &quot;]&quot;, s, count=1, flags=re.M)
-open(p, &#x27;w&#x27;, encoding=&#x27;utf-8&#x27;).write(s2)
-
-for blk, d in zip(blocks, names):
-    loc = loc.replace(blk, &#x27;\n&#x27; + &#x27;\n&#x27;.join(f&quot;      {c}: &#x27;{d[c]}&#x27;,&quot; for c in TARGET), 1)
-open(&#x27;site/locales.mjs&#x27;, &#x27;w&#x27;, encoding=&#x27;utf-8&#x27;).write(loc)
-
-for fn, d in ((&#x27;README.md&#x27;, EN), (&#x27;README.zh.md&#x27;, ZH)):
-    lines = open(fn, encoding=&#x27;utf-8&#x27;).read().split(&#x27;\n&#x27;)
-    idx = [i for i, l in enumerate(lines) if l.startswith(&#x27;### &#x27;)]
-    ends = idx[1:] + [next(i for i in range(idx[-1] + 1, len(lines)) if lines[i].startswith(&#x27;## &#x27;))]
-    secs = {}
-    for a, b in zip(idx, ends):
-        cat = next((c for c in TARGET if d[c] in lines[a]), None)
-        assert cat, (fn, lines[a])
-        secs[cat] = lines[a:b]
-    assert len(secs) == len(TARGET), (fn, len(secs))
-    body = [l for c in TARGET for l in secs[c]]
-    lines = lines[:idx[0]] + body + lines[ends[-1]:]
-
-    t = [i for i, l in enumerate(lines) if re.match(r&#x27;^  - \[&#x27;, l)]
-    tl = {}
-    for i in t:
-        cat = next((c for c in TARGET if d[c] in lines[i]), None)
-        assert cat, (fn, lines[i])
-        tl[cat] = lines[i]
-    assert len(tl) == len(TARGET)
-    lines = lines[:t[0]] + [tl[c] for c in TARGET] + lines[t[-1] + 1:]
-    open(fn, &#x27;w&#x27;, encoding=&#x27;utf-8&#x27;).write(&#x27;\n&#x27;.join(lines))
-    print(fn, &#x27;reordered&#x27;)
-print(&#x27;CAT_IDS =&#x27;, TARGET)
-=== site/locales.mjs ===
-export const locales = {
-  en: {
-    categories: {
-      security: &#x27;Security&#x27;,
-      monitoring: &#x27;Monitoring&#x27;,
-      deployment: &#x27;Deployment&#x27;,
-    },
-  },
-  zh: {
-    categories: {
-      security: &#x27;安全&#x27;,
-      monitoring: &#x27;监控&#x27;,
-      deployment: &#x27;部署&#x27;,
-    },
-  },
-};
-=== scripts/build-site.mjs ===
-const CAT_IDS = [&#x27;security&#x27;, &#x27;monitoring&#x27;, &#x27;deployment&#x27;];
-console.log(&quot;placeholder&quot;);
-=== file check ===
--rw-r--r-- 1 root root 217895 Aug 16 07:30 README.md
--rw-r--r-- 1 root root 209174 Aug 16 07:30 README.zh.md
--rw-r--r-- 1 root root  27845 Aug 16 07:30 scripts/build-site.mjs
--rw-r--r-- 1 root root   8463 Aug 16 07:30 site/locales.mjs
-EN_CATS=ui,theme,model,session,memory,tools,skill,workflow,notify,dev,market,fun
-README.md reordered
-README.zh.md reordered
-CAT_IDS = [&#x27;ui&#x27;, &#x27;theme&#x27;, &#x27;model&#x27;, &#x27;session&#x27;, &#x27;memory&#x27;, &#x27;tools&#x27;, &#x27;skill&#x27;, &#x27;workflow&#x27;, &#x27;notify&#x27;, &#x27;dev&#x27;, &#x27;market&#x27;, &#x27;fun&#x27;]
-=== reorder-categories.py completed successfully ===
-const CAT_IDS = [&#x27;ui&#x27;, &#x27;theme&#x27;, &#x27;model&#x27;, &#x27;session&#x27;, &#x27;memory&#x27;, &#x27;tools&#x27;, &#x27;skill&#x27;, &#x27;workflow&#x27;, &#x27;notify&#x27;, &#x27;dev&#x27;, &#x27;mark</pre><div class="cta"><a href="https://github.com/awesome-dsh-plugin/awesome-dsh-plugin" rel="noopener">View awesome-dsh-plugin/awesome-dsh-plugin on GitHub &rarr;</a></div>
+  <div class="kicker">Run &amp; Review &middot; 17 Aug 2026</div>
+  <h1 class="disp title">awesome-dsh-plugin/awesome-dsh-plugin</h1><div class="badges"><span class="bdg lang">Python</span><span class="bdg stars num">&#9733; 6.4k</span><span class="bdg">unknown</span><span class="bdg num">6,471 LOC</span><span class="bdg">static review</span></div><div class="article"><p>I cloned awesome-dsh-plugin today and could not run it. The venv and pytest setup failed on my machine, so everything below is a static read of the repository, not a runtime test. I am not claiming any observed runtime behavior.</p><p>This is a curated list of community plugins for DeepSeek Harness, which the README describes as an open source agent harness from DeepSeek that works as a coding agent in web and headless modes and is built around an everything-is-a-plugin architecture where models, tools, sandboxes, session storage, UI, and the agent loop itself are all pluggable. The list collects plugins installable via `dsh plugin add`, each declaring a `dsh.bundle` manifest. So the problem it solves is discovery: a central, categorized index for a plugin ecosystem that could otherwise fragment across GitHub.</p><p>The repository is not just a markdown file. The READMEs are generated. The script `scripts/reorder-categories.py` shows the real architecture: plugin entries live in `data/plugins/*.yml`, and `scripts/generate-readme.mjs` regenerates the README files from that YAML data. Editing a README by hand would be overwritten on the next generation run. The taxonomy is declared in two places that must stay in sync: `CAT_IDS` in `scripts/lib/entries.mjs` and two `categories` blocks in `site/locales.mjs`. The reordering script rewrites both, then shells out to `node scripts/generate-readme.mjs`. There is also a site component with locales for English, Chinese, and Japanese, plus badge endpoints that appear to serve a plugin count from JSON.</p><p>The code I can see is short and pragmatic. `reorder-categories.py` is 40 lines of regex substitution and assertions. It validates that the English and Chinese category sets match each other and match the requested target list, failing loudly with a symmetric difference if they do not. It asserts exactly one replacement for `CAT_IDS`, which is a good guard against silent drift. The approach is brittle by nature, relying on regex patterns matching specific formatting in `locales.mjs`, but the assertions catch the common failure modes. Error handling is assert-based, which is appropriate for a maintenance script that a developer runs interactively. The larger structure, 6471 lines across 1288 files, is mostly the per-plugin YAML entries and generated output, not hand-written logic. Test coverage is thin: 10 test files, which is modest for a repository this size. CI is enabled. The license is unknown, which is a real issue for anyone wanting to reuse or fork this.</p><p>This is for developers already using or building for DeepSeek Harness who want to find or list plugins. As a curated index it is useful. As a project, the generated-data approach is sensible, but the missing license and thin tests mean you should treat it as a community resource, not a dependency.</p></div><h2 class="ah"><span class="o">Why we couldn’t run it</span></h2><p>venv/pytest setup failed So this is a static read of the source, not a run.</p><div class="cta"><a href="https://github.com/awesome-dsh-plugin/awesome-dsh-plugin" rel="noopener">View awesome-dsh-plugin/awesome-dsh-plugin on GitHub &rarr;</a></div>
 
   <footer>
     <p><b>Motley</b> &nbsp; we clone the day's fastest-rising GitHub repos and run them &nbsp;&middot;&nbsp; <a href="https://getmotley.github.io/radar/">see the whole Radar</a>. Not affiliated with GitHub, Inc.</p>

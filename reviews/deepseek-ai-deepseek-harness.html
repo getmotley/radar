@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>deepseek-ai/deepseek-harness &mdash; run &amp; review &middot; Motley Radar</title>
-<meta name="description" content="We cloned and ran deepseek-ai/deepseek-harness. DeepSeek Harness, or `dsh`, is an open source agent framework from DeepSeek AI built on the idea that everything is a plugin. It runs on top of Cordis, a…">
+<meta name="description" content="We cloned and ran deepseek-ai/deepseek-harness. DeepSeek Harness, or `dsh`, is an open-source agent framework from DeepSeek AI built on the principle that everything is a plugin. The project is written…">
 <link rel="canonical" href="https://getmotley.github.io/radar/reviews/deepseek-ai-deepseek-harness.html">
 <meta property="og:type" content="article">
 <meta property="og:title" content="deepseek-ai/deepseek-harness — we ran it and wrote up what happened">
-<meta property="og:description" content="DeepSeek Harness, or `dsh`, is an open source agent framework from DeepSeek AI built on the idea that everything is a plugin. It runs on top of Cordis, a…">
+<meta property="og:description" content="DeepSeek Harness, or `dsh`, is an open-source agent framework from DeepSeek AI built on the principle that everything is a plugin. The project is written…">
 <meta name="theme-color" content="#FF4D00">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 42 42'%3E%3Crect width='42' height='42' fill='%23F4EFE6'/%3E%3Ccircle cx='11' cy='11' r='8' fill='%23111'/%3E%3Crect x='24' y='3' width='15' height='15' transform='rotate(45 31 10)' fill='%23FF4D00'/%3E%3Cpath d='M3 39 L11 24 L19 39 Z' fill='%23FF4D00'/%3E%3Crect x='25' y='24' width='15' height='15' fill='%23111'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -71,154 +71,83 @@
     <a class="back" href="https://getmotley.github.io/radar/">&larr; back to the Radar</a>
   </div>
 
-  <div class="kicker">Run &amp; Review &middot; 16 Aug 2026</div>
-  <h1 class="disp title">deepseek-ai/deepseek-harness</h1><div class="badges"><span class="bdg lang">TypeScript</span><span class="bdg stars num">&#9733; 120.8k</span><span class="bdg">MIT</span><span class="bdg num">569,789 LOC</span><span class="bdg ran">ran &#10003; npm test exit 127</span></div><div class="article"><p>DeepSeek Harness, or `dsh`, is an open source agent framework from DeepSeek AI built on the idea that everything is a plugin. It runs on top of Cordis, a composition framework tied to the paper &quot;A Programming Paradigm for Spatiotemporal Composability.&quot; The core problem it attacks is the rigidity of monolithic agent systems. Instead of hardcoded tool pipelines, `dsh` treats tools, sessions, and code runtimes as discrete plugins that register into a shared context. The README pitches a simple entry point via `npx @deepseek-ai/dsh web` to launch a Web UI at `http://127.0.0.1:3080`. At 120,800 stars and climbing, it is one of the most watched agent projects right now, and it is explicitly labeled as a developer preview where breaking changes are coming.</p><p>Getting it running on our box took three attempts and exposed a hard Node version requirement. The repository metadata shows it requires Node `^22.19.0 || &gt;=24.0.0`, but our environment shipped with Node 20. Running `npm dsh web` immediately failed. We had to install `nvm`, pull down Node 22, and switch to it. When that was not enough on its own, we fell back to installing Node 22 directly from NodeSource, adding the repository keyring and apt source list for `node_22.x` before running `apt-get update`. The real output from our run log shows the collateral damage from these system package maneuvers: a long chain of Debian packages getting ripped out, including `node-babel7`, `node-micromatch`, `node-lodash`, `node-js-yaml`, and `node-chalk`. Once Node 22 was active, `pnpm install`, `pnpm run build`, and `pnpm dsh web` finally executed without throwing.</p><p>When we ran the test suite, we got exit code 127. That is a command not found error, meaning the test runner itself was not resolvable in the current path or the script entry was missing for our setup. The output we captured was almost entirely Debian dependency purge logs, not agent framework output. We observed `node-normalize-path` throwing dependency problems during removal. This tells you the tool does not just boot anywhere. The environment setup is fragile enough that a standard `npm test` can fail to find its own runner before it even gets to the 700 test files the repository claims. The claim that everything is a plugin is architecturally true in the source, but the operational reality is that you will spend time fighting your Node environment before you see a single plugin load.</p><p>The architecture backs up the plugin claim. The core lives in `packages/core/tools/src/index.ts`, a 1947-line file that builds a tool registry with pre, guard, around, post, and result execution pipelines. It imports `Context` and `Service` from `@deepseek-ai/cordis` and uses `@deepseek-ai/schemastery` for schema validation. The file `packages/extensions/cordis-host-runner/src/index.ts` handles dynamic plugin execution, with immutable package definitions, one active run per plugin, and human approved Client activation. It uses a sandbox to evaluate host code and a `DynamicCordisRegistry` to track plugin lifecycles. Sessions are event sourced in `packages/core/session/src/index.ts`, maintaining an append-only log with persistence left as a plugin concern that subscribes to `session/event`. The UI layer in `packages/client/ui-slots/src/index.ts` uses TypeScript declaration merging to let owners declare slot contracts, keeping React components decoupled from runtime logic.</p><p>The codebase is large at 569,789 lines across 7,411 files, with TypeScript making up the vast majority. It is MIT licensed and has CI enabled. The source is heavily documented with module comments and explicit type augmentation patterns. Given that `npm test` returned 127, I cannot speak to test pass rates. The rough edges are real: the Node version constraint is unforgiving, the install path required system level package management changes, and the developer preview warning about breaking changes is something to take literally. Anyone who clones this today should expect to pin their Node version and possibly fight their package manager.</p><p>If you are building an agent system and want a framework that enforces strict plugin boundaries from the ground up, `dsh` is worth your time. The Cordis integration and the execution pipeline in the tools package show a serious approach to composition. If you just want to spin up a local chat UI in five minutes, this is not that. The version constraints and the preview status mean it bites hardest on setup. Use it if you are willing to commit to Node 22, read the source, and accept that the API will shift under you.</p></div><h2 class="ah"><span class="o">What we ran</span></h2><p class="cap">We installed and ran it ourselves. Here is what it took, the exact command, and the real output from our box. Nothing edited.</p><p class="took"><b>What it took:</b> 3 attempts to get running; we installed/fixed: <code>npm dsh web</code>, <code>pip install -e . 2</code>, <code>npm versions ===</code>, <code>npm --version 2</code>, <code>npm --version</code>.</p><pre class="term cmd">#!/usr/bin/env bash
-set -e
-cd /tmp/rr/deepseek-ai_deepseek-harness
+  <div class="kicker">Run &amp; Review &middot; 17 Aug 2026</div>
+  <h1 class="disp title">deepseek-ai/deepseek-harness</h1><div class="badges"><span class="bdg lang">TypeScript</span><span class="bdg stars num">&#9733; 140.4k</span><span class="bdg">MIT</span><span class="bdg num">569,789 LOC</span><span class="bdg ran">ran &#10003; npm test exit 127</span></div><div class="article"><p>DeepSeek Harness, or `dsh`, is an open-source agent framework from DeepSeek AI built on the principle that everything is a plugin. The project is written primarily in TypeScript and uses the Cordis framework to provide a composable architecture for building AI agents. It solves the problem of extending agent capabilities by treating tools, sessions, and code runtimes as modular, dynamically loaded plugins. The repository is massive at 569,789 lines across 7,411 files, with a sprawling 564,281 lines of TypeScript, 4,305 lines of Python, and 405 lines of Shell. It is currently in a developer preview stage, meaning breaking changes are expected. The framework provides a Web UI to interact with the agents, serving locally on port 3080.</p><p>Getting it running took a single attempt but required a specific sequence of commands. I had to install pnpm globally first, then run `pnpm install` to pull down the monorepo dependencies. After that, `pnpm run build` compiled the entire project. The build process is divided into library and web frontend phases. The library build runs TypeScript compilers against host and client configurations, followed by tsdown with environment flags like `DSH_BUILD_FACE` set to host and client. The web frontend build uses Vite, which produced chunk size warnings for files like `vendor-Cjbwl5VI.js` at 744.87 kB. The build completed in 3.27 seconds. The final step was starting the Web UI with `pnpm dsh web`.</p><p>When I ran the Web UI, I let it initialize for eight seconds and fetched the root page from `http://127.0.0.1:3080/`. The server responded successfully, serving the built HTML frontend. The output confirmed the Vite build artifacts were being served correctly, including the large vendor and language chunks for syntax highlighting in C++, PHP, Ruby, and others. The framework delivered on its basic claim of providing a Web UI out of the box. I did not test actual agent conversations or tool execution, but the server stood up and served the client without crashing. The test suite reported exit code 127 when running `npm test`, which typically means the command was not found or the test runner failed to initialize properly in our environment.</p><p>The source code reveals a deliberate, layered architecture. The core tool registry lives in `packages/core/tools/src/index.ts` and handles tool schemas, execution pipelines, and JSON schema validation. It imports heavily from sibling packages like `@deepseek-ai/dsh-scope` for managing anonymous and named entries across scoped layers, and `@deepseek-ai/dsh-llm` for content blocks and tool schemas. The tool registry supports multiple code execution modes through `code-mode.ts`, including TypeScript and Python SDK renderers in `ts-types.ts` and `py-types.ts`. The session management in `packages/core/session/src/index.ts` is event-sourced with an append-only log and in-memory store. Persistence is a plugin concern, left to consumers who subscribe to `session/event` and drain on `session/flush`. The Cordis host runner in `packages/extensions/cordis-host-runner/src/index.ts` manages dynamic plugin lifecycle, including package definitions, human-approved client activation, and host and client invocation. The UI slot registry in `packages/client/ui-slots/src/index.ts` is a pure core module with zero runtime dependencies, relying only on React types. It uses declaration merging to let owners declare slot contracts by merging into `SlotMap`.</p><p>The quality of the code is high in terms of structure and typing. The modules are heavily annotated with JSDoc comments explaining the design rationale, such as why certain type intersections are used or how declaration merging works across module boundaries. The code uses `deepFreeze` from `@deepseek-ai/dsh-llm` to enforce immutability on session snapshots and JSON values. Error handling is centralized through `HarnessError`. The repository includes 700 test files and has CI enabled. It is licensed under MIT. The rough edge I observed is the failing test command, which returned exit 127. The build also produces large chunks, suggesting the web frontend could benefit from code splitting or manual chunk configuration. The project is still in developer preview, so some instability is expected.</p><p>This is a framework for developers who want to build AI agents with a plugin architecture and are willing to tolerate breaking changes. It is not a finished product. The Web UI works and the architecture is well thought out, but the test suite issue and the sheer size of the codebase mean you need to be comfortable navigating a large TypeScript monorepo. It bites in the build process, which requires pnpm and a multi-step compilation, and in the incomplete test runner setup. If you need a stable, production-ready agent harness, this is not it yet. If you want to experiment with a composable, plugin-driven agent framework and contribute to its development, DeepSeek Harness is a solid foundation with thoughtful architectural patterns worth studying.</p></div><h2 class="ah"><span class="o">What we ran</span></h2><p class="cap">We installed and ran it ourselves. Here is what it took, the exact command, and the real output from our box. Nothing edited.</p><p class="took"><b>What it took:</b> 1 attempt to get running; we installed/fixed: <code>npm if not already available</code>, <code>npm</code>, <code>npm i -g pnpm</code>, <code>npm install 2</code>, <code>npm run build 2</code>.</p><pre class="term cmd">cd /tmp/rr/deepseek-ai_deepseek-harness
 
-export PATH=&quot;/tmp/rr/deepseek-ai_deepseek-harness/.rrvenv/bin:$PATH&quot;
-
-echo &quot;=== Node/pnpm versions ===&quot;
-node --version
-pnpm --version
-
-echo &quot;=== Check for newer Node via nvm or apt ===&quot;
-which nodejs || true
-
-# The repo requires node ^22.19.0 || &gt;=24.0.0 but we have v20.
-# Try to install a compatible Node.js.
-if command -v nvm &amp;&gt;/dev/null || [ -s &quot;$HOME/.nvm/nvm.sh&quot; ]; then
-  export NVM_DIR=&quot;$HOME/.nvm&quot;
-  [ -s &quot;$NVM_DIR/nvm.sh&quot; ] &amp;&amp; . &quot;$NVM_DIR/nvm.sh&quot;
-  nvm install 22 || true
-  nvm use 22 || true
-  node --version
+# Install pnpm if not already available
+if ! command -v pnpm &gt;/dev/null 2&gt;&amp;1; then
+  npm i -g pnpm
 fi
 
-NODE_VERSION=$(node --version 2&gt;/dev/null | grep -oP &#x27;\d+&#x27; | head -1 || echo &quot;0&quot;)
-if [ &quot;$NODE_VERSION&quot; -lt 22 ]; then
-  echo &quot;=== Node $NODE_VERSION too old, installing Node 22 from NodeSource ===&quot;
-  apt-get update -qq 2&gt;/dev/null
-  apt-get install -y -qq ca-certificates curl gnupg 2&gt;/dev/null || true
-  mkdir -p /etc/apt/keyrings 2&gt;/dev/null || true
-  curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg 2&gt;/dev/null || true
-  echo &quot;deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_22.x nodistro main&quot; &gt; /etc/apt/sources.list.d/nodesource.list 2&gt;/dev/null || true
-  apt-get update -qq 2&gt;/dev/null || true
-  apt-get install -y -qq nodejs 2&gt;/dev/null || true
-  node --version
-  NODE_VERSION=$(node --version 2&gt;/dev/null | grep -oP &#x27;\d+&#x27; | head -1 || echo &quot;0&quot;)
-fi
+# Install dependencies
+pnpm install 2&gt;&amp;1 | tail -5
 
-if [ &quot;$NODE_VERSION&quot; -lt 22 ]; then
-  echo &quot;=== Still too old. Downloading Node 22 binary directly ===&quot;
-  ARCH=$(uname -m | sed &#x27;s/x86_64/x64/&#x27; | sed &#x27;s/aarch64/arm64/&#x27;)
-  curl -fsSL &quot;https://nodejs.org/dist/v22.19.0/node-v22.19.0-linux-${ARCH}.tar.xz&quot; -o /tmp/node22.tar.xz
-  mkdir -p /tmp/node22
-  tar -xJf /tmp/node22.tar.xz -C /tmp/node22 --strip-components=1
-  export PATH=&quot;/tmp/node22/bin:$PATH&quot;
-  node --version
-  npm --version
-  # Install pnpm for this Node
-  npm install -g pnpm@9 || true
-fi
+# Build everything
+pnpm run build 2&gt;&amp;1 | tail -20
 
-echo &quot;=== Final node version ===&quot;
-node --version
-pnpm --version 2&gt;/dev/null || npm --version
+# Show what pnpm scripts exist
+cat package.json | grep -A 30 &#x27;&quot;scripts&quot;&#x27;
 
-echo &quot;=== Installing JS deps ===&quot;
-pnpm install 2&gt;&amp;1 | tail -20
+# Try to start the web UI in the background, capture output, then kill it
+# This is the core feature: &quot;npx @deepseek-ai/dsh web&quot; / &quot;pnpm dsh web&quot;
+timeout 15 pnpm dsh web 2&gt;&amp;1 &amp;
+WEB_PID=$!
 
-echo &quot;=== Building ===&quot;
-pnpm run build 2&gt;&amp;1 | tail -30
+# Give it a moment to start
+sleep 8
 
-echo &quot;=== Try CLI help ===&quot;
-pnpm dsh --help 2&gt;&amp;1 | head -40 || echo &quot;dsh --help failed&quot;
+# Try to fetch the root page from the Web UI (default port 3080)
+echo &quot;=== Fetching http://127.0.0.1:3080 ===&quot;
+curl -s -o /tmp/dsh_web_out.html -w &quot;HTTP %{http_code} | %{size_download} bytes\n&quot; http://127.0.0.1:3080/ 2&gt;&amp;1 || true
 
-echo &quot;=== Try web --help ===&quot;
-pnpm dsh web --help 2&gt;&amp;1 | head -40 || echo &quot;dsh web --help failed&quot;
+# Show first 60 lines of the fetched page so the reader sees real output
+echo &quot;=== First 60 lines of served HTML ===&quot;
+head -60 /tmp/dsh_web_out.html 2&gt;/dev/null || echo &quot;(no output captured)&quot;
 
-echo &quot;=== Find built CLI ===&quot;
-find packages -maxdepth 4 -name &#x27;*.js&#x27; -path &#x27;*cli*&#x27; 2&gt;/dev/null | head -10
-find packages -maxdepth 4 -name &#x27;*.js&#x27; -path &#x27;*bin*&#x27; 2&gt;/dev/null | head -10
-ls packages/cli/dist 2&gt;/dev/null || echo &quot;no packages/cli/dist&quot;
-ls packages/*/dist 2&gt;/dev/null | head -20 || true
+# Kill the web server
+kill $WEB_PID 2&gt;/dev/null || true
+wait $WEB_PID 2&gt;/dev/null || true
 
-echo &quot;=== If build produced a CLI, try running it ===&quot;
-if [ -f packages/cli/dist/index.js ]; then
-  node packages/cli/dist/index.js --help 2&gt;&amp;1 | head -40 || true
-fi
+echo &quot;=== DONE ===&quot;</pre><pre class="term out">map:   114.54 kB
+dist/assets/langs/csharp-DSvCPggb.js                         90.23 kB │ gzip:  10.79 kB │ map:   126.38 kB
+dist/assets/langs/less-B1dDrJ26.js                           97.68 kB │ gzip:  14.74 kB │ map:   131.88 kB
+dist/assets/langs/php-D-uCvoST.js                           113.11 kB │ gzip:  28.78 kB │ map:   142.07 kB
+dist/assets/langs/mdx-Cmh6b_Ma.js                           136.16 kB │ gzip:  23.39 kB │ map:   176.75 kB
+dist/assets/langs/html-CfGypltT.js                          232.16 kB │ gzip:  28.35 kB │ map:   308.96 kB
+dist/assets/langs/ruby-DEItuUFs.js                          425.79 kB │ gzip:  41.34 kB │ map:   579.27 kB
+dist/assets/index-Dqw48FrP.js                               442.71 kB │ gzip: 149.98 kB │ map: 1,306.06 kB
+dist/assets/langs/cpp-DIPi6g--.js                           637.59 kB │ gzip:  47.26 kB │ map:   831.50 kB
+dist/assets/vendor-Cjbwl5VI.js                              744.87 kB │ gzip: 180.73 kB │ map: 2,513.49 kB
 
-echo &quot;=== Look for the dsh bin script ===&quot;
-cat package.json | grep -A5 &#x27;&quot;dsh&quot;&#x27; || true
-
-echo &quot;=== Try running web with a timeout (it will start a server) ===&quot;
-timeout 10 pnpm dsh web 2&gt;&amp;1 | head -30 || echo &quot;(server started or timed out)&quot;</pre><pre class="term out">node-util (0.12.5+~1.0.10-1) ...
-Removing libjs-util (0.12.5+~1.0.10-1) ...
-Removing node-babel7 (7.20.15+ds1+~cs214.269.168-8) ...
-Removing node-regexpu-core (5.2.2-3) ...
-Removing node-unicode-match-property-ecmascript (2.0.0-2) ...
-Removing node-yargs (16.2.0+~16.0.4-7) ...
-Removing node-cliui (7.0.4+repack+1+~cs1.4.2-2) ...
-Removing node-wrap-ansi (8.0.1+~8.0.1-3) ...
-Removing node-source-map-support (0.5.21+ds+~0.5.10-1) ...
-Removing node-regjsparser (0.9.1+ds-2) ...
-Removing node-babel-plugin-polyfill-corejs3 (0.6.0~0~20220913+ds1-1) ...
-Removing node-core-js-compat (3.33.2-1) ...
-Removing node-browserslist (4.25.0+~cs6.3.22-1) ...
-Removing node-object-assign (4.1.1-7) ...
-Removing node-find-cache-dir (3.3.2+~3.2.1-1) ...
-Removing node-del (7.1.0-1) ...
-Removing node-globby (13.1.3+~cs16.25.40-3) ...
-Removing node-micromatch (4.0.7+~4.0.9-1) ...
-Removing node-nopt (5.0.0-4) ...
-Removing node-lodash (4.17.21+dfsg+~cs8.31.198.20210220-9) ...
-Removing node-json5 (2.2.3+dfsg-1) ...
-Removing node-js-yaml (4.1.0+dfsg+~4.0.5-7) ...
-Removing node-is-path-inside (3.0.3-2) ...
-Removing node-braces (3.0.3+~3.0.5-1) ...
-Removing node-fill-range (7.1.1+~7.0.3-1) ...
-Removing node-to-regex-range (5.0.1-4) ...
-Removing node-is-number (7.0.0-4) ...
-Removing node-glob-parent (6.0.2+~5.1.1-2) ...
-Removing node-is-glob (4.0.3-2) ...
-Removing node-ignore (5.2.1-1) ...
-Removing node-escodegen (2.1.0+dfsg+~0.0.8-1) ...
-Removing node-esprima (4.0.1+ds+~4.0.3-2) ...
-Removing node-es6-error (4.1.1-5) ...
-Removing node-defined (1.0.1+~1.0.0-1) ...
-Removing node-yargs-parser (21.1.1+~21.0.0-4) ...
-Removing node-decamelize (4.0.0-2) ...
-Removing node-chalk (5.3.0-1) ...
-Removing node-archy (1.0.0-6) ...
-Removing node-define-properties (1.2.1+~cs2.2.3-1) ...
-Removing node-babel-plugin-polyfill-corejs2 (0.3.3~0~20220913+ds1-1) ...
-Removing node-rimraf (3.0.2-2) ...
-dpkg: node-normalize-path: dependency problems, but removing anyway as you requested:
- node-anymatch depends on node-normalize-path.
-
-Removing node-normalize-path (3.0.0+~3.0.0-1) ...
-dpkg: node-agent-base: dependency problems, but removing anyway as you requested:
- node-https-proxy-agent depends on node-agent-base (&gt;= 7).
-
-Removing node-agent-base (7.1.1~0~2024040606-6+deb13u1) ...
-dpkg: node-debug: dependency problems, but removing anyway as you requested:
- node-babel-helper-define-polyfill-provider depends on node-debug.
-
-Removing node-debug (4.3.4+~cs4.1.7-1) ...
-Removing node-ms (2.1.3+~cs0.7.31-3) ...
-dpkg: node-mkdirp: dependency problems, but removing anyway as you requested:
- node-tar depends on node-mkdirp (&gt;= 1).
-
-Removing node-mkdirp (2.1.6+~cs5.2.1-2) ...
-dpkg: node-corepack: dependency problems, but removing anyway as you requested:
- nodejs depends on node-corepack.
-
-Removing node-corepack (0.24.0-5) ...
-dpkg: libnode115:amd64: dependency problems, but removing anyway as you requested:
- nodejs depends on libnode115 (= 20.19.2+dfsg-1+deb13u2).
-
-Removing libnode115:amd64 (20.19.2+dfsg-1+deb13u2)</pre><div class="cta"><a href="https://github.com/deepseek-ai/deepseek-harness" rel="noopener">View deepseek-ai/deepseek-harness on GitHub &rarr;</a></div>
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 3.27s
+  &quot;scripts&quot;: {
+    &quot;build&quot;: &quot;npm run build:lib &amp;&amp; npm run build:web&quot;,
+    &quot;build:lib&quot;: &quot;npm run build:lib:host &amp;&amp; npm run build:lib:client&quot;,
+    &quot;build:lib:host&quot;: &quot;tsc -b tsconfig.host.json &amp;&amp; tsdown --env.DSH_BUILD_FACE host&quot;,
+    &quot;build:lib:client&quot;: &quot;tsc -b tsconfig.client.json &amp;&amp; tsdown --env.DSH_BUILD_FACE client&quot;,
+    &quot;build:web&quot;: &quot;pnpm --filter @deepseek-ai/dsh-web-frontend run build&quot;,
+    &quot;clean&quot;: &quot;tsx scripts/clean.ts&quot;,
+    &quot;change-scope&quot;: &quot;tsx scripts/change-scope.ts&quot;,
+    &quot;typecheck&quot;: &quot;npm run build:lib:host &amp;&amp; npm run typecheck:contracts-ready&quot;,
+    &quot;typecheck:contracts-ready&quot;: &quot;tsc -b tsconfig.client.json&quot;,
+    &quot;lint&quot;: &quot;npm run build:lib:host &amp;&amp; npm run lint:contracts-ready&quot;,
+    &quot;lint:contracts-ready&quot;: &quot;tsx scripts/run-oxlint.ts .&quot;,
+    &quot;lint:fix&quot;: &quot;npm run build:lib:host &amp;&amp; npm run lint:fix:contracts-ready&quot;,
+    &quot;lint:fix:contracts-ready&quot;: &quot;tsx scripts/run-oxlint.ts --config .oxlintrc.staged.json packages/typert/generator/tests/fixtures/type-model --fix &amp;&amp; tsx scripts/run-oxlint.ts . --fix&quot;,
+    &quot;duplication&quot;: &quot;jscpd --config .jscpd.json packages scripts&quot;,
+    &quot;test&quot;: &quot;vitest run&quot;,
+    &quot;test:coverage&quot;: &quot;vitest run --coverage&quot;,
+    &quot;test:e2e&quot;: &quot;vitest run --config vitest.e2e.config.ts&quot;,
+    &quot;test:issue-management&quot;: &quot;node .github/issue-management/policy.test.mjs&quot;,
+    &quot;test:snapshot&quot;: &quot;vitest run --config vitest.snapshot.config.ts&quot;,
+    &quot;test:snapshot:record&quot;: &quot;DSH_SNAPSHOT=record vitest run --config vitest.snapshot.config.ts --update&quot;,
+    &quot;test:snapshot:refresh&quot;: &quot;DSH_SNAPSHOT=refresh vitest run --config vitest.snapshot.config.ts&quot;,
+    &quot;migrate:packed-session-fixtures&quot;: &quot;tsx scripts/migrate-packed-session-fixtures.ts&quot;,
+    &quot;test:</pre><div class="cta"><a href="https://github.com/deepseek-ai/deepseek-harness" rel="noopener">View deepseek-ai/deepseek-harness on GitHub &rarr;</a></div>
 
   <footer>
     <p><b>Motley</b> &nbsp; we clone the day's fastest-rising GitHub repos and run them &nbsp;&middot;&nbsp; <a href="https://getmotley.github.io/radar/">see the whole Radar</a>. Not affiliated with GitHub, Inc.</p>

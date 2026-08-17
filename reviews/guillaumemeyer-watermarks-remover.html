@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>guillaumemeyer/watermarks-remover &mdash; run &amp; review &middot; Motley Radar</title>
-<meta name="description" content="We cloned and ran guillaumemeyer/watermarks-remover. watermarks-remover by Guillaume Meyer is a Python toolkit and HTTP service that strips AI provenance marks from files. It targets three layers: invisible…">
+<meta name="description" content="We cloned and ran guillaumemeyer/watermarks-remover. watermarks-remover by Guillaume Meyer strips AI provenance marks from files. It targets three layers: Unicode text hygiene like homoglyphs and invisible…">
 <link rel="canonical" href="https://getmotley.github.io/radar/reviews/guillaumemeyer-watermarks-remover.html">
 <meta property="og:type" content="article">
 <meta property="og:title" content="guillaumemeyer/watermarks-remover — we ran it and wrote up what happened">
-<meta property="og:description" content="watermarks-remover by Guillaume Meyer is a Python toolkit and HTTP service that strips AI provenance marks from files. It targets three layers: invisible…">
+<meta property="og:description" content="watermarks-remover by Guillaume Meyer strips AI provenance marks from files. It targets three layers: Unicode text hygiene like homoglyphs and invisible…">
 <meta name="theme-color" content="#FF4D00">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 42 42'%3E%3Crect width='42' height='42' fill='%23F4EFE6'/%3E%3Ccircle cx='11' cy='11' r='8' fill='%23111'/%3E%3Crect x='24' y='3' width='15' height='15' transform='rotate(45 31 10)' fill='%23FF4D00'/%3E%3Cpath d='M3 39 L11 24 L19 39 Z' fill='%23FF4D00'/%3E%3Crect x='25' y='24' width='15' height='15' fill='%23111'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -71,171 +71,115 @@
     <a class="back" href="https://getmotley.github.io/radar/">&larr; back to the Radar</a>
   </div>
 
-  <div class="kicker">Run &amp; Review &middot; 16 Aug 2026</div>
-  <h1 class="disp title">guillaumemeyer/watermarks-remover</h1><div class="badges"><span class="bdg lang">Python</span><span class="bdg stars num">&#9733; 10.1k</span><span class="bdg">MIT</span><span class="bdg num">13,886 LOC</span><span class="bdg ran">ran &#10003; tests passed</span></div><div class="article"><p>watermarks-remover by Guillaume Meyer is a Python toolkit and HTTP service that strips AI provenance marks from files. It targets three layers: invisible Unicode characters embedded in text, statistical watermarks from token-sampling models like SynthID, and C2PA or metadata in PNG, JPEG, SVG, PDF, DOCX, HTML, and Markdown. The repo has 10,076 stars and is actively rising, which signals real demand for this kind of scrubbing tool in a landscape where AI-generated content increasingly carries hidden provenance signals. The codebase is 13,888 lines across 105 files, mostly Python with some Shell, under an MIT license.</p><p>Getting it running took three attempts. The sticking point was the install command. The initial attempt failed because the pip install syntax was malformed, mixing a conditional check with an actual install flag. The fix was straightforward once identified: run pip install against the requirements file. After that, the service started without needing any additional system libraries. The server is stdlib-first by design, so the core pipeline needs no external packages. Optional tools like c2patool, exiftool, and qpdf are detected at runtime through a which() check, and optional backends like CtrlRegen or Ollama for rewrite hooks are also gated behind environment variables. This means a bare pip install gets you a working server, just without the heavier optional capabilities.</p><p>I started the server with python service/scripts/server.py on localhost port 18345. It came up on the first probe. The GET /health endpoint returned a JSON object with ok set to true and version set to dev. The GET /capabilities endpoint was more revealing. It showed c2patool, exiftool, and qpdf all absent, which was expected since we did not install those. The pixel backends ctrlregen and diffusion were both false. The synthid scorer was false while the stylometry scorer was true. The markllm harness was false. This tells you the service degrades gracefully when optional dependencies are missing, exposing what it can and cannot do rather than crashing.</p><p>I tested the /inspect and /clean endpoints with a real 1x1 red PNG constructed in Python. The /inspect response correctly identified the file as a PNG image, reported has_c2pa as false, has_ai_metadata as false, and returned an empty findings array with suspicious set to false. That is the correct behavior for a clean file with no provenance markers. The /clean endpoint returned a report with keys including kind, format, actions, bytes_in, bytes_out, still_has_c2pa, still_has_ai_metadata, post_findings, synthid_before, synthid_after, and pixel_removal. The cleaned output was 74 bytes and did not start with the PNG signature, which is a rough edge worth noting. A 1x1 PNG with no metadata should round-trip cleanly through a metadata stripper and still be a valid PNG. The output suggests the cleaning path may be re-encoding or truncating in a way that breaks the format for trivial inputs, though the server reported HTTP 200 and did not error.</p><p>The architecture is split across focused modules. server.py is 521 lines and implements a ThreadingHTTPServer with endpoints for health, capabilities, a dynamically generated OpenAPI spec, inspect, and clean. It supports an optional bearer token via WATERMARKS_SERVER_API_KEY and binds to loopback by default. container_meta.py at 1,090 lines handles SVG, PDF, DOCX, ODT, HTML, and Markdown, using frozensets like AI_FRONTMATTER_KEYS and regex patterns like AI_META_NAME_RE to detect provenance signals in frontmatter and metadata tags. image_meta.py at 1,111 lines handles PNG, JPEG, and WebP, scanning for C2PA_MARKERS and AI_META_HINTS byte patterns. It defines a ctrlregen_preexec_fn that raises resource limits for the torch-based CtrlRegen subprocess, though that was not active in our run. rewrite_text.py at 623 lines provides Layer B paraphrasing through print-prompt, ollama, or openai-compatible backends, with explicit security controls: only http(s) endpoints are accepted, redirects are refused, and non-loopback endpoints require WATERMARKS_REWRITE_ALLOW_REMOTE set to 1. text_unicode.py and score_stylometry.py handle the Unicode hygiene and stylometric scoring layers.</p><p>The code is readable and the separation of concerns is clear. Each module owns a specific format or layer. The security posture is conservative: loopback binding, atomic writes, binary-as-text guards, input size caps, and API key support. The test suite has 20 files and CI is configured. The repo passed its own test suite on our box. The one rough edge I hit firsthand was the /clean endpoint producing a non-PNG output for a trivial PNG input, which means you should validate outputs against your format expectations before trusting them in a pipeline. The overall quality is solid for a tool that is honest about its optional dependencies and does not pretend to do what it cannot do without c2patool or exiftool installed.</p><p>This is for developers who need to scrub provenance metadata from files in batch or through a service interface. It works for text Unicode hygiene and container metadata stripping out of the box. It bites when you expect pixel-level watermark removal or C2PA validation without installing the optional tools, and the re-encoding behavior on trivial images means you should verify cleaned outputs rather than assuming format preservation.</p></div><h2 class="ah"><span class="o">What we ran</span></h2><p class="cap">We installed and ran it ourselves. Here is what it took, the exact command, and the real output from our box. Nothing edited.</p><p class="took"><b>What it took:</b> 3 attempts to get running; we installed/fixed: <code>pip install requirements if present ===</code>, <code>pip install -r</code>.</p><pre class="term cmd">#!/bin/bash
-set -e
-
+  <div class="kicker">Run &amp; Review &middot; 17 Aug 2026</div>
+  <h1 class="disp title">guillaumemeyer/watermarks-remover</h1><div class="badges"><span class="bdg lang">Python</span><span class="bdg stars num">&#9733; 12.2k</span><span class="bdg">MIT</span><span class="bdg num">17,045 LOC</span><span class="bdg ran">ran &#10003; tests passed</span></div><div class="article"><p>watermarks-remover by Guillaume Meyer strips AI provenance marks from files. It targets three layers: Unicode text hygiene like homoglyphs and invisible characters, statistical rewrite hooks for token-sampling watermarks, and C2PA or metadata stripping from PNG, JPEG, SVG, PDF, DOCX, HTML, and Markdown. The repository has 12,235 stars and is rising, which suggests a real appetite for tools that remove machine-readable signals from AI-generated content. It is MIT licensed, written in Python with some Shell, and spans 17,045 lines across 113 files with 25 test files and CI enabled.</p><p>Getting it running took one attempt. The only dependency we had to add was Pillow, installed with pip. The test suite passed on its own. We ran the HTTP server in service/scripts/server.py, which binds to loopback only by default and uses stdlib HTTP handling with optional bearer token auth via WATERMARKS_SERVER_API_KEY. We hit three endpoints: GET /health returned ok true with version dev, POST /inspect on a 300x100 PNG returned a JSON report classifying it as image kind with format png, has_c2pa false, has_ai_metadata false, and empty findings, and POST /clean returned a 200 with a base64-encoded cleaned image. The server enforces a body cap of MAX_INPUT_BYTES plus half that to account for base64 inflation, and has a binary-as-text guard in common.py via looks_binary. Before finding the server path, we tried clean_text.py and inspect_text.py in skills/clean-user-facing-text/scripts on the same PNG. Both exited with code 2 and printed &quot;refusing to treat /tmp/wm_input.png as text: it looks like a PNG image. This lightweight skill accepts text files only.&quot; That guard caught the mismatch immediately and refused to process it, which is the correct behavior for a text-only tool.</p><p>The test image we created had visible gray text reading &quot;AI-MARK-12345&quot; and &quot;Summary: zH7k2pQ9xW&quot; drawn on white. The inspect endpoint returned no findings because those are literal pixels, not metadata or C2PA assertions, and the tool does not OCR. The clean endpoint still returned a valid PNG, presumably with metadata stripped, though the base64 output was truncated in our capture so we could not confirm the exact diff. The report shows has_c2pa false and has_ai_metadata false, which is accurate for an image created from scratch with Pillow. The external tools c2patool and exiftool were both unavailable, which the report disclosed honestly. SynthID scoring was null.</p><p>The architecture is split across real modules. image_meta.py handles raster formats including PNG, JPEG, WebP, AVIF/HEIC via ISOBMFF, BMP, GIF, and both classic and BigTIFF. It defines format signatures like PNG_SIG and JPEG_SOI, and has a ctrlregen_preexec_fn that raises RLIMIT_AS to 32 gigabytes for torch-based subprocesses. container_meta.py covers SVG, PDF, DOCX, ODT, HTML, Markdown frontmatter, and EPUB. It imports the raster inspectors and strippers from image_meta and defines AI_FRONTMATTER_KEYS as a frozenset with entries like generator, claude, anthropic, openai, gemini, synthid, and c2pa. It also drops SVG metadata tags including xmpmeta and RDF. rewrite_text.py is the statistical watermark layer with three backends: print-prompt for CI-safe no-model operation, ollama for local inference, and openai-compatible for remote endpoints. It refuses redirects and denies non-loopback endpoints unless WATERMARKS_REWRITE_ALLOW_REMOTE is set.</p><p>The code is defensive in ways you notice. common.py exports guard_binary, safe_write_bytes, safe_write_text, subprocess_preexec_fn, and which, suggesting careful subprocess handling. The server caps input size, checks for binary content in text paths, and writes atomically. The rewrite hook never accepts API keys on argv, only environment variables. These are the choices of someone who thought about untrusted input. The 25 test files and CI badge mean the suite is not decorative. The rough edge we hit was discovering which entry point to use. The skills directory has lightweight text-only scripts that refuse images, while the real pipeline lives in service/scripts/server.py. A new user could waste time on the wrong entry point. Also, the PDF path prefers external exiftool or c2patool when present, so on a stock machine without those installed you get best-effort stdlib handling only.</p><p>This tool is for developers who need to strip C2PA assertions, AI metadata, and Unicode watermarks from files they own. It is not for removing visible watermarks from images you did not generate. It will not defeat statistical watermarks without a configured rewrite backend and a model. The core is stdlib-first, which keeps it portable, but optional features like SynthID scoring and CtrlRegen require external sidecars or torch. Use it as a library or HTTP service on a trusted network, put it behind a reverse proxy if exposed, and do not expect it to remove pixel-level marks.</p></div><h2 class="ah"><span class="o">What we ran</span></h2><p class="cap">We installed and ran it ourselves. Here is what it took, the exact command, and the real output from our box. Nothing edited.</p><p class="took"><b>What it took:</b> 1 attempt to get running; we installed/fixed: <code>pip install --quiet pillow 2</code>.</p><pre class="term cmd">#!/usr/bash
+export PATH=&quot;/tmp/rr/guillaumemeyer_watermarks-remover/.rrvenv/bin:$PATH&quot;
 cd /tmp/rr/guillaumemeyer_watermarks-remover
 
-SERVER=./service/scripts/server.py
+pip install --quiet pillow 2&gt;/dev/null
 
-# Start server in background
-python &quot;$SERVER&quot; --host 127.0.0.1 --port 18345 &gt;/tmp/wr_server.log 2&gt;&amp;1 &amp;
-SRV_PID=$!
-echo &quot;server pid: $SRV_PID&quot;
+python3 - &lt;&lt;&#x27;PY&#x27;
+import sys, traceback
+from PIL import Image, ImageDraw, ImageFont
 
-# Wait for it to come up
-for i in $(seq 1 30); do
-  sleep 0.3
-  if curl -s http://127.0.0.1:18345/health &gt;/dev/null 2&gt;&amp;1; then
-    echo &quot;server is up after $i tries&quot;
-    break
-  fi
-done
+# Create a small test image with some visible marks
+img = Image.new(&quot;RGB&quot;, (300, 100), &quot;white&quot;)
+draw = ImageDraw.Draw(img)
+draw.text((10, 10), &quot;Clean text here&quot;, fill=&quot;black&quot;)
+draw.text((10, 40), &quot;#### AI-MARK-12345 ####&quot;, fill=&quot;gray&quot;)
+draw.text((10, 70), &quot;Summary: zH7k2pQ9xW&quot;, fill=&quot;gray&quot;)
+img.save(&quot;/tmp/wm_input.png&quot;)
+print(&quot;Created test image: /tmp/wm_input.png&quot;)
 
-echo
-echo &quot;=== GET /health ===&quot;
-curl -s http://127.0.0.1:18345/health; echo
+clean = None
+scripts_tried = []
 
-echo
-echo &quot;=== GET /capabilities ===&quot;
-curl -s http://127.0.0.1:18345/capabilities; echo
+# 1. Try the clean_text.py script
+try:
+    scripts_tried.append(&quot;clean_text.py&quot;)
+    import subprocess
+    result = subprocess.run(
+        [sys.executable, &quot;skills/clean-user-facing-text/scripts/clean_text.py&quot;, &quot;/tmp/wm_input.png&quot;],
+        capture_output=True, text=True, timeout=30
+    )
+    print(f&quot;clean_text.py exit={result.returncode}&quot;)
+    if result.stdout: print(&quot;STDOUT:&quot;, result.stdout[:500])
+    if result.stderr: print(&quot;STDERR:&quot;, result.stderr[:500])
+except Exception as e:
+    print(f&quot;clean_text.py error: {e}&quot;)
 
-echo
-echo &quot;=== GET /openapi.json (first 500 chars) ===&quot;
-curl -s http://127.0.0.1:18345/openapi.json | head -c 500; echo
+# 2. Try inspect_text.py
+try:
+    scripts_tried.append(&quot;inspect_text.py&quot;)
+    import subprocess
+    result = subprocess.run(
+        [sys.executable, &quot;skills/clean-user-facing-text/scripts/inspect_text.py&quot;, &quot;/tmp/wm_input.png&quot;],
+        capture_output=True, text=True, timeout=30
+    )
+    print(f&quot;inspect_text.py exit={result.returncode}&quot;)
+    if result.stdout: print(&quot;STDOUT:&quot;, result.stdout[:800])
+    if result.stderr: print(&quot;STDERR:&quot;, result.stderr[:500])
+except Exception as e:
+    print(f&quot;inspect_text.py error: {e}&quot;)
 
-echo
-echo &quot;=== POST /inspect with a real PNG ===&quot;
+# 3. Try importing common.py directly
+try:
+    scripts_tried.append(&quot;common.py import&quot;)
+    sys.path.insert(0, &quot;skills/clean-user-facing-text/scripts&quot;)
+    import common
+    print(&quot;common.py imported, attrs:&quot;, [a for a in dir(common) if not a.startswith(&#x27;_&#x27;)][:20])
+except Exception as e:
+    print(f&quot;common.py import error: {e}&quot;)
+    traceback.print_exc()
 
-# Create a small real PNG (1x1 red pixel)
-python3 - &lt;&lt;&#x27;PYEOF&#x27;
-import base64, json, struct, zlib, urllib.request
+# 4. Try the server
+try:
+    scripts_tried.append(&quot;server.py&quot;)
+    import subprocess, time, requests
+    proc = subprocess.Popen(
+        [sys.executable, &quot;service/scripts/server.py&quot;, &quot;--port&quot;, &quot;18099&quot;],
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    )
+    time.sleep(2)
+    # health check
+    r = requests.get(&quot;http://127.0.0.1:18099/health&quot;, timeout=5)
+    print(f&quot;GET /health -&gt; {r.status_code}: {r.text}&quot;)
+    # inspect endpoint
+    import base64
+    with open(&quot;/tmp/wm_input.png&quot;, &quot;rb&quot;) as f:
+        b64 = base64.b64encode(f.read()).decode()
+    r = requests.post(&quot;http://127.0.0.1:18099/inspect&quot;, json={&quot;file&quot;: b64, &quot;name&quot;: &quot;test.png&quot;}, timeout=10)
+    print(f&quot;POST /inspect -&gt; {r.status_code}: {r.text[:600]}&quot;)
+    # clean endpoint
+    r = requests.post(&quot;http://127.0.0.1:18099/clean&quot;, json={&quot;file&quot;: b64, &quot;name&quot;: &quot;test.png&quot;, &quot;options&quot;: {}}, timeout=10)
+    print(f&quot;POST /clean -&gt; {r.status_code}: {r.text[:600]}&quot;)
+    proc.terminate()
+except Exception as e:
+    print(f&quot;server.py error: {e}&quot;)
+    traceback.print_exc()
+    try: proc.terminate()
+    except: pass
 
-def make_png(w, h, r, g, b):
-    sig = b&#x27;\x89PNG\r\n\x1a\n&#x27;
-    ihdr = struct.pack(&#x27;&gt;IIBBBBB&#x27;, w, h, 8, 2, 0, 0, 0)
-    ihdr_chunk = b&#x27;IHDR&#x27; + ihdr
-    ihdr_full = struct.pack(&#x27;&gt;I&#x27;, len(ihdr)) + ihdr_chunk + struct.pack(&#x27;&gt;I&#x27;, zlib.crc32(ihdr_chunk))
-    raw = b&#x27;&#x27;
-    for y in range(h):
-        raw += b&#x27;\x00&#x27; + bytes([r, g, b]) * w
-    comp = zlib.compress(raw)
-    idat_chunk = b&#x27;IDAT&#x27; + comp
-    idat_full = struct.pack(&#x27;&gt;I&#x27;, len(comp)) + idat_chunk + struct.pack(&#x27;&gt;I&#x27;, zlib.crc32(idat_chunk))
-    iend_chunk = b&#x27;IEND&#x27;
-    iend_full = struct.pack(&#x27;&gt;I&#x27;, 0) + iend_chunk + struct.pack(&#x27;&gt;I&#x27;, zlib.crc32(iend_chunk))
-    return sig + ihdr_full + idat_full + iend_full
+print(f&quot;\nScripts tried: {scripts_tried}&quot;)
+PY</pre><pre class="term out">Created test image: /tmp/wm_input.png
+clean_text.py exit=2
+STDERR: refusing to treat /tmp/wm_input.png as text: it looks like a PNG image.
+This lightweight skill accepts text files only.
 
-png = make_png(8, 8, 200, 30, 30)
-b64 = base64.b64encode(png).decode()
-payload = json.dumps({&quot;file&quot;: b64, &quot;name&quot;: &quot;test.png&quot;}).encode()
-req = urllib.request.Request(
-    &quot;http://127.0.0.1:18345/inspect&quot;,
-    data=payload,
-    headers={&quot;Content-Type&quot;: &quot;application/json&quot;},
-)
-with urllib.request.urlopen(req) as resp:
-    print(resp.read().decode())
-PYEOF
+inspect_text.py exit=2
+STDERR: refusing to treat /tmp/wm_input.png as text: it looks like a PNG image.
+This lightweight skill accepts text files only.
 
-echo
-echo &quot;=== POST /clean with same PNG ===&quot;
-python3 - &lt;&lt;&#x27;PYEOF&#x27;
-import base64, json, struct, zlib, urllib.request
-
-def make_png(w, h, r, g, b):
-    sig = b&#x27;\x89PNG\r\n\x1a\n&#x27;
-    ihdr = struct.pack(&#x27;&gt;IIBBBBB&#x27;, w, h, 8, 2, 0, 0, 0)
-    ihdr_chunk = b&#x27;IHDR&#x27; + ihdr
-    ihdr_full = struct.pack(&#x27;&gt;I&#x27;, len(ihdr)) + ihdr_chunk + struct.pack(&#x27;&gt;I&#x27;, zlib.crc32(ihdr_chunk))
-    raw = b&#x27;&#x27;
-    for y in range(h):
-        raw += b&#x27;\x00&#x27; + bytes([r, g, b]) * w
-    comp = zlib.compress(raw)
-    idat_chunk = b&#x27;IDAT&#x27; + comp
-    idat_full = struct.pack(&#x27;&gt;I&#x27;, len(comp)) + idat_chunk + struct.pack(&#x27;&gt;I&#x27;, zlib.crc32(idat_chunk))
-    iend_chunk = b&#x27;IEND&#x27;
-    iend_full = struct.pack(&#x27;&gt;I&#x27;, 0) + iend_chunk + struct.pack(&#x27;&gt;I&#x27;, zlib.crc32(iend_chunk))
-    return sig + ihdr_full + idat_full + iend_full
-
-png = make_png(8, 8, 200, 30, 30)
-b64 = base64.b64encode(png).decode()
-payload = json.dumps({&quot;file&quot;: b64, &quot;name&quot;: &quot;test.png&quot;, &quot;options&quot;: {}}).encode()
-req = urllib.request.Request(
-    &quot;http://127.0.0.1:18345/clean&quot;,
-    data=payload,
-    headers={&quot;Content-Type&quot;: &quot;application/json&quot;},
-)
-with urllib.request.urlopen(req) as resp:
-    data = json.loads(resp.read().decode())
-    if &quot;cleaned&quot; in data and data[&quot;cleaned&quot;]:
-        decoded = base64.b64decode(data[&quot;cleaned&quot;])
-        print(f&quot;cleaned PNG bytes: {len(decoded)}&quot;)
-        print(f&quot;starts with PNG sig: {decoded[:8] == b&#x27;\\x89PNG\\r\\n\\x1a\\n&#x27;}&quot;)
-    print(f&quot;report keys: {list(data.get(&#x27;report&#x27;, {}).keys())}&quot;)
-
-print()
-print(&quot;=== server log tail ===&quot;)
-PYEOF
-
-tail -5 /tmp/wr_server.log 2&gt;/dev/null || true
-
-kill $SRV_PID 2&gt;/dev/null || true</pre><pre class="term out">server pid: 81390
-server is up after 1 tries
-
-=== GET /health ===
-{
+common.py imported, attrs: [&#x27;Any&#x27;, &#x27;BINARY_MAGIC&#x27;, &#x27;BINARY_SNIFF_BYTES&#x27;, &#x27;MAX_INPUT_BYTES&#x27;, &#x27;MAX_STDIN_BYTES&#x27;, &#x27;Path&#x27;, &#x27;annotations&#x27;, &#x27;backup_path&#x27;, &#x27;cleaned_path&#x27;, &#x27;emit_json&#x27;, &#x27;eprint&#x27;, &#x27;guard_binary&#x27;, &#x27;json&#x27;, &#x27;looks_binary&#x27;, &#x27;os&#x27;, &#x27;read_text_input&#x27;, &#x27;safe_write_bytes&#x27;, &#x27;sys&#x27;, &#x27;tempfile&#x27;, &#x27;write_text_output&#x27;]
+GET /health -&gt; 200: {
   &quot;ok&quot;: true,
   &quot;version&quot;: &quot;dev&quot;
 }
-
-=== GET /capabilities ===
-{
-  &quot;ok&quot;: true,
-  &quot;version&quot;: &quot;dev&quot;,
-  &quot;tools&quot;: {
-    &quot;c2patool&quot;: false,
-    &quot;exiftool&quot;: false,
-    &quot;qpdf&quot;: false
-  },
-  &quot;pixel_backends&quot;: {
-    &quot;ctrlregen&quot;: false,
-    &quot;diffusion&quot;: false
-  },
-  &quot;scorers&quot;: {
-    &quot;synthid&quot;: false,
-    &quot;stylometry&quot;: true
-  },
-  &quot;harnesses&quot;: {
-    &quot;markllm&quot;: false
-  }
-}
-
-=== GET /openapi.json (first 500 chars) ===
-{
-  &quot;openapi&quot;: &quot;3.0.3&quot;,
-  &quot;info&quot;: {
-    &quot;title&quot;: &quot;watermarks-remover service&quot;,
-    &quot;version&quot;: &quot;dev&quot;,
-    &quot;description&quot;: &quot;Strip multi-vendor AI provenance marks (Unicode, C2PA/EXIF/XMP, containers). Files are passed base64-encoded in JSON; cleaned bytes come back base64-encoded.&quot;
-  },
-  &quot;paths&quot;: {
-    &quot;/health&quot;: {
-      &quot;get&quot;: {
-        &quot;summary&quot;: &quot;Liveness and version&quot;,
-        &quot;responses&quot;: {
-          &quot;400&quot;: {
-            &quot;description&quot;: &quot;Bad request&quot;,
-            &quot;content&quot;: {
-              &quot;app
-
-=== POST /inspect with a real PNG ===
-{
+POST /inspect -&gt; 200: {
   &quot;ok&quot;: true,
   &quot;kind&quot;: &quot;image&quot;,
   &quot;report&quot;: {
-    &quot;path&quot;: &quot;/tmp/wm-inspect-y6cruti5/test.png&quot;,
+    &quot;path&quot;: &quot;/tmp/wm-inspect-m_zwxrie/test.png&quot;,
     &quot;format&quot;: &quot;png&quot;,
     &quot;has_c2pa&quot;: false,
     &quot;has_ai_metadata&quot;: false,
@@ -254,18 +198,12 @@ server is up after 1 tries
   },
   &quot;suspicious&quot;: false
 }
+POST /clean -&gt; 200: {
+  &quot;ok&quot;: true,
+  &quot;kind&quot;: &quot;image&quot;,
+  &quot;cleaned&quot;: &quot;iVBORw0KGgoAAAANSUhEUgAAASwAAABkCAIAAACzY5qXAAAOjUlEQVR4nO3dWUwb1xoH8DO2QwykhpTdYJawxqwFwl62AoFSgmiAKogk0ChVkrZSn6pKbdSHlhRVVav2oc1CFdJKTdiK2ZeSCGisNICIqySAASdlMVCMWWywjMH2fTjSXAsD5mY7ueL7Pc2cOXNmPPLfx2PQfJRer0cAAHIYpE8AgN0OQggAYRBCAAiDEAJAGIQQAMIghAAQBiEEgDAIIQCEQQgBIAxCCABhEEIACDMdwitXroSGhiYkJGRmZk5MTOBGa2vrpz92aWnpk/V8JkcH4GWh31Z7e3tSUpJKpdLr9c3NzcnJybjdyspq+x13YueDbOj5TI4OwEvCxEz4zTffXLhwwdzcHCGUkZHh6em5trZGb11YWCgsLExJSYmPj+/p6UEIPXz4MC4uLiAg4LvvvsN9rK2tP/3004SEhODg4NraWnrfzz//fHl5OS0tzXiQt99+WyAQIITee++9X3/9le5peGJ4zMDAQDym8SD40MXFxT/88MO
 
-=== POST /clean with same PNG ===
-cleaned PNG bytes: 74
-starts with PNG sig: False
-report keys: [&#x27;kind&#x27;, &#x27;format&#x27;, &#x27;actions&#x27;, &#x27;bytes_in&#x27;, &#x27;bytes_out&#x27;, &#x27;still_has_c2pa&#x27;, &#x27;still_has_ai_metadata&#x27;, &#x27;post_findings&#x27;, &#x27;synthid_before&#x27;, &#x27;synthid_after&#x27;, &#x27;pixel_removal&#x27;]
-
-=== server log tail ===
-127.0.0.1 - &quot;GET /health HTTP/1.1&quot; 200 -
-127.0.0.1 - &quot;GET /capabilities HTTP/1.1&quot; 200 -
-127.0.0.1 - &quot;GET /openapi.json HTTP/1.1&quot; 200 -
-127.0.0.1 - &quot;POST /inspect HTTP/1.1&quot; 200 -
-127.0.0.1 - &quot;POST /clean HTTP/1.1&quot; 200 -</pre><div class="cta"><a href="https://github.com/guillaumemeyer/watermarks-remover" rel="noopener">View guillaumemeyer/watermarks-remover on GitHub &rarr;</a></div>
+Scripts tried: [&#x27;clean_text.py&#x27;, &#x27;inspect_text.py&#x27;, &#x27;common.py import&#x27;, &#x27;server.py&#x27;]</pre><div class="cta"><a href="https://github.com/guillaumemeyer/watermarks-remover" rel="noopener">View guillaumemeyer/watermarks-remover on GitHub &rarr;</a></div>
 
   <footer>
     <p><b>Motley</b> &nbsp; we clone the day's fastest-rising GitHub repos and run them &nbsp;&middot;&nbsp; <a href="https://getmotley.github.io/radar/">see the whole Radar</a>. Not affiliated with GitHub, Inc.</p>
