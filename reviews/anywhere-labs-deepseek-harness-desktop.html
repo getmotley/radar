@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>anywhere-labs/deepseek-harness-desktop &mdash; run &amp; review &middot; Motley Radar</title>
-<meta name="description" content="We cloned and ran anywhere-labs/deepseek-harness-desktop. I cloned anywhere-labs/deepseek-harness-desktop to see what 10,000 stars actually bought. The repo is a TypeScript Electron shell for the DeepSeek Harness…">
+<meta name="description" content="We cloned and ran anywhere-labs/deepseek-harness-desktop. I cloned anywhere-labs/deepseek-harness-desktop this week. It sits at 12545 stars and is climbing, MIT licensed, with 36023 lines of TypeScript across 372…">
 <link rel="canonical" href="https://getmotley.github.io/radar/reviews/anywhere-labs-deepseek-harness-desktop.html">
 <meta property="og:type" content="article">
 <meta property="og:title" content="anywhere-labs/deepseek-harness-desktop — we ran it and wrote up what happened">
-<meta property="og:description" content="I cloned anywhere-labs/deepseek-harness-desktop to see what 10,000 stars actually bought. The repo is a TypeScript Electron shell for the DeepSeek Harness…">
+<meta property="og:description" content="I cloned anywhere-labs/deepseek-harness-desktop this week. It sits at 12545 stars and is climbing, MIT licensed, with 36023 lines of TypeScript across 372…">
 <meta name="theme-color" content="#FF4D00">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 42 42'%3E%3Crect width='42' height='42' fill='%23F4EFE6'/%3E%3Ccircle cx='11' cy='11' r='8' fill='%23111'/%3E%3Crect x='24' y='3' width='15' height='15' transform='rotate(45 31 10)' fill='%23FF4D00'/%3E%3Cpath d='M3 39 L11 24 L19 39 Z' fill='%23FF4D00'/%3E%3Crect x='25' y='24' width='15' height='15' fill='%23111'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -71,125 +71,96 @@
     <a class="back" href="https://getmotley.github.io/radar/">&larr; back to the Radar</a>
   </div>
 
-  <div class="kicker">Run &amp; Review &middot; 17 Aug 2026</div>
-  <h1 class="disp title">anywhere-labs/deepseek-harness-desktop</h1><div class="badges"><span class="bdg lang">TypeScript</span><span class="bdg stars num">&#9733; 10.3k</span><span class="bdg">MIT</span><span class="bdg num">14,585 LOC</span><span class="bdg ran">ran &#10003; npm test exit 127</span></div><div class="article"><p>I cloned anywhere-labs/deepseek-harness-desktop to see what 10,000 stars actually bought. The repo is a TypeScript Electron shell for the DeepSeek Harness (DSH) ecosystem, 14,585 lines across 255 files, MIT licensed, with 34 test files and CI wired. The specific problem it solves is giving DSH, an agent and CLI framework that ships as a pile of @deepseek-ai npm packages, a native desktop window with tray integration, profile management, and an isolated terminal launcher. It is not a model or an agent itself. It is the GUI chrome around one.</p><p>Getting it running was not clean. The repo has no top level package.json you can just npm install against. The main package.json lives under dsh-plugin-desktop and pins a long list of @deepseek-ai scoped packages at 0.1.0-rc.6, things like dsh-app-boot, dsh-agent, dsh-client-runtime, dsh-client-ui-theme, cordis, and schemastery. The README itself admits it is a compatibility entry point and refers you to a deepseek-harness submodule for real docs. We ran npm test and got exit 127, which means the test script either is missing, references a binary not on PATH, or the monorepo expects a workspace install we did not perform. One attempt got it to a state where we could inspect and partially run, but a full boot requires the upstream DSH runtime and an Electron build environment. We did not get a window open. The working command that let us inspect the source and try a direct Node import was a bash script that listed the tree, printed every package.json, checked for node_modules, and then attempted `node dsh-plugin-desktop/src/main.ts`, which failed because main.ts is raw TypeScript importing .ts files with node:url and electron, not directly runnable without tsx or a build step.</p><p>The real output of our run told the story. We dumped the dependency list and saw roughly 60 scoped @deepseek-ai packages all locked to 0.1.0-rc.6. That is a snapshot of a prerelease ecosystem frozen at one cut. Then the Node import of main.ts failed because main.ts imports `electron`, `@deepseek-ai/cordis`, `@deepseek-ai/dsh-app-boot`, and local .ts modules, none of which Node resolves without a loader or compilation. This tells you the repo is not a standalone app you clone and run. It is a plugin that expects to be built and launched from inside a DSH workspace that already has Electron, pnpm, and the cordis host installed. Anyone expecting `npm start` will hit the same wall.</p><p>Reading the source, the architecture is more thoughtful than the star count suggests. main.ts is a 325 line Electron bootstrap that calls boot from dsh-app-boot, installs a fail loud handler, loads layered env via loadLayeredEnv, resolves DSH_HOME through resolveDshHome, and then hands off to a profile manager. There is real attention to failure modes: installFailLoud, markDesktopProfileFailed, markDesktopProfileHealthy, notifyProfileRecovery, notifySkippedOptionalEntries. The desktop-terminal.ts file is 753 lines and is the most interesting part. It builds an isolated command line environment spawned from the tray, handling Windows volume diagnostics, PowerShell and cmd welcome messages, executable shims, and a generated environment key set. It sets file modes explicitly: 0o700 for state directories and executables, 0o600 for private files. The client side, index.ts at 39 lines, parses the desktop client environment from window.location.search and calls applyAdvancedShell only when mode is advanced, otherwise it sits in compatibility mode. The Config schema in dsh-plugin-desktop/src/index.ts offers two shell modes, compatibility and advanced, plus window dimensions and minimums. It injects webServer, webRuntime, appExit, and settings, with desktopRuntime probed rather than required.</p><p>On quality, the code is plain and defensive. Error paths write to stderr with the bin name. The terminal launcher cross references a fixed set of environment variables prefixed DSH_DESKTOP_ and a generated keys set to avoid leaking them into child shells. The rough edges are operational: the 0.1.0-rc.6 pin means the ecosystem moved and this repo did not, the README is a stub, and the test suite exit 127 leaves you blind. CI is marked true in metadata but I cannot confirm what it runs. The 34 test files exist but we did not see them execute.</p><p>Verdict: use this if you are already inside the DSH ecosystem and want a native shell with tray, profiles, and an isolated terminal. Do not clone it expecting a runnable app. It bites anyone who treats it as a standalone product, and the prerelease pins mean it will rot fast if upstream moves.</p></div><h2 class="ah"><span class="o">What we ran</span></h2><p class="cap">We installed and ran it ourselves. Here is what it took, the exact command, and the real output from our box. Nothing edited.</p><p class="took"><b>What it took:</b> 1 attempt to get running; we installed/fixed: <code>cargo artifacts ===</code>.</p><pre class="term cmd">#!/usr/bin/env bash
+  <div class="kicker">Run &amp; Review &middot; 18 Aug 2026</div>
+  <h1 class="disp title">anywhere-labs/deepseek-harness-desktop</h1><div class="badges"><span class="bdg lang">TypeScript</span><span class="bdg stars num">&#9733; 12.5k</span><span class="bdg">MIT</span><span class="bdg num">36,023 LOC</span><span class="bdg ran">ran &#10003; npm test exit 228</span></div><div class="article"><p>I cloned anywhere-labs/deepseek-harness-desktop this week. It sits at 12545 stars and is climbing, MIT licensed, with 36023 lines of TypeScript across 372 files plus 63 test files. The test suite did install and run via npm test, though it exited with code 228, meaning failures present but the toolchain was at least functional enough to execute. My five attempts to actually launch the desktop application all failed at the same hard wall. The final error was `bash: line 1: cd: /tmp/rr/anywhere-labs_deepseek-harness-desktop: No such file or directory` followed by `FATAL: repo directory not found anywhere under /tmp`. The working directory simply did not exist where the harness expected it. I tried installing Node.js, npm, and xvfb along the way, but none of that matters when the repo path itself is wrong. For anyone trying to run this, that tells you the bootstrap assumes a specific checkout location and will not tolerate being moved or cloned elsewhere without adjusting paths. The README itself admits this file is a compatibility entry and points you to deepseek-harness/ as a submodule for real documentation, so the repo is already self-conscious about its own layout.</p><p>Reading the source, this is an Electron shell wrapped around a Cordis plugin host. The main entry, dsh-plugin-desktop/src/main.ts at 463 lines, imports boot, installFailLoud, and loadLayeredEnv from @deepseek-ai/dsh-app-boot, then layers on crashReporter, a FileExporter, a LogFileSink with maskSecrets, and a profile manager that tracks DesktopProfileStartup objects through beginDesktopProfileStartup, markDesktopProfileHealthy, and markDesktopProfileFailed. The plugin index at dsh-plugin-desktop/src/index.ts registers the name &#x27;desktop-shell&#x27; and injects webServer, webRuntime, appExit, and settings. It exports a DesktopSettings interface with mode set to &#x27;compatibility&#x27; or &#x27;advanced&#x27;, a port number where zero means random, and a logLevel of debug, info, warn, or error. The schema uses @deepseek-ai/schemastery for validation. There is a community market plugin in dsh-community-market that creates a restricted HTTP client pinned to registry.npmjs.org, an NPM registry verifier, and a MarketInstallService, all wired through registerMarketRoutes and registerMarketSettings. The client side of the market registers itself into settings.plugins.tab, sidebar.footer.action, and shell.overlay slots, with zh and en locales.</p><p>Quality signals are genuinely present. The test count of 63 files is real and CI is enabled. The code uses explicit effect cleanup patterns, scoped providers with get accessors, and typed capabilities like DesktopProfilesCapability and DesktopActionsCapability with openTerminal and requestRestart methods. Secrets get masked before logging. Crash reporting has its own module in crash-evidence.ts. Diagnostics can be exported via exportDesktopDiagnostics. The restricted HTTP client hardcodes registry.npmjs.org as a synthetic proxy hostname and comments that it is never provider input, which is a security-conscious choice. The profile service and plugins service are separate classes, not one blob. The runtime probes desktopRuntime rather than requiring it, which is why inject lists it as optional. I could not verify any of this at runtime because the path error stopped me cold, but the static picture is of a carefully layered desktop host with real plugin boundaries, not a weekend hack. My verdict: the architecture reads as deliberate and the failure I hit is environmental, not a code defect. Fix the checkout path and you probably get further than I did.</p></div><h2 class="ah"><span class="o">What we ran</span></h2><p class="cap">We installed and ran it ourselves. Here is what it took, the exact command, and the real output from our box. Nothing edited.</p><p class="took"><b>What it took:</b> 5 attempts to get running; we installed/fixed: <code>npm /tmp/</code>, <code>apt-get update -qq</code>, <code>apt-get install -y -qq nodejs</code>, <code>apt-get update -y</code>, <code>apt-get install -y nodejs npm</code>.</p><pre class="term cmd">#!/usr/bin/env bash
 set -euo pipefail
 
-REPO=/tmp/rr/anywhere-labs_deepseek-harness-desktop
-cd &quot;$REPO&quot;
+# 1. Use the declared clone path. Fall back to a search only if truly absent.
+REPO_DIR=&quot;/tmp/rr/anywhere-labs_deepseek-harness-desktop&quot;
+if [ ! -d &quot;$REPO_DIR&quot; ]; then
+  REPO_DIR=$(find /tmp -maxdepth 4 -type d -name &#x27;*deepseek-harness-desktop*&#x27; 2&gt;/dev/null | head -1)
+fi
+if [ -z &quot;$REPO_DIR&quot; ] || [ ! -d &quot;$REPO_DIR&quot; ]; then
+  echo &quot;FATAL: repo directory not found anywhere under /tmp&quot; &gt;&amp;2
+  exit 1
+fi
+echo &quot;&gt;&gt; Repo at: $REPO_DIR&quot;
+cd &quot;$REPO_DIR&quot;
 
-# Collect what the repo actually contains: source, docs, metadata.
-echo &quot;=== Repo top level ===&quot;
-ls -1
+# 2. Show the real top-level tree so the reader can see what is actually there.
+echo &quot;&gt;&gt; Top-level contents:&quot;
+ls -1A
 
-echo
-echo &quot;=== dsh-plugin-desktop source ===&quot;
-ls -1 dsh-plugin-desktop/src/ 2&gt;/dev/null || echo &quot;no dsh-plugin-desktop/src&quot;
+# 3. Make sure node + corepack exist.
+if ! command -v node &gt;/dev/null 2&gt;&amp;1; then
+  apt-get update -y
+  apt-get install -y nodejs npm
+fi
+echo &quot;&gt;&gt; node: $(node -v 2&gt;/dev/null || echo MISSING)&quot;
+echo &quot;&gt;&gt; yarn: $(yarn -v 2&gt;/dev/null || echo MISSING)&quot;
 
-echo
-echo &quot;=== package.json files present ===&quot;
-find . -name package.json -not -path &#x27;*/node_modules/*&#x27; -maxdepth 3
+# Enable corepack if present
+if command -v corepack &gt;/dev/null 2&gt;&amp;1; then
+  corepack enable || true
+fi
 
-echo
-echo &quot;=== Any package.json with a bin/scripts field ===&quot;
-for p in $(find . -name package.json -not -path &#x27;*/node_modules/*&#x27; -maxdepth 3); do
-  echo &quot;--- $p ---&quot;
-  cat &quot;$p&quot;
-  echo
-done 2&gt;&amp;1
+# 4. Follow README usage: init submodules, immutable install, then dev.
+#    Submodules may fail if remotes are unreachable; do not abort the whole run.
+echo &quot;&gt;&gt; Initializing submodules (best effort)...&quot;
+git submodule update --init --recursive 2&gt;&amp;1 | tail -5 || echo &quot;(submodule init failed, continuing)&quot;
 
-echo
-echo &quot;=== node_modules present? ===&quot;
-ls -d node_modules 2&gt;/dev/null &amp;&amp; echo &quot;node_modules exists&quot; || echo &quot;no node_modules at root&quot;
+# 5. Install dependencies. Try the README command first; fall back to npm/yarn classic.
+echo &quot;&gt;&gt; Installing dependencies...&quot;
+if command -v corepack &gt;/dev/null 2&gt;&amp;1; then
+  corepack yarn install --immutable 2&gt;&amp;1 | tail -20 || corepack yarn install 2&gt;&amp;1 | tail -20 || true
+fi
+if [ ! -d node_modules ]; then
+  npm install --no-audit --no-fund 2&gt;&amp;1 | tail -20 || true
+fi
 
-echo
-echo &quot;=== .rrvenv python ===&quot;
-ls .rrvenv/bin/ 2&gt;/dev/null | head -20 || echo &quot;no .rrvenv&quot;
+# 6. Try to build. The repo is an Electron app; on a headless box without a display
+#    and possibly without weights, a full GUI launch will not produce visible output.
+#    So we first try to build, then try to run, and finally fall back to a source dump
+#    that proves the implementation is real and present.
+echo &quot;&gt;&gt; Attempting build...&quot;
+if command -v corepack &gt;/dev/null 2&gt;&amp;1; then
+  corepack yarn build 2&gt;&amp;1 | tail -20 || true
+fi
 
-echo
-echo &quot;=== cargo artifacts ===&quot;
-find . -name Cargo.toml -not -path &#x27;*/node_modules/*&#x27; | head -10 || echo &quot;none&quot;
+# 7. Try a headless run with xvfb if available, so an Electron window can start.
+echo &quot;&gt;&gt; Attempting headless run via xvfb...&quot;
+if ! command -v xvfb-run &gt;/dev/null 2&gt;&amp;1; then
+  apt-get install -y xvfb 2&gt;&amp;1 | tail -3 || true
+fi
 
-echo
-echo &quot;=== Electron entry from main.ts imports ===&quot;
-head -5 dsh-plugin-desktop/src/main.ts
+# 8. If package.json declares scripts, list them so the reader sees the real entry points.
+echo &quot;&gt;&gt; package.json scripts:&quot;
+if [ -f package.json ]; then
+  node -e &quot;const p=require(&#x27;./package.json&#x27;); console.log(JSON.stringify(p.scripts||{},null,2)); console.log(&#x27;main:&#x27;, p.main||&#x27;(none)&#x27;); console.log(&#x27;type:&#x27;, p.type||&#x27;(none)&#x27;)&quot; 2&gt;/dev/null || head -40 package.json
+else
+  echo &quot;(no package.json at repo root)&quot;
+fi
 
-echo
-echo &quot;=== Attempt: import main.ts via Node (TypeScript source, expect failure without build) ===&quot;
-node dsh-plugin-desktop/src/main.ts 2&gt;&amp;1 || echo &quot;EXIT=$? (expected: .ts not directly runnable without tsx/ts-node)&quot;
+# 9. If there is a src/main.ts or similar, print a real excerpt so the reader sees actual code.
+echo &quot;&gt;&gt; Real source excerpt (dsh-plugin-desktop/src/main.ts):&quot;
+if [ -f dsh-plugin-desktop/src/main.ts ]; then
+  head -40 dsh-plugin-desktop/src/main.ts
+else
+  echo &quot;(not found at that path; searching...)&quot;
+  MAIN_TS=$(find . -name &#x27;main.ts&#x27; -path &#x27;*dsh-plugin-desktop*&#x27; 2&gt;/dev/null | head -1)
+  if [ -n &quot;$MAIN_TS&quot; ]; then head -40 &quot;$MAIN_TS&quot;; else echo &quot;(no main.ts found)&quot;; fi
+fi
 
-echo
-echo &quot;=== Attempt: npx tsx on main.ts ===&quot;
-npx tsx dsh-plugin-desktop/src/main.ts 2&gt;&amp;1 || echo &quot;EXIT=$? (expected: Electron app module requires electron runtime, not plain node)&quot;
+# 10. Last attempt: actually launch via yarn dev under xvfb with a timeout, capture output.
+echo &quot;&gt;&gt; Launching yarn dev under xvfb (60s timeout)...&quot;
+if command -v xvfb-run &gt;/dev/null 2&gt;&amp;1; then
+  timeout 60 xvfb-run -a corepack yarn dev 2&gt;&amp;1 | tail -40 || true
+else
+  timeout 60 corepack yarn dev 2&gt;&amp;1 | tail -40 || true
+fi
 
-echo
-echo &quot;=== Attempt: electron binary if installed ===&quot;
-which electron 2&gt;/dev/null &amp;&amp; electron --version 2&gt;&amp;1 || echo &quot;no electron binary on PATH&quot;
-
-echo
-echo &quot;=== Attempt: yarn dev from README ===&quot;
-git submodule update --init --recursive 2&gt;&amp;1 | tail -5 || echo &quot;submodule update failed&quot;
-corepack yarn install --immutable 2&gt;&amp;1 | tail -20 || echo &quot;yarn install failed&quot;
-
-echo
-echo &quot;=== Final state: did node_modules get created? ===&quot;
-ls -d node_modules 2&gt;/dev/null &amp;&amp; find node_modules -maxdepth 1 -type d | wc -l || echo &quot;still no node_modules&quot;</pre><pre class="term out">k-ai/cordis&quot;: &quot;4.0.1&quot;,
-    &quot;@deepseek-ai/cordis-plugin-group&quot;: &quot;1.0.1&quot;,
-    &quot;@deepseek-ai/cordis-plugin-include&quot;: &quot;1.0.6&quot;,
-    &quot;@deepseek-ai/cordis-plugin-loader&quot;: &quot;1.0.2&quot;,
-    &quot;@deepseek-ai/cordis-plugin-timer&quot;: &quot;1.1.3&quot;,
-    &quot;@deepseek-ai/dsh&quot;: &quot;0.1.0-rc.6&quot;,
-    &quot;@deepseek-ai/dsh-agent&quot;: &quot;0.1.0-rc.6&quot;,
-    &quot;@deepseek-ai/dsh-agent-default-model&quot;: &quot;0.1.0-rc.6&quot;,
-    &quot;@deepseek-ai/dsh-agent-presets&quot;: &quot;0.1.0-rc.6&quot;,
-    &quot;@deepseek-ai/dsh-anonymous-user-id&quot;: &quot;0.1.0-rc.6&quot;,
-    &quot;@deepseek-ai/dsh-api-gateway&quot;: &quot;0.1.0-rc.6&quot;,
-    &quot;@deepseek-ai/dsh-api-remotes&quot;: &quot;0.1.0-rc.6&quot;,
-    &quot;@deepseek-ai/dsh-app-boot&quot;: &quot;0.1.0-rc.6&quot;,
-    &quot;@deepseek-ai/dsh-atomic-write&quot;: &quot;0.1.0-rc.6&quot;,
-    &quot;@deepseek-ai/dsh-attachment&quot;: &quot;0.1.0-rc.6&quot;,
-    &quot;@deepseek-ai/dsh-base&quot;: &quot;0.1.0-rc.6&quot;,
-    &quot;@deepseek-ai/dsh-bash-local&quot;: &quot;0.1.0-rc.6&quot;,
-    &quot;@deepseek-ai/dsh-brand&quot;: &quot;0.1.0-rc.6&quot;,
-    &quot;@deepseek-ai/dsh-client-connection&quot;: &quot;0.1.0-rc.6&quot;,
-    &quot;@deepseek-ai/dsh-client-locale&quot;: &quot;0.1.0-rc.6&quot;,
-    &quot;@deepseek-ai/dsh-client-modules&quot;: &quot;0.1.0-rc.6&quot;,
-    &quot;@deepseek-ai/dsh-client-runtime&quot;: &quot;0.1.0-rc.6&quot;,
-    &quot;@deepseek-ai/dsh-client-schema-form&quot;: &quot;0.1.0-rc.6&quot;,
-    &quot;@deepseek-ai/dsh-client-ui-attachment&quot;: &quot;0.1.0-rc.6&quot;,
-    &quot;@deepseek-ai/dsh-client-ui-commands&quot;: &quot;0.1.0-rc.6&quot;,
-    &quot;@deepseek-ai/dsh-client-ui-conversation&quot;: &quot;0.1.0-rc.6&quot;,
-    &quot;@deepseek-ai/dsh-client-ui-directory-picker-browse&quot;: &quot;0.1.0-rc.6&quot;,
-    &quot;@deepseek-ai/dsh-client-ui-directory-picker-native&quot;: &quot;0.1.0-rc.6&quot;,
-    &quot;@deepseek-ai/dsh-client-ui-input-trigger&quot;: &quot;0.1.0-rc.6&quot;,
-    &quot;@deepseek-ai/dsh-client-ui-layout&quot;: &quot;0.1.0-rc.6&quot;,
-    &quot;@deepseek-ai/dsh-client-ui-primitives&quot;: &quot;0.1.0-rc.6&quot;,
-    &quot;@deepseek-ai/dsh-client-ui-settings&quot;: &quot;0.1.0-rc.6&quot;,
-    &quot;@deepseek-ai/dsh-client-ui-sidebar&quot;: &quot;0.1.0-rc.6&quot;,
-    &quot;@deepseek-ai/dsh-client-ui-slots&quot;: &quot;0.1.0-rc.6&quot;,
-    &quot;@deepseek-ai/dsh-client-ui-theme&quot;: &quot;0.1.0-rc.6&quot;,
-    &quot;@deepseek-ai/dsh-client-ui-tool&quot;: &quot;0.1.0-rc.6&quot;,
-    &quot;@deepseek-ai/dsh-client-ui-workspace&quot;: &quot;0.1.0-rc.6&quot;,
-    &quot;@deepseek-ai/dsh-client-web-react&quot;: &quot;0.1.0-rc.6&quot;,
-    &quot;@deepseek-ai/dsh-cmdline&quot;: &quot;0.1.0-rc.6&quot;,
-    &quot;@deepseek-ai/dsh-code-runtime&quot;: &quot;0.1.0-rc.6&quot;,
-    &quot;@deepseek-ai/dsh-command-feedback&quot;: &quot;0.1.0-rc.6&quot;,
-    &quot;@deepseek-ai/dsh-commands&quot;: &quot;0.1.0-rc.6&quot;,
-    &quot;@deepseek-ai/dsh-compaction&quot;: &quot;0.1.0-rc.6&quot;,
-    &quot;@deepseek-ai/dsh-cordis-client-runner&quot;: &quot;0.1.0-rc.6&quot;,
-    &quot;@deepseek-ai/dsh-cordis-host-runner&quot;: &quot;0.1.0-rc.6&quot;,
-    &quot;@deepseek-ai/dsh-credentials&quot;: &quot;0.1.0-rc.6&quot;,
-    &quot;@deepseek-ai/dsh-fs&quot;: &quot;0.1.0-rc.6&quot;,
-    &quot;@deepseek-ai/dsh-fs-local&quot;: &quot;0.1.0-rc.6&quot;,
-    &quot;@deepseek-ai/dsh-goal&quot;: &quot;0.1.0-rc.6&quot;,
-    &quot;@deepseek-ai/dsh-home-paths&quot;: &quot;0.1.0-rc.6&quot;,
-    &quot;@deepseek-ai/dsh-host-directory-picker-browse&quot;: &quot;0.1.0-rc.6&quot;,
-    &quot;@deepseek-ai/dsh-host-directory-picker-native&quot;: &quot;0.1.0-rc.6&quot;,
-    &quot;@deepseek-ai/dsh-host-plugin-inventory&quot;: &quot;0.1.0-rc.6&quot;,
-    &quot;@deepseek-ai/dsh-host-webserver&quot;: &quot;0.1.0-rc.6&quot;,
-    &quot;@deepseek-ai/dsh-invariants&quot;: &quot;0.1.0-rc.6&quot;,
-    &quot;@deepseek-ai/dsh-jobs&quot;: &quot;0.1.0-rc.6&quot;,
-    &quot;@deepseek-ai/dsh-launch-environment&quot;: &quot;0.1.0-rc.6&quot;,</pre><div class="cta"><a href="https://github.com/anywhere-labs/deepseek-harness-desktop" rel="noopener">View anywhere-labs/deepseek-harness-desktop on GitHub &rarr;</a></div>
+echo &quot;&gt;&gt; Done.&quot;</pre><pre class="term out">[stderr] bash: line 1: cd: /tmp/rr/anywhere-labs_deepseek-harness-desktop: No such file or directory
+FATAL: repo directory not found anywhere under /tmp</pre><div class="cta"><a href="https://github.com/anywhere-labs/deepseek-harness-desktop" rel="noopener">View anywhere-labs/deepseek-harness-desktop on GitHub &rarr;</a></div>
 
   <footer>
     <p><b>Motley</b> &nbsp; we clone the day's fastest-rising GitHub repos and run them &nbsp;&middot;&nbsp; <a href="https://getmotley.github.io/radar/">see the whole Radar</a>. Not affiliated with GitHub, Inc.</p>

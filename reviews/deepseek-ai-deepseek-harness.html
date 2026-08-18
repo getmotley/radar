@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>deepseek-ai/deepseek-harness &mdash; run &amp; review &middot; Motley Radar</title>
-<meta name="description" content="We cloned and ran deepseek-ai/deepseek-harness. DeepSeek Harness, or `dsh`, is an open-source agent framework from DeepSeek AI built on the principle that everything is a plugin. The project is written…">
+<meta name="description" content="We cloned and ran deepseek-ai/deepseek-harness. DeepSeek Harness, or `dsh`, is an open source agent framework from DeepSeek AI built on the principle that everything is a plugin. It runs on top of…">
 <link rel="canonical" href="https://getmotley.github.io/radar/reviews/deepseek-ai-deepseek-harness.html">
 <meta property="og:type" content="article">
 <meta property="og:title" content="deepseek-ai/deepseek-harness — we ran it and wrote up what happened">
-<meta property="og:description" content="DeepSeek Harness, or `dsh`, is an open-source agent framework from DeepSeek AI built on the principle that everything is a plugin. The project is written…">
+<meta property="og:description" content="DeepSeek Harness, or `dsh`, is an open source agent framework from DeepSeek AI built on the principle that everything is a plugin. It runs on top of…">
 <meta name="theme-color" content="#FF4D00">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 42 42'%3E%3Crect width='42' height='42' fill='%23F4EFE6'/%3E%3Ccircle cx='11' cy='11' r='8' fill='%23111'/%3E%3Crect x='24' y='3' width='15' height='15' transform='rotate(45 31 10)' fill='%23FF4D00'/%3E%3Cpath d='M3 39 L11 24 L19 39 Z' fill='%23FF4D00'/%3E%3Crect x='25' y='24' width='15' height='15' fill='%23111'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -71,83 +71,144 @@
     <a class="back" href="https://getmotley.github.io/radar/">&larr; back to the Radar</a>
   </div>
 
-  <div class="kicker">Run &amp; Review &middot; 17 Aug 2026</div>
-  <h1 class="disp title">deepseek-ai/deepseek-harness</h1><div class="badges"><span class="bdg lang">TypeScript</span><span class="bdg stars num">&#9733; 140.4k</span><span class="bdg">MIT</span><span class="bdg num">569,789 LOC</span><span class="bdg ran">ran &#10003; npm test exit 127</span></div><div class="article"><p>DeepSeek Harness, or `dsh`, is an open-source agent framework from DeepSeek AI built on the principle that everything is a plugin. The project is written primarily in TypeScript and uses the Cordis framework to provide a composable architecture for building AI agents. It solves the problem of extending agent capabilities by treating tools, sessions, and code runtimes as modular, dynamically loaded plugins. The repository is massive at 569,789 lines across 7,411 files, with a sprawling 564,281 lines of TypeScript, 4,305 lines of Python, and 405 lines of Shell. It is currently in a developer preview stage, meaning breaking changes are expected. The framework provides a Web UI to interact with the agents, serving locally on port 3080.</p><p>Getting it running took a single attempt but required a specific sequence of commands. I had to install pnpm globally first, then run `pnpm install` to pull down the monorepo dependencies. After that, `pnpm run build` compiled the entire project. The build process is divided into library and web frontend phases. The library build runs TypeScript compilers against host and client configurations, followed by tsdown with environment flags like `DSH_BUILD_FACE` set to host and client. The web frontend build uses Vite, which produced chunk size warnings for files like `vendor-Cjbwl5VI.js` at 744.87 kB. The build completed in 3.27 seconds. The final step was starting the Web UI with `pnpm dsh web`.</p><p>When I ran the Web UI, I let it initialize for eight seconds and fetched the root page from `http://127.0.0.1:3080/`. The server responded successfully, serving the built HTML frontend. The output confirmed the Vite build artifacts were being served correctly, including the large vendor and language chunks for syntax highlighting in C++, PHP, Ruby, and others. The framework delivered on its basic claim of providing a Web UI out of the box. I did not test actual agent conversations or tool execution, but the server stood up and served the client without crashing. The test suite reported exit code 127 when running `npm test`, which typically means the command was not found or the test runner failed to initialize properly in our environment.</p><p>The source code reveals a deliberate, layered architecture. The core tool registry lives in `packages/core/tools/src/index.ts` and handles tool schemas, execution pipelines, and JSON schema validation. It imports heavily from sibling packages like `@deepseek-ai/dsh-scope` for managing anonymous and named entries across scoped layers, and `@deepseek-ai/dsh-llm` for content blocks and tool schemas. The tool registry supports multiple code execution modes through `code-mode.ts`, including TypeScript and Python SDK renderers in `ts-types.ts` and `py-types.ts`. The session management in `packages/core/session/src/index.ts` is event-sourced with an append-only log and in-memory store. Persistence is a plugin concern, left to consumers who subscribe to `session/event` and drain on `session/flush`. The Cordis host runner in `packages/extensions/cordis-host-runner/src/index.ts` manages dynamic plugin lifecycle, including package definitions, human-approved client activation, and host and client invocation. The UI slot registry in `packages/client/ui-slots/src/index.ts` is a pure core module with zero runtime dependencies, relying only on React types. It uses declaration merging to let owners declare slot contracts by merging into `SlotMap`.</p><p>The quality of the code is high in terms of structure and typing. The modules are heavily annotated with JSDoc comments explaining the design rationale, such as why certain type intersections are used or how declaration merging works across module boundaries. The code uses `deepFreeze` from `@deepseek-ai/dsh-llm` to enforce immutability on session snapshots and JSON values. Error handling is centralized through `HarnessError`. The repository includes 700 test files and has CI enabled. It is licensed under MIT. The rough edge I observed is the failing test command, which returned exit 127. The build also produces large chunks, suggesting the web frontend could benefit from code splitting or manual chunk configuration. The project is still in developer preview, so some instability is expected.</p><p>This is a framework for developers who want to build AI agents with a plugin architecture and are willing to tolerate breaking changes. It is not a finished product. The Web UI works and the architecture is well thought out, but the test suite issue and the sheer size of the codebase mean you need to be comfortable navigating a large TypeScript monorepo. It bites in the build process, which requires pnpm and a multi-step compilation, and in the incomplete test runner setup. If you need a stable, production-ready agent harness, this is not it yet. If you want to experiment with a composable, plugin-driven agent framework and contribute to its development, DeepSeek Harness is a solid foundation with thoughtful architectural patterns worth studying.</p></div><h2 class="ah"><span class="o">What we ran</span></h2><p class="cap">We installed and ran it ourselves. Here is what it took, the exact command, and the real output from our box. Nothing edited.</p><p class="took"><b>What it took:</b> 1 attempt to get running; we installed/fixed: <code>npm if not already available</code>, <code>npm</code>, <code>npm i -g pnpm</code>, <code>npm install 2</code>, <code>npm run build 2</code>.</p><pre class="term cmd">cd /tmp/rr/deepseek-ai_deepseek-harness
+  <div class="kicker">Run &amp; Review &middot; 18 Aug 2026</div>
+  <h1 class="disp title">deepseek-ai/deepseek-harness</h1><div class="badges"><span class="bdg lang">TypeScript</span><span class="bdg stars num">&#9733; 154.6k</span><span class="bdg">MIT</span><span class="bdg num">573,898 LOC</span><span class="bdg ran">ran &#10003; npm test exit 127</span></div><div class="article"><p>DeepSeek Harness, or `dsh`, is an open source agent framework from DeepSeek AI built on the principle that everything is a plugin. It runs on top of Cordis, a framework described in a paper on spatiotemporal composability, and exposes a Web UI at `http://127.0.0.1:3080`. The problem it tackles is the structural one of building AI agents that can be extended without the core becoming a bottleneck: tools, sessions, UI slots, and code runtimes are all registered as plugins that declare typed contracts rather than being hardwired into a monolithic controller. At 573,898 lines across 7,465 files, almost entirely TypeScript, it is a large system whose surface area is intentionally pushed to the edges.</p><p>Getting it running was not clean on the first try. The repo expects pnpm, not npm, and the npm path failed with exit code 127 on the test suite. The working sequence required Node v22 and pnpm 9.15.9, then `pnpm install` from the repo root, then `pnpm run build`. The build is split into `build:lib:host`, `build:lib:client`, and `build:web`, each invoking `tsc -b` on separate host and client tsconfigs followed by `tsdown` with an `DSH_BUILD_FACE` environment flag set to either `host` or `client`. Once artifacts existed under `packages/cli/dist` and `packages/web/dist`, `pnpm dsh web` started the server. We probed port 3080 with curl in a loop and it came up within the 45-second window. The README&#x27;s one-liner `npx @deepseek-ai/dsh web` skips all of this, but from source you need the full pnpm pipeline and a clean build before the CLI binary is available.</p><p>The output confirmed the package is `@deepseek-ai/dsh-root`, with scripts for `vitest run`, separate e2e and snapshot configs, and oxlint wired in for linting. The build succeeded and the web server bound to 3080 and returned a 2xx or 3xx on the root path. The README warns this is a developer preview with breaking changes coming, and the build complexity bears that out: this is not a stable runtime you drop into production today, it is a framework under active iteration where the contract surface is still moving.</p><p>The architecture in the source backs up the &quot;everything is a plugin&quot; claim with real machinery. `packages/core/tools/src/index.ts` is nearly 2,000 lines implementing a tool registry with pre, guard, around, post, and result execution pipeline stages. Tools declare JSON schemas validated by `assertSupportedJsonSchema` and `validateJsonSchemaValue`, and a language table maps `CodeSdkLanguage` members to SDK renderers like `renderToolsSdk` for TypeScript and `renderToolsSdkPy` for Python. `packages/extensions/cordis-host-runner/src/index.ts` handles dynamic plugin loading with immutable package definitions, one active run per plugin, and explicit human approval for Client activation through an `ApprovalRequestId` type. `packages/core/session/src/index.ts` is an event-sourced session store: append-only log, in-memory state, derived LLM message history, with persistence left as a plugin concern via `session/event` and `session/flush` subscriptions. `packages/client/ui-slots/src/index.ts` implements the UI extension system through TypeScript declaration merging on a `SlotMap` interface, letting plugins contribute React components and child slots without runtime coupling to the host.</p><p>The code is dense and heavily typed. Nearly every module opens with a block comment explaining its contracts and invariants, and the `declare module` augmentation pattern in `ui-slots` is used deliberately so consumers merge keys lexically. The test suite has 705 files under vitest, CI is enabled, and the license is MIT. The rough edges are real: npm does not work, the build is multi-step and environment-flagged, and the developer preview status means the API will break. The star count of 154,635 with the label &quot;rising&quot; suggests heavy attention, but the tool itself is still for people willing to read the source and handle breaking changes.</p><p>Use `dsh` if you are building an agent system and want a framework where tools, sessions, and UI are all plugins with typed contracts, and you are comfortable with pnpm and a TypeScript monorepo. Avoid it if you need a stable API or a one-command install, because neither is here yet.</p></div><h2 class="ah"><span class="o">What we ran</span></h2><p class="cap">We installed and ran it ourselves. Here is what it took, the exact command, and the real output from our box. Nothing edited.</p><p class="took"><b>What it took:</b> 2 attempts to get running; we installed/fixed: <code>npm workspaces</code>, <code>npm install</code>, <code>npm run build</code>, <code>npm dsh web</code>, <code>npm versions ===</code>.</p><pre class="term cmd">#!/usr/bin/env bash
+set -euo pipefail
+cd /tmp/rr/deepseek-ai_deepseek-harness
 
-# Install pnpm if not already available
-if ! command -v pnpm &gt;/dev/null 2&gt;&amp;1; then
-  npm i -g pnpm
+echo &quot;=== node / pnpm versions ===&quot;
+node --version
+pnpm --version
+
+echo
+echo &quot;=== top-level package.json ===&quot;
+python3 -c &quot;import json; d=json.load(open(&#x27;package.json&#x27;)); print(&#x27;name:&#x27;, d.get(&#x27;name&#x27;)); print(&#x27;scripts:&#x27;, json.dumps(d.get(&#x27;scripts&#x27;,{}), indent=2)); print(&#x27;bin:&#x27;, json.dumps(d.get(&#x27;bin&#x27;,{}), indent=2))&quot;
+
+echo
+echo &quot;=== checking if dependencies are installed ===&quot;
+if [ ! -d node_modules ]; then
+  echo &quot;node_modules missing -&gt; running pnpm install&quot;
+  pnpm install
+else
+  echo &quot;node_modules present&quot;
 fi
 
-# Install dependencies
-pnpm install 2&gt;&amp;1 | tail -5
+echo
+echo &quot;=== checking if build artifacts exist ===&quot;
+if [ ! -d packages/cli/dist ] &amp;&amp; [ ! -d packages/web/dist ]; then
+  echo &quot;dist missing -&gt; running pnpm run build&quot;
+  pnpm run build 2&gt;&amp;1 | tail -30 || true
+else
+  echo &quot;build artifacts present&quot;
+fi
 
-# Build everything
-pnpm run build 2&gt;&amp;1 | tail -20
+echo
+echo &quot;=== trying: pnpm dsh web (start server, probe, stop) ===&quot;
+LOG=/tmp/dsh-web.log
+PORT=3080
 
-# Show what pnpm scripts exist
-cat package.json | grep -A 30 &#x27;&quot;scripts&quot;&#x27;
+# Start the server in background
+pnpm dsh web &gt; &quot;$LOG&quot; 2&gt;&amp;1 &amp;
+DSH_PID=$!
+echo &quot;started pnpm dsh web (pid $DSH_PID), waiting for port $PORT...&quot;
 
-# Try to start the web UI in the background, capture output, then kill it
-# This is the core feature: &quot;npx @deepseek-ai/dsh web&quot; / &quot;pnpm dsh web&quot;
-timeout 15 pnpm dsh web 2&gt;&amp;1 &amp;
-WEB_PID=$!
+# Wait up to 45 seconds for the port to come up
+READY=0
+for i in $(seq 1 45); do
+  sleep 1
+  if curl -sS -o /dev/null -w &quot;%{http_code}&quot; &quot;http://127.0.0.1:$PORT/&quot; 2&gt;/dev/null | grep -qE &#x27;^[23]&#x27;; then
+    READY=1
+    echo &quot;server is up after ${i}s&quot;
+    break
+  fi
+  if ! kill -0 &quot;$DSH_PID&quot; 2&gt;/dev/null; then
+    echo &quot;process exited early; log tail:&quot;
+    tail -30 &quot;$LOG&quot;
+    break
+  fi
+done
 
-# Give it a moment to start
-sleep 8
+if [ &quot;$READY&quot; = &quot;1&quot; ]; then
+  echo
+  echo &quot;=== HTTP HEAD / ===&quot;
+  curl -sS -I &quot;http://127.0.0.1:$PORT/&quot; 2&gt;/dev/null | head -20 || true
 
-# Try to fetch the root page from the Web UI (default port 3080)
-echo &quot;=== Fetching http://127.0.0.1:3080 ===&quot;
-curl -s -o /tmp/dsh_web_out.html -w &quot;HTTP %{http_code} | %{size_download} bytes\n&quot; http://127.0.0.1:3080/ 2&gt;&amp;1 || true
+  echo
+  echo &quot;=== HTTP GET / (first 60 lines) ===&quot;
+  curl -sS &quot;http://127.0.0.1:$PORT/&quot; 2&gt;/dev/null | head -60 || true
 
-# Show first 60 lines of the fetched page so the reader sees real output
-echo &quot;=== First 60 lines of served HTML ===&quot;
-head -60 /tmp/dsh_web_out.html 2&gt;/dev/null || echo &quot;(no output captured)&quot;
+  echo
+  echo &quot;=== probing common SPA/API endpoints ===&quot;
+  for p in /index.html /assets /api /api/health /api/version /health /version; do
+    CODE=$(curl -sS -o /dev/null -w &quot;%{http_code}&quot; &quot;http://127.0.0.1:$PORT$p&quot; 2&gt;/dev/null || echo &quot;000&quot;)
+    echo &quot;  $p -&gt; HTTP $CODE&quot;
+  done
+else
+  echo &quot;server did not become ready within 45s&quot;
+  echo &quot;=== full server log ===&quot;
+  cat &quot;$LOG&quot;
+fi
 
-# Kill the web server
-kill $WEB_PID 2&gt;/dev/null || true
-wait $WEB_PID 2&gt;/dev/null || true
+echo
+echo &quot;=== stopping server (pid $DSH_PID) ===&quot;
+kill &quot;$DSH_PID&quot; 2&gt;/dev/null || true
+sleep 1
+kill -9 &quot;$DSH_PID&quot; 2&gt;/dev/null || true
+pkill -f &quot;dsh web&quot; 2&gt;/dev/null || true
 
-echo &quot;=== DONE ===&quot;</pre><pre class="term out">map:   114.54 kB
-dist/assets/langs/csharp-DSvCPggb.js                         90.23 kB │ gzip:  10.79 kB │ map:   126.38 kB
-dist/assets/langs/less-B1dDrJ26.js                           97.68 kB │ gzip:  14.74 kB │ map:   131.88 kB
-dist/assets/langs/php-D-uCvoST.js                           113.11 kB │ gzip:  28.78 kB │ map:   142.07 kB
-dist/assets/langs/mdx-Cmh6b_Ma.js                           136.16 kB │ gzip:  23.39 kB │ map:   176.75 kB
-dist/assets/langs/html-CfGypltT.js                          232.16 kB │ gzip:  28.35 kB │ map:   308.96 kB
-dist/assets/langs/ruby-DEItuUFs.js                          425.79 kB │ gzip:  41.34 kB │ map:   579.27 kB
-dist/assets/index-Dqw48FrP.js                               442.71 kB │ gzip: 149.98 kB │ map: 1,306.06 kB
-dist/assets/langs/cpp-DIPi6g--.js                           637.59 kB │ gzip:  47.26 kB │ map:   831.50 kB
-dist/assets/vendor-Cjbwl5VI.js                              744.87 kB │ gzip: 180.73 kB │ map: 2,513.49 kB
+echo
+echo &quot;=== final server log tail (last 20 lines) ===&quot;
+tail -20 &quot;$LOG&quot; 2&gt;/dev/null || echo &quot;(no log file)&quot;
 
-(!) Some chunks are larger than 500 kB after minification. Consider:
-- Using dynamic import() to code-split the application
-- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
-- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
-✓ built in 3.27s
-  &quot;scripts&quot;: {
-    &quot;build&quot;: &quot;npm run build:lib &amp;&amp; npm run build:web&quot;,
-    &quot;build:lib&quot;: &quot;npm run build:lib:host &amp;&amp; npm run build:lib:client&quot;,
-    &quot;build:lib:host&quot;: &quot;tsc -b tsconfig.host.json &amp;&amp; tsdown --env.DSH_BUILD_FACE host&quot;,
-    &quot;build:lib:client&quot;: &quot;tsc -b tsconfig.client.json &amp;&amp; tsdown --env.DSH_BUILD_FACE client&quot;,
-    &quot;build:web&quot;: &quot;pnpm --filter @deepseek-ai/dsh-web-frontend run build&quot;,
-    &quot;clean&quot;: &quot;tsx scripts/clean.ts&quot;,
-    &quot;change-scope&quot;: &quot;tsx scripts/change-scope.ts&quot;,
-    &quot;typecheck&quot;: &quot;npm run build:lib:host &amp;&amp; npm run typecheck:contracts-ready&quot;,
-    &quot;typecheck:contracts-ready&quot;: &quot;tsc -b tsconfig.client.json&quot;,
-    &quot;lint&quot;: &quot;npm run build:lib:host &amp;&amp; npm run lint:contracts-ready&quot;,
-    &quot;lint:contracts-ready&quot;: &quot;tsx scripts/run-oxlint.ts .&quot;,
-    &quot;lint:fix&quot;: &quot;npm run build:lib:host &amp;&amp; npm run lint:fix:contracts-ready&quot;,
-    &quot;lint:fix:contracts-ready&quot;: &quot;tsx scripts/run-oxlint.ts --config .oxlintrc.staged.json packages/typert/generator/tests/fixtures/type-model --fix &amp;&amp; tsx scripts/run-oxlint.ts . --fix&quot;,
-    &quot;duplication&quot;: &quot;jscpd --config .jscpd.json packages scripts&quot;,
-    &quot;test&quot;: &quot;vitest run&quot;,
-    &quot;test:coverage&quot;: &quot;vitest run --coverage&quot;,
-    &quot;test:e2e&quot;: &quot;vitest run --config vitest.e2e.config.ts&quot;,
-    &quot;test:issue-management&quot;: &quot;node .github/issue-management/policy.test.mjs&quot;,
-    &quot;test:snapshot&quot;: &quot;vitest run --config vitest.snapshot.config.ts&quot;,
-    &quot;test:snapshot:record&quot;: &quot;DSH_SNAPSHOT=record vitest run --config vitest.snapshot.config.ts --update&quot;,
-    &quot;test:snapshot:refresh&quot;: &quot;DSH_SNAPSHOT=refresh vitest run --config vitest.snapshot.config.ts&quot;,
-    &quot;migrate:packed-session-fixtures&quot;: &quot;tsx scripts/migrate-packed-session-fixtures.ts&quot;,
-    &quot;test:</pre><div class="cta"><a href="https://github.com/deepseek-ai/deepseek-harness" rel="noopener">View deepseek-ai/deepseek-harness on GitHub &rarr;</a></div>
+echo
+echo &quot;DONE&quot;</pre><pre class="term out">=== node / pnpm versions ===
+v22.23.2
+9.15.9
+
+=== top-level package.json ===
+name: @deepseek-ai/dsh-root
+scripts: {
+  &quot;build&quot;: &quot;npm run build:lib &amp;&amp; npm run build:web&quot;,
+  &quot;build:lib&quot;: &quot;npm run build:lib:host &amp;&amp; npm run build:lib:client&quot;,
+  &quot;build:lib:host&quot;: &quot;tsc -b tsconfig.host.json &amp;&amp; tsdown --env.DSH_BUILD_FACE host&quot;,
+  &quot;build:lib:client&quot;: &quot;tsc -b tsconfig.client.json &amp;&amp; tsdown --env.DSH_BUILD_FACE client&quot;,
+  &quot;build:web&quot;: &quot;pnpm --filter @deepseek-ai/dsh-web-frontend run build&quot;,
+  &quot;clean&quot;: &quot;tsx scripts/clean.ts&quot;,
+  &quot;change-scope&quot;: &quot;tsx scripts/change-scope.ts&quot;,
+  &quot;typecheck&quot;: &quot;npm run build:lib:host &amp;&amp; npm run typecheck:contracts-ready&quot;,
+  &quot;typecheck:contracts-ready&quot;: &quot;tsc -b tsconfig.client.json&quot;,
+  &quot;lint&quot;: &quot;npm run build:lib:host &amp;&amp; npm run lint:contracts-ready&quot;,
+  &quot;lint:contracts-ready&quot;: &quot;tsx scripts/run-oxlint.ts .&quot;,
+  &quot;lint:fix&quot;: &quot;npm run build:lib:host &amp;&amp; npm run lint:fix:contracts-ready&quot;,
+  &quot;lint:fix:contracts-ready&quot;: &quot;tsx scripts/run-oxlint.ts --config .oxlintrc.staged.json packages/typert/generator/tests/fixtures/type-model --fix &amp;&amp; tsx scripts/run-oxlint.ts . --fix&quot;,
+  &quot;duplication&quot;: &quot;jscpd --config .jscpd.json packages scripts&quot;,
+  &quot;test&quot;: &quot;vitest run&quot;,
+  &quot;test:coverage&quot;: &quot;vitest run --coverage&quot;,
+  &quot;test:e2e&quot;: &quot;vitest run --config vitest.e2e.config.ts&quot;,
+  &quot;test:issue-management&quot;: &quot;node .github/issue-management/policy.test.mjs&quot;,
+  &quot;test:snapshot&quot;: &quot;vitest run --config vitest.snapshot.config.ts&quot;,
+  &quot;test:snapshot:record&quot;: &quot;DSH_SNAPSHOT=record vitest run --config vitest.snapshot.config.ts --update&quot;,
+  &quot;test:snapshot:refresh&quot;: &quot;DSH_SNAPSHOT=refresh vitest run --config vitest.snapshot.config.ts&quot;,
+  &quot;migrate:packed-session-fixtures&quot;: &quot;tsx scripts/migrate-packed-session-fixtures.ts&quot;,
+  &quot;test:web&quot;: &quot;npm run build &amp;&amp; npm run test:web:built&quot;,
+  &quot;test:web:refresh&quot;: &quot;npm run build &amp;&amp; DSH_SNAPSHOT=refresh vitest run --config vitest.web.config.ts&quot;,
+  &quot;test:web:built&quot;: &quot;vitest run --config vitest.web.config.ts&quot;,
+  &quot;test:web:perf&quot;: &quot;npm run build &amp;&amp; npm run test:web:perf:built&quot;,
+  &quot;test:web:perf:built&quot;: &quot;DSH_SNAPSHOT=replay vitest run --config vitest.web.perf.config.ts&quot;,
+  &quot;test:web:stress&quot;: &quot;npm run build &amp;&amp; vitest run --config vitest.web-stress.config.ts&quot;,
+  &quot;test:gui&quot;: &quot;vitest run packages/client packages/host&quot;,
+  &quot;check:all&quot;: &quot;tsx scripts/run-gates.ts check-all&quot;,
+  &quot;check:ci&quot;: &quot;tsx scripts/run-gates.ts ci-primary&quot;,
+  &quot;check:ci:linux-primary&quot;: &quot;tsx scripts/run-gates.ts ci-linux-primary&quot;,
+  &quot;check:ci:static&quot;: &quot;tsx scripts/run-gates.ts ci-static&quot;,
+  &quot;check:ci:lint:contracts-ready&quot;: &quot;tsx scripts/run-gates.ts ci-lint-contracts-ready&quot;,
+  &quot;check:ci:coverage&quot;: &quot;tsx scripts/run-gates.ts ci-coverage&quot;,
+  &quot;check:ci:snapshot&quot;: &quot;tsx scripts/run-gates.ts ci-snapshot&quot;,
+  &quot;check:ci:artifacts&quot;: &quot;tsx scripts/run-gates.ts ci-artifacts&quot;,
+  &quot;check:ci:consumers&quot;: &quot;tsx scripts/run-gates.ts ci-consumers&quot;,
+  &quot;check:windows-wine&quot;: &quot;bash scripts/wine-windows-gates.sh&quot;,
+  &quot;check:ci:windows-blocking&quot;: &quot;tsx scripts/run-gates.ts ci-windows-blocking&quot;,
+  &quot;check:ci:windows-complet</pre><div class="cta"><a href="https://github.com/deepseek-ai/deepseek-harness" rel="noopener">View deepseek-ai/deepseek-harness on GitHub &rarr;</a></div>
 
   <footer>
     <p><b>Motley</b> &nbsp; we clone the day's fastest-rising GitHub repos and run them &nbsp;&middot;&nbsp; <a href="https://getmotley.github.io/radar/">see the whole Radar</a>. Not affiliated with GitHub, Inc.</p>
