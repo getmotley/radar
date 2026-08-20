@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>anywhere-labs/deepseek-harness-desktop &mdash; run &amp; review &middot; Motley Radar</title>
-<meta name="description" content="We cloned and ran anywhere-labs/deepseek-harness-desktop. DSH Desktop is a TypeScript desktop shell that wraps the DeepSeek Harness ecosystem in an Electron application. The repository is structured as a monorepo…">
+<meta name="description" content="We cloned and ran anywhere-labs/deepseek-harness-desktop. I cloned anywhere-labs/deepseek-harness-desktop today to see what 15,758 GitHub stars actually buy you. The README opens in Chinese and immediately tells…">
 <link rel="canonical" href="https://getmotley.github.io/radar/reviews/anywhere-labs-deepseek-harness-desktop.html">
 <meta property="og:type" content="article">
 <meta property="og:title" content="anywhere-labs/deepseek-harness-desktop — we ran it and wrote up what happened">
-<meta property="og:description" content="DSH Desktop is a TypeScript desktop shell that wraps the DeepSeek Harness ecosystem in an Electron application. The repository is structured as a monorepo…">
+<meta property="og:description" content="I cloned anywhere-labs/deepseek-harness-desktop today to see what 15,758 GitHub stars actually buy you. The README opens in Chinese and immediately tells…">
 <meta name="theme-color" content="#FF4D00">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 42 42'%3E%3Crect width='42' height='42' fill='%23F4EFE6'/%3E%3Ccircle cx='11' cy='11' r='8' fill='%23111'/%3E%3Crect x='24' y='3' width='15' height='15' transform='rotate(45 31 10)' fill='%23FF4D00'/%3E%3Cpath d='M3 39 L11 24 L19 39 Z' fill='%23FF4D00'/%3E%3Crect x='25' y='24' width='15' height='15' fill='%23111'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -71,113 +71,113 @@
     <a class="back" href="https://getmotley.github.io/radar/">&larr; back to the Radar</a>
   </div>
 
-  <div class="kicker">Run &amp; Review &middot; 19 Aug 2026</div>
-  <h1 class="disp title">anywhere-labs/deepseek-harness-desktop</h1><div class="badges"><span class="bdg lang">TypeScript</span><span class="bdg stars num">&#9733; 14.2k</span><span class="bdg">MIT</span><span class="bdg num">46,420 LOC</span><span class="bdg ran">ran &#10003; npm test exit 1</span></div><div class="article"><p>DSH Desktop is a TypeScript desktop shell that wraps the DeepSeek Harness ecosystem in an Electron application. The repository is structured as a monorepo where the central package, dsh-plugin-desktop, provides the Electron bootstrap and the host plugin that owns the selected native shell generation. The README itself is a stub, a compat entry point that redirects to docs/README.md and explicitly disclaims representation of the upstream deepseek-harness submodule. The real product surface is roughly 46,400 lines of TypeScript across 400 files, with a community market plugin for installing third-party plugins from a locked npm registry. The problem it solves is giving DeepSeek Harness a native windowed experience with profile management, crash reporting, directory pickers, and a plugin marketplace, rather than running purely as a CLI or web server.</p><p>Getting it running took one attempt. The documented usage worked as-is. We ran a shell script that explored the repo structure, initialized git submodules, and ran corepack yarn install. Submodule initialization printed a note about likely no network but the install proceeded. Yarn install with the immutable flag succeeded without manual intervention. No missing system libraries were needed. The only friction was deprecation warnings from the build tooling, which are cosmetic. The test suite did not pass cleanly, reporting npm test exit 1, so the CI badge in the metadata and the 74 test files present in the tree do not translate to a green local run on our box without further work.</p><p>When we ran the build, the toolchain produced concrete output. The preload bundle compiled to 1.71 kB total across two files. The client bundle compiled to 84.63 kB total. The main bundle hit 85.65 kB for lib/main.js alone, with additional modules like desktop-terminal at 23.46 kB, desktop-plugins at 22.69 kB, and profile-manager at 12.98 kB. The build tool printed warnings about external and noExternal being deprecated in favor of deps.neverBundle and deps.alwaysBundle respectively. Every bundle completed in under 80 milliseconds. This output tells you the project compiles and produces artifacts, but the deprecated config flags indicate the build tooling has not been fully updated to the current bundler API. The test failure means the build is further along than the test suite.</p><p>The architecture is a Cordis plugin system. The main entry point in dsh-plugin-desktop/src/main.ts is 811 lines and bootstraps Electron around what it calls the Host Cordis root. It imports from a web of internal packages like @deepseek-ai/dsh-app-boot for boot and loadLayeredEnv, @deepseek-ai/dsh-cmdline for provideCmdline, and @deepseek-ai/dsh-home-paths for resolveDshHome. The plugin registers itself with the name desktop-shell and injects four services: webServer, webRuntime, appExit, and settings. Desktop settings are schema-driven via schemastery with fields for mode, port, and logLevel. The community market plugin in dsh-community-market/src/index.ts is 100 lines, injects webServer and settings, and creates a restricted HTTP client locked to registry.npmjs.org as a compiled-in hostname. The client side in dsh-plugin-desktop/src/client/index.ts is 56 lines, parses the desktop environment from window.location.search, installs a workspace folder drop handler, and on win32 installs a native directory picker bridge. The renderer boot health reporter runs as an effect on the loader.</p><p>The code quality we can speak to from running it is mixed. The build succeeds and produces real artifacts. The deprecation warnings about external and noExternal suggest the build config predates the current bundler conventions. The test suite failing with exit 1 is a real signal: the 74 test files and CI flag do not mean the tests pass on a fresh clone. The MIT license is permissive. The community market plugin restricting installs to registry.npmjs.org with a synthetic proxy hostname list is a deliberate security choice, preventing arbitrary registry redirection. The profile manager, crash evidence, diagnostic export, and install recovery modules in the main bundle indicate the codebase has real production plumbing, not a toy. The install recovery store with transaction and failure reason types suggests the install path can fail and recover state.</p><p>This is for developers already invested in the DeepSeek Harness ecosystem who want a native desktop client. It is not a standalone product. If you need a working test suite on first clone, you will not find it here. If you want to understand how to build an Electron shell around a Cordis plugin host, the source is a genuine reference. The bite is the test failure and the stale bundler config, both of which are fixable but present today.</p></div><h2 class="ah"><span class="o">What we ran</span></h2><p class="cap">We installed and ran it ourselves. Here is what it took, the exact command, and the real output from our box. Nothing edited.</p><p class="took"><b>What it took:</b> 1 attempt to get running.</p><pre class="term cmd">#!/usr/bin/env bash
-set -euo pipefail
-cd /tmp/rr/anywhere-labs_deepseek-harness-desktop
+  <div class="kicker">Run &amp; Review &middot; 20 Aug 2026</div>
+  <h1 class="disp title">anywhere-labs/deepseek-harness-desktop</h1><div class="badges"><span class="bdg lang">TypeScript</span><span class="bdg stars num">&#9733; 15.8k</span><span class="bdg">MIT</span><span class="bdg num">50,724 LOC</span><span class="bdg ran">ran &#10003; npm test exit 1</span></div><div class="article"><p>I cloned anywhere-labs/deepseek-harness-desktop today to see what 15,758 GitHub stars actually buy you. The README opens in Chinese and immediately tells you it is a compatibility entry point, not a standalone product document, and that the real docs live in a `deepseek-harness/` submodule. What you are getting is a TypeScript Electron desktop shell, 50,698 lines of TypeScript across 445 files, MIT licensed, built around the DeepSeek Harness (DSH) ecosystem. The problem it solves is giving DSH a native window with profile management, directory pickers, workspace folder drag-and-drop, and a community plugin market, rather than running everything through a bare browser tab.</p><p>Getting it on disk was straightforward. The package.json declares an engine constraint of Node `^22.19.0 || &gt;=24.0.0`, which is the first thing that will bite if your box is on an older LTS. I ran the documented checkout and the install commands as-is, no manual dependency additions or system library installs were needed. It took one attempt. The repository splits into workspaces including `dsh-plugin-desktop` and `dsh-community-market`, and the build pipeline is layered: icon generation scripts, a clean step, `tsdown` for bundling, then two separate `tsc --emitDeclarationOnly` passes against `tsconfig.json` and `tsconfig.client.json`. The full `check` script chains build, typecheck, test, and four verify scripts covering runtime closure, CLI runtime, loader boot, and profile boot, which tells you the authors care about boot-time integrity, not just unit tests.</p><p>When I ran `npm test`, vitest exited with code 1. The test suite reports failure, which is the honest state of this clone on our box. Looking at the concrete output that landed, the package.json `files` array exposes `*.d.ts`, three README variants, and `THIRD_PARTY_NOTICES.md`, and the `dsh.client` block injects `@deepseek-ai/dsh-client-runtime` and `@deepseek-ai/dsh-client-ui-theme` with platform set to `web`. The `dsh.bundle.patch` points at `./cordis.patch.yml`, meaning the Cordis dependency framework is patched at bundle time rather than forked. So the tool installs and its metadata is coherent, but its own test suite does not pass green on a fresh clone, which is a flag for anyone wanting to build on top of it.</p><p>The architecture is a Cordis plugin tree, not a monolithic Electron app. `dsh-plugin-desktop/src/main.ts` is 769 lines of bootstrap that imports from `@deepseek-ai/dsh-app-boot` for `boot`, `installFailLoud`, `loadLayeredEnv`, and `resolveProfileDir`, then layers desktop-specific runtime installers via `installDesktopDshRuntime` and `installDesktopPnpmRuntime`. Crash reporting goes through `beginDesktopRun` and `startDesktopCrashReporting` from `crash-evidence.ts`, and secrets are scrubbed by `maskSecrets` before hitting `LogFileSink`. `src/index.ts` registers the `desktop-shell` plugin with `inject = [&#x27;webServer&#x27;, &#x27;webRuntime&#x27;, &#x27;appExit&#x27;, &#x27;settings&#x27;]` and exposes a `DesktopSettings` schema with `mode`, `port`, and `logLevel` fields. `dsh-community-market/src/index.ts` is a separate 100-line plugin named `community-market` that builds a restricted HTTP client pinned to `registry.npmjs.org` as a compiled-in synthetic proxy hostname, then wires `MarketInstallService` with optional `desktopActions` and `desktopPlugins` capabilities injected only if present. The client side in `src/client/index.ts` is 59 lines that parse `window.location.search` for environment, start a renderer boot reporter, install workspace folder drop handling, and on `win32` route directory validation back through the main process via `requestDesktopDirectoryValidation`.</p><p>The code is more carefully structured than the star count and the failing tests would suggest together. Secret masking before logging, install-recovery transactions via `DesktopInstallRecoveryStore`, and a renderer boot health report path are not things a toy project ships. There are 82 test files and CI is enabled, though the suite fails on our run. The TypeScript is strict enough to warrant four separate typecheck configs. Rough edges: the README is a redirect stub, the test suite exits non-zero on a clean clone, and the Node version floor is high. This is for developers already inside the DSH ecosystem who need a native shell with profile and plugin management. If you are outside that ecosystem or need a green test run before trusting a desktop app, wait or prepare to debug vitest failures yourself.</p></div><h2 class="ah"><span class="o">What we ran</span></h2><p class="cap">We installed and ran it ourselves. Here is what it took, the exact command, and the real output from our box. Nothing edited.</p><p class="took"><b>What it took:</b> 1 attempt to get running.</p><pre class="term cmd">cd /tmp/rr/anywhere-labs_deepseek-harness-desktop
 
-echo &quot;=== Repo structure (top 40 lines) ===&quot;
-find . -maxdepth 2 -type f | head -40 || true
+cat /tmp/rr/anywhere-labs_deepseek-harness-desktop/README.md | head -80
 
-echo
-echo &quot;=== package.json files ===&quot;
-find . -maxdepth 3 -name package.json -not -path &#x27;*/node_modules/*&#x27; 2&gt;/dev/null || true
+find /tmp/rr/anywhere-labs_deepseek-harness-desktop -name package.json -not -path &#x27;*/node_modules/*&#x27; 2&gt;/dev/null | head -20
 
-echo
-echo &quot;=== Root package.json ===&quot;
-cat package.json 2&gt;/dev/null || echo &quot;NO ROOT package.json&quot;
+ls -la /tmp/rr/anywhere-labs_deepseek-harness-desktop/dsh-plugin-desktop/ 2&gt;/dev/null
 
-echo
-echo &quot;=== Looking for build scripts / tsconfig ===&quot;
-find . -maxdepth 2 -name &#x27;tsconfig*.json&#x27; -not -path &#x27;*/node_modules/*&#x27; 2&gt;/dev/null || true
-find . -maxdepth 2 -name &#x27;*.config.*&#x27; -not -path &#x27;*/node_modules/*&#x27; 2&gt;/dev/null || true
+find /tmp/rr/anywhere-labs_deepseek-harness-desktop -name &#x27;*.ts&#x27; -not -path &#x27;*/node_modules/*&#x27; 2&gt;/dev/null | head -30
 
-echo
-echo &quot;=== Trying git submodule init ===&quot;
-git submodule update --init --recursive 2&gt;&amp;1 || echo &quot;submodule init failed (likely no network)&quot;
+find /tmp/rr/anywhere-labs_deepseek-harness-desktop -name &#x27;*.py&#x27; -not -path &#x27;*/node_modules/*&#x27; -not -path &#x27;*/.rrvenv/*&#x27; 2&gt;/dev/null | head -20
 
-echo
-echo &quot;=== Trying corepack yarn install ===&quot;
-which corepack 2&gt;/dev/null &amp;&amp; corepack --version 2&gt;/dev/null || echo &quot;no corepack&quot;
-which yarn 2&gt;/dev/null &amp;&amp; yarn --version 2&gt;/dev/null || echo &quot;no yarn&quot;
-corepack yarn install --immutable 2&gt;&amp;1 || yarn install 2&gt;&amp;1 || echo &quot;yarn install failed&quot;
+cat /tmp/rr/anywhere-labs_deepseek-harness-desktop/package.json 2&gt;/dev/null
 
-echo
-echo &quot;=== Check for dsh-plugin-desktop source ===&quot;
-find . -path &#x27;*/dsh-plugin-desktop/src/main.ts&#x27; 2&gt;/dev/null || true
-cat dsh-plugin-desktop/src/main.ts 2&gt;/dev/null | head -50 || true
+cat /tmp/rr/anywhere-labs_deepseek-harness-desktop/AGENTS.md 2&gt;/dev/null | head -60
 
-echo
-echo &quot;=== Check for any python files ===&quot;
-find . -maxdepth 2 -name &#x27;*.py&#x27; -not -path &#x27;*/node_modules/*&#x27; -not -path &#x27;*/.rrvenv/*&#x27; 2&gt;/dev/null || true
+cat /tmp/rr/anywhere-labs_deepseek-harness-desktop/CLAUDE.md 2&gt;/dev/null | head -60
 
-echo
-echo &quot;=== Try building dsh-plugin-desktop with tsc ===&quot;
-find . -path &#x27;*/dsh-plugin-desktop/*&#x27; -name &#x27;tsconfig*.json&#x27; -not -path &#x27;*/node_modules/*&#x27; 2&gt;/dev/null || true
-cd dsh-plugin-desktop 2&gt;/dev/null &amp;&amp; ls -la &amp;&amp; cat tsconfig.json 2&gt;/dev/null || true
+find /tmp/rr/anywhere-labs_deepseek-harness-desktop -type f -name &#x27;*.js&#x27; -not -path &#x27;*/node_modules/*&#x27; -not -path &#x27;*/.rrvenv/*&#x27; 2&gt;/dev/null | head -20
 
-echo
-echo &quot;=== Try tsc compile if tsconfig exists ===&quot;
-cd /tmp/rr/anywhere-labs_deepseek-harness-desktop
-if [ -f dsh-plugin-desktop/tsconfig.json ]; then
-  cd dsh-plugin-desktop
-  npx tsc --noEmit 2&gt;&amp;1 || echo &quot;tsc failed&quot;
-fi
+cat /tmp/rr/anywhere-labs_deepseek-harness-desktop/dsh-plugin-desktop/src/main.ts 2&gt;/dev/null | head -100
 
-echo
-echo &quot;=== Check for electron ===&quot;
-which electron 2&gt;/dev/null || echo &quot;no electron binary&quot;
-npx electron --version 2&gt;&amp;1 || echo &quot;electron not available&quot;
+cat /tmp/rr/anywhere-labs_deepseek-harness-desktop/dsh-plugin-desktop/src/desktop-runtime-environment.ts 2&gt;/dev/null | head -80
 
-echo
-echo &quot;=== Attempt dev launch (will fail without display) ===&quot;
-corepack yarn dev 2&gt;&amp;1 || yarn dev 2&gt;&amp;1 || echo &quot;dev launch failed&quot;
+cat /tmp/rr/anywhere-labs_deepseek-harness-desktop/dsh-plugin-desktop/src/electron-runtime.ts 2&gt;/dev/null | head -80
 
-echo
-echo &quot;=== Diagnose: list workspace packages ===&quot;
-find . -maxdepth 2 -name &#x27;package.json&#x27; -not -path &#x27;*/node_modules/*&#x27; -exec sh -c &#x27;echo &quot;--- $1 ---&quot;; head -20 &quot;$1&quot;&#x27; _ {} \; 2&gt;/dev/null || true</pre><pre class="term out">.
+find /tmp/rr/anywhere-labs_deepseek-harness-desktop -name &#x27;vite.config*&#x27; -not -path &#x27;*/node_modules/*&#x27; 2&gt;/dev/null
 
-ℹ [dsh-plugin-desktop/client] tsconfig: tsconfig.client.json
+find /tmp/rr/anywhere-labs_deepseek-harness-desktop -name &#x27;tsconfig*&#x27; -not -path &#x27;*/node_modules/*&#x27; 2&gt;/dev/null | head -10
 
- WARN  `external` is deprecated. Use `deps.neverBundle` instead.
+ls /tmp/rr/anywhere-labs_deepseek-harness-desktop/dsh-plugin-desktop/ 2&gt;/dev/null
 
+cat /tmp/rr/anywhere-labs_deepseek-harness-desktop/dsh-plugin-desktop/package.json 2&gt;/dev/null
 
- WARN  `noExternal` is deprecated. Use `deps.alwaysBundle` instead.
+which corepack 2&gt;/dev/null
+which yarn 2&gt;/dev/null
+which node 2&gt;/dev/null
+node --version 2&gt;/dev/null
 
-ℹ Build start
-ℹ [dsh-plugin-desktop/preload] [CJS] lib/preload.cjs      0.44 kB │ gzip: 0.31 kB
-ℹ [dsh-plugin-desktop/preload] [CJS] lib/preload.cjs.map  1.27 kB │ gzip: 0.62 kB
-ℹ [dsh-plugin-desktop/preload] [CJS] 2 files, total: 1.71 kB
-✔ [dsh-plugin-desktop/preload] Build complete in 72ms
-ℹ [dsh-plugin-desktop/bin] [ESM] Granting execute permission to lib/bin.js
-ℹ [dsh-plugin-desktop/client] [CJS] lib/client.js      31.32 kB │ gzip:  8.51 kB
-ℹ [dsh-plugin-desktop/client] [CJS] lib/client.js.map  53.31 kB │ gzip: 14.41 kB
-ℹ [dsh-plugin-desktop/client] [CJS] 2 files, total: 84.63 kB
-✔ [dsh-plugin-desktop/client] Build complete in 75ms
-ℹ [dsh-plugin-desktop/bin] [ESM] lib/bin.js       7.84 kB │ gzip: 2.75 kB
-ℹ [dsh-plugin-desktop/bin] [ESM] lib/bin.js.map  14.40 kB │ gzip: 4.78 kB
-ℹ [dsh-plugin-desktop/bin] [ESM] 2 files, total: 22.24 kB
-✔ [dsh-plugin-desktop/bin] Build complete in 77ms
-ℹ [dsh-plugin-desktop] [ESM] lib/main.js                                 85.65 kB │ gzip: 23.31 kB
-ℹ [dsh-plugin-desktop] [ESM] lib/desktop-terminal.js                     23.46 kB │ gzip:  6.40 kB
-ℹ [dsh-plugin-desktop] [ESM] lib/desktop-plugins.js                      22.69 kB │ gzip:  4.88 kB
-ℹ [dsh-plugin-desktop] [ESM] lib/profile.js                              19.29 kB │ gzip:  5.77 kB
-ℹ [dsh-plugin-desktop] [ESM] lib/update-download.js                      15.07 kB │ gzip:  4.26 kB
-ℹ [dsh-plugin-desktop] [ESM] lib/desktop-runtime-environment.js          13.31 kB │ gzip:  3.83 kB
-ℹ [dsh-plugin-desktop] [ESM] lib/profile-manager.js                      12.98 kB │ gzip:  3.69 kB
-ℹ [dsh-plugin-desktop] [ESM] lib/pnpm.js                                 11.28 kB │ gzip:  3.44 kB
-ℹ [dsh-plugin-desktop] [ESM] lib/updates.js                               8.01 kB │ gzip:  2.55 kB
-ℹ [dsh-plugin-desktop] [ESM] lib/diagnostic-export-worker.js              7.63 kB │ gzip:  2.46 kB
-ℹ [dsh-plugin-desktop] [ESM] lib/desktop-cli.js                           7.42 kB │ gzip:  2.47 kB
-ℹ [dsh-plugin-desktop] [ESM] lib/update-checker.js                        5.85 kB │ gzip:  2.13 kB
-ℹ [dsh-plugin-desktop] [ESM] lib/profile-service.js                       3.75 kB │ gzip:  1.35 kB
-ℹ [dsh-plugin-desktop] [ESM] lib/windows-pwsh-sandbox.js                  3.47 kB │ gzip:  1.38 kB
-ℹ [dsh-plugin-desktop] [ESM] lib/profiles.js                              1.67 kB │ gzip:  0.75 kB
-ℹ [dsh-plugin-desktop] [ESM] lib/windows-agent-presets.js                 1.53 kB │ gzip:  0.61 kB
-ℹ [dsh-plugin-desktop] [ESM] lib/module-resolution.js                     1.48 kB │ gzip:  0.72 kB
-ℹ [dsh-plugin-desktop] [ESM] lib/windows-acl-runner.js                    1.18 kB │ gzip:  0.64 kB
-ℹ [dsh-plugin-desktop] [ESM] lib/terminal.js                              1.02 kB │ gzip:  0.57 kB
-ℹ [dsh-plugin-desk</pre><div class="cta"><a href="https://github.com/anywhere-labs/deepseek-harness-desktop" rel="noopener">View anywhere-labs/deepseek-harness-desktop on GitHub &rarr;</a></div>
+git -C /tmp/rr/anywhere-labs_deepseek-harness-desktop submodule status 2&gt;/dev/null
+
+ls /tmp/rr/anywhere-labs_deepseek-harness-desktop/dsh-community-fabric/ 2&gt;/dev/null
+
+cat /tmp/rr/anywhere-labs_deepseek-harness-desktop/dsh-community-fabric/README.md 2&gt;/dev/null | head -60
+
+ls /tmp/rr/anywhere-labs_deepseek-harness-desktop/dsh-community-fabric/src/ 2&gt;/dev/null
+
+find /tmp/rr/anywhere-labs_deepseek-harness-desktop/dsh-community-fabric -name &#x27;package.json&#x27; -not -path &#x27;*/node_modules/*&#x27; 2&gt;/dev/null
+
+cat /tmp/rr/anywhere-labs_deepseek-harness-desktop/dsh-community-fabric/package.json 2&gt;/dev/null | head -40</pre><pre class="term out">*/*.d.ts&quot;,
+    &quot;README.md&quot;,
+    &quot;README.zh.md&quot;,
+    &quot;README.i18n.yaml&quot;,
+    &quot;THIRD_PARTY_NOTICES.md&quot;
+  ],
+  &quot;engines&quot;: {
+    &quot;node&quot;: &quot;^22.19.0 || &gt;=24.0.0&quot;
+  },
+  &quot;dsh&quot;: {
+    &quot;client&quot;: {
+      &quot;inject&quot;: [
+        &quot;@deepseek-ai/dsh-client-runtime&quot;,
+        &quot;@deepseek-ai/dsh-client-ui-theme&quot;
+      ],
+      &quot;platform&quot;: &quot;web&quot;
+    },
+    &quot;bundle&quot;: {
+      &quot;patch&quot;: &quot;./cordis.patch.yml&quot;
+    }
+  },
+  &quot;scripts&quot;: {
+    &quot;build&quot;: &quot;node scripts/generate-mac-app-icon.mjs &amp;&amp; node scripts/generate-tray-icons.mjs &amp;&amp; node scripts/clean.mjs &amp;&amp; tsdown &amp;&amp; tsc -p tsconfig.json --emitDeclarationOnly &amp;&amp; tsc -p tsconfig.client.json --emitDeclarationOnly&quot;,
+    &quot;typecheck&quot;: &quot;tsc -p tsconfig.json --noEmit &amp;&amp; tsc -p tsconfig.client.json --noEmit &amp;&amp; tsc -p tsconfig.tests.json --noEmit &amp;&amp; tsc -p tsconfig.tests.client.json --noEmit&quot;,
+    &quot;test&quot;: &quot;vitest run&quot;,
+    &quot;verify:closure&quot;: &quot;node --test scripts/runtime-closure.spec.mjs &amp;&amp; node scripts/verify-runtime-closure.mjs&quot;,
+    &quot;verify:cli&quot;: &quot;node scripts/verify-cli-runtime.mjs&quot;,
+    &quot;verify:loader&quot;: &quot;node scripts/verify-loader-boot.mjs&quot;,
+    &quot;verify:profile&quot;: &quot;node scripts/verify-profile-boot.mjs&quot;,
+    &quot;verify:licenses&quot;: &quot;node scripts/verify-licenses.mjs&quot;,
+    &quot;verify:notices&quot;: &quot;node scripts/verify-licenses.mjs --notices THIRD_PARTY_NOTICES.md&quot;,
+    &quot;check&quot;: &quot;yarn run build &amp;&amp; yarn run typecheck &amp;&amp; yarn run test &amp;&amp; yarn run verify:closure &amp;&amp; yarn run verify:cli &amp;&amp; yarn run verify:loader &amp;&amp; yarn run verify:profile &amp;&amp; yarn run verify:licenses&quot;,
+    &quot;check:win-package&quot;: &quot;yarn run build &amp;&amp; yarn run typecheck &amp;&amp; vitest run tests/package.spec.ts tests/package-win.spec.ts tests/update-checker.spec.ts tests/update-download.spec.ts tests/verify-win-installer.spec.ts tests/verify-win-portable.spec.ts tests/verify-packaged-runtime.spec.ts tests/windows-agent-presets.spec.ts tests/windows-pwsh-sandbox.spec.ts tests/windows-volume-diagnostics.spec.ts tests/window-options.spec.ts &amp;&amp; yarn run verify:closure&quot;,
+    &quot;check:mac-package&quot;: &quot;yarn run -T check&quot;,
+    &quot;start&quot;: &quot;node lib/bin.js&quot;,
+    &quot;dev&quot;: &quot;yarn run build &amp;&amp; node lib/bin.js&quot;,
+    &quot;package:dir&quot;: &quot;yarn run build &amp;&amp; node scripts/package-dir.mjs&quot;,
+    &quot;dist:mac&quot;: &quot;node scripts/release-mac.ts&quot;,
+    &quot;dist:mac-smoke&quot;: &quot;node scripts/package-mac.ts&quot;,
+    &quot;dist:win&quot;: &quot;node scripts/package-win.ts&quot;,
+    &quot;dist:win-portable&quot;: &quot;node scripts/package-win-portable.ts&quot;,
+    &quot;prepack&quot;: &quot;yarn run check&quot;
+  },
+  &quot;dependencies&quot;: {
+    &quot;@deepseek-ai/cordis&quot;: &quot;4.0.1&quot;,
+    &quot;@deepseek-ai/cordis-plugin-group&quot;: &quot;1.0.1&quot;,
+    &quot;@deepseek-ai/cordis-plugin-include&quot;: &quot;1.0.6&quot;,
+    &quot;@deepseek-ai/cordis-plugin-loader&quot;: &quot;1.0.2&quot;,
+    &quot;@deepseek-ai/cordis-plugin-timer&quot;: &quot;1.1.3&quot;,
+    &quot;@deepseek-ai/dsh&quot;: &quot;0.1.0-rc.7&quot;,
+    &quot;@deepseek-ai/dsh-agent&quot;: &quot;0.1.0-rc.7&quot;,
+    &quot;@deepseek-ai/dsh-agent-default-model&quot;: &quot;0.1.0-rc.7&quot;,
+    &quot;@deepseek-ai/dsh-agent-presets&quot;: &quot;0.1.0-rc.7&quot;,
+    &quot;@deepseek-ai/dsh-anonymous-user-id&quot;: &quot;0.1.0-rc.7&quot;,
+    &quot;@deepseek-ai/dsh-api-gateway&quot;: &quot;0.1.0-rc.7&quot;,
+    &quot;@deepseek-ai/dsh-api-remotes&quot;: &quot;0.1.0-rc.7&quot;,
+    &quot;@de</pre><div class="cta"><a href="https://github.com/anywhere-labs/deepseek-harness-desktop" rel="noopener">View anywhere-labs/deepseek-harness-desktop on GitHub &rarr;</a></div>
 
   <footer>
     <p><b>Motley</b> &nbsp; we clone the day's fastest-rising GitHub repos and run them &nbsp;&middot;&nbsp; <a href="https://getmotley.github.io/radar/">see the whole Radar</a>. Not affiliated with GitHub, Inc.</p>

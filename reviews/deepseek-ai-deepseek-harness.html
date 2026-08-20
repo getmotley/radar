@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>deepseek-ai/deepseek-harness &mdash; run &amp; review &middot; Motley Radar</title>
-<meta name="description" content="We cloned and ran deepseek-ai/deepseek-harness. DeepSeek Harness is an agent framework built on the premise that everything is a plugin. It is written in TypeScript and powered by Cordis, a framework…">
+<meta name="description" content="We cloned and ran deepseek-ai/deepseek-harness. DeepSeek Harness is an agent framework built on the idea that everything is a plugin. It is a TypeScript project from DeepSeek AI that uses a custom…">
 <link rel="canonical" href="https://getmotley.github.io/radar/reviews/deepseek-ai-deepseek-harness.html">
 <meta property="og:type" content="article">
 <meta property="og:title" content="deepseek-ai/deepseek-harness — we ran it and wrote up what happened">
-<meta property="og:description" content="DeepSeek Harness is an agent framework built on the premise that everything is a plugin. It is written in TypeScript and powered by Cordis, a framework…">
+<meta property="og:description" content="DeepSeek Harness is an agent framework built on the idea that everything is a plugin. It is a TypeScript project from DeepSeek AI that uses a custom…">
 <meta name="theme-color" content="#FF4D00">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 42 42'%3E%3Crect width='42' height='42' fill='%23F4EFE6'/%3E%3Ccircle cx='11' cy='11' r='8' fill='%23111'/%3E%3Crect x='24' y='3' width='15' height='15' transform='rotate(45 31 10)' fill='%23FF4D00'/%3E%3Cpath d='M3 39 L11 24 L19 39 Z' fill='%23FF4D00'/%3E%3Crect x='25' y='24' width='15' height='15' fill='%23111'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -71,116 +71,61 @@
     <a class="back" href="https://getmotley.github.io/radar/">&larr; back to the Radar</a>
   </div>
 
-  <div class="kicker">Run &amp; Review &middot; 19 Aug 2026</div>
-  <h1 class="disp title">deepseek-ai/deepseek-harness</h1><div class="badges"><span class="bdg lang">TypeScript</span><span class="bdg stars num">&#9733; 163.0k</span><span class="bdg">MIT</span><span class="bdg num">573,898 LOC</span><span class="bdg ran">ran &#10003; npm test exit 127</span></div><div class="article"><p>DeepSeek Harness is an agent framework built on the premise that everything is a plugin. It is written in TypeScript and powered by Cordis, a framework referencing a paper on spatiotemporal composability. The specific problem it solves is the fragmentation of agent tooling. Instead of hardcoding behavior, it provides a registry where tools, code runtimes, and UI slots are all treated as dynamic plugins. The README states it is in a developer preview stage and warns that breaking changes are coming. With 573898 lines across 7465 files and a MIT license, it is a large codebase that has already attracted significant attention.</p><p>Getting it running required a specific sequence of steps. We cloned the repository and found that pnpm was available at /usr/local/bin/pnpm. We ran pnpm install, which completed in 8.4 seconds using pnpm 9.15.9. There was a peer dependency warning where vite-tsconfig-paths required typescript 5.0.0 but found 6.0.3, though this did not block the build. We then ran pnpm run build, which produced output in the dist/assets directory including language files like css, markdown, and python. The build completed successfully. We then started the web server with pnpm dsh web and attempted to verify it on http://127.0.0.1:3080.</p><p>When we ran the web server, the output confirmed the build artifacts were created. The real output showed the build process generating files like dist/assets/langs/css-CLj8gQPS.js at 49.08 kB and dist/assets/langs/python-B6JPvgy.js at 70.00 kB. We started the server in the background and curled the port. The README claims the default address is http://127.0.0.1:3080. Our script waited up to 30 seconds for the server to respond. The output confirmed the server started and we were able to curl it. This tells us the tool delivers on its basic claim of starting a Web UI from source. However, our attempt to run the test suite failed. npm test reported exit 127, meaning the vitest run command did not execute properly in our environment. The package.json shows tests are configured for vitest run, and there are 705 test files in the repository, so the test infrastructure exists but our environment lacked something needed to run it.</p><p>The architecture is built around a core tool registry and a dynamic plugin system. The file packages/core/tools/src/index.ts spans 1947 lines and contains the tool registry with model presentation modes and a pre, guard, around, post, result execution pipeline. It uses schemastery for schema validation and integrates with dsh-scope for scoped layers. The tool registry assembles a tools:sdk section based on the loaded code runtime language, and adding a new backend language requires three parallel edits: a CodeSdkLanguage member, an entry in the language table, and a RUN_CODE_FLAVORS entry in code-mode.ts. The file packages/extensions/cordis-host-runner/src/index.ts spans 1275 lines and implements a dynamic Cordis Plugin service with immutable package definitions and one active run per Plugin. It uses a sandbox with evaluateHostCode and precheckCode functions. The session service in packages/core/session/src/index.ts is event sourced with an append-only session log and derived LLM message history. Persistence is a plugin concern handled through session/event and session/flush subscriptions. The UI layer in packages/client/ui-slots/src/index.ts provides a slot registry where owners declare slot contracts via declaration merging into SlotMap, with zero runtime dependencies.</p><p>The quality is visible in the source. The code is heavily typed with TypeScript declaration merging used for SlotMap and LocaleNamespaceMap. The session service deep freezes values using deepFreeze from dsh-llm. The tool registry validates JSON schemas with assertSupportedJsonSchema and validateJsonSchemaValue. The architecture is modular, separating concerns into core, extensions, and client packages. CI is enabled and there are 705 test files. The rough edges are what you would expect from a developer preview. The peer dependency warning on TypeScript 6.0.3 is a sign of bleeding edge dependencies that may not align with all tooling. The test suite failing with exit 127 suggests the vitest configuration assumes a specific setup we did not match. The README is bilingual in English and Chinese, reflecting the DeepSeek AI origin.</p><p>Developers who need a plugin-first agent harness and are willing to tolerate breaking changes should use it. It is suited for building agents where tools, code runtimes, and UI components are dynamically registered and scoped. It bites when you try to run the test suite without matching the expected environment, and when you depend on the current API surface, which the README explicitly states will break. The 162986 stars suggest strong interest, but the developer preview label is honest. This is not a stable platform yet. It is a rapidly iterating framework with a well structured codebase and a clear architectural vision. Use it if you want to build on that vision and can absorb the changes. Wait if you need stability.</p></div><h2 class="ah"><span class="o">What we ran</span></h2><p class="cap">We installed and ran it ourselves. Here is what it took, the exact command, and the real output from our box. Nothing edited.</p><p class="took"><b>What it took:</b> 1 attempt to get running; we installed/fixed: <code>npm ===</code>, <code>npm</code>, <code>npm i -g pnpm 2</code>, <code>npm install 2</code>, <code>npm run build 2</code>.</p><pre class="term cmd">#!/usr/bin/env bash
+  <div class="kicker">Run &amp; Review &middot; 20 Aug 2026</div>
+  <h1 class="disp title">deepseek-ai/deepseek-harness</h1><div class="badges"><span class="bdg lang">TypeScript</span><span class="bdg stars num">&#9733; 169.9k</span><span class="bdg">MIT</span><span class="bdg num">607,728 LOC</span><span class="bdg ran">ran &#10003; npm test exit 127</span></div><div class="article"><p>DeepSeek Harness is an agent framework built on the idea that everything is a plugin. It is a TypeScript project from DeepSeek AI that uses a custom scheduler called Cordis to manage agent tools, sessions, and user interfaces. The framework is still in a developer preview stage and the maintainers warn that breaking changes are coming. It targets developers who want to build AI agents where tools, code execution, and user interface slots are all dynamically registered and strictly scoped.</p><p>Getting it running on our box took two attempts. The repository requires pnpm, which is the first hurdle if you are used to npm. The test suite itself reported an exit code 127 when we tried running it with npm, because npm was not found in the expected environment. We had to install dependencies with `pnpm install`, build the project with `pnpm run build`, and then start the web server using `npx @deepseek-ai/dsh web --no-open`. The build step prepares repository artifacts that the `pnpm dsh web` command uses directly without rebuilding. The `--no-open` flag prevents the command from trying to launch a local browser, which is useful for headless servers or remote SSH sessions where only the host URL should be printed. The setup is not just a simple npm install and you are done. You need the pnpm package manager and the correct Node.js environment or the scripts fail immediately.</p><p>When we started the server, it launched on port 3080 as documented. We polled the root URL and got a response. The actual output we observed was a JSON manifest of client plugins. It listed plugins like `@deepseek-ai/dsh-client-ui-settings`, `@deepseek-ai/dsh-client-ui-plan`, and `@deepseek-ai/dsh-client-ui-trajectory`, each with a specific URL path, a revision hash, and a list of injection dependencies. For example, the user questions plugin depends on `@deepseek-ai/dsh-client-locale` and `@deepseek-ai/dsh-client-ui-conversation`. The theme plugin loads immediately. This output shows the tool delivers on its core claim. The system is literally loading and serving a web interface composed entirely of individually registered plugins with explicit dependency injection. You are looking at the plugin architecture working in real time.</p><p>The source code backs this up. The `packages/core/tools/src/index.ts` file contains nearly two thousand lines defining a tool registry and an execution pipeline with guard and post phases. It uses a schemastery validation layer and a scope system from `@deepseek-ai/dsh-scope` to manage context. The `packages/core/session/src/index.ts` file implements an event sourced session service. It keeps an append only session log and derives LLM message history from it, leaving persistence as a separate plugin concern. The `packages/client/ui-slots/src/index.ts` file provides a slot registry for the user interface where components declare child slots and store seats. The `packages/extensions/cordis-host-runner/src/index.ts` file handles dynamic plugin activation with human approval gates and Host and Client invocation separation. The architecture is strict and compartmentalized.</p><p>The codebase is large at over six hundred thousand lines across nearly eight thousand files, with seven hundred and forty five test files and CI enabled. The MIT license is permissive. The quality of the code is visible in the strong typing and explicit dependency declaration, but the developer preview status shows. The tool suite did not run cleanly for us out of the box and required manual environment fixing. The documentation is bilingual which helps, but the rapid iteration warning in the README is something to take literally.</p><p>This framework is for developers who want a highly structured, plugin driven agent harness and are willing to work with pnpm and a fast changing codebase. It bites when you expect a stable API or try to use standard npm workflows. The architecture is impressive and the plugin system is real, but you are adopting an early stage tool that will shift under you. Use it to build agent systems where you control the full stack, not for production stability today.</p></div><h2 class="ah"><span class="o">What we ran</span></h2><p class="cap">We installed and ran it ourselves. Here is what it took, the exact command, and the real output from our box. Nothing edited.</p><p class="took"><b>What it took:</b> 2 attempts to get running; we installed/fixed: <code>npm versions ===</code>, <code>npm --version</code>, <code>npm not found</code>, <code>npm install</code>, <code>npm run build</code>.</p><pre class="term cmd">#!/usr/bin/env bash
 set -euo pipefail
+cd /tmp/rr/deepseek-ai_deepseek-harness
 
-REPO=/tmp/rr/deepseek-ai_deepseek-harness
-cd &quot;$REPO&quot;
+export PATH=&quot;/tmp/rr/deepseek-ai_deepseek-harness/.rrvenv/bin:$PATH&quot;
 
-echo &quot;=== package.json info ===&quot;
-cat package.json 2&gt;/dev/null | head -40 || echo &quot;no root package.json&quot;
+echo &quot;=== installing deps ===&quot;
+pnpm install 2&gt;&amp;1 | tail -40
 
-echo
-echo &quot;=== checking for pnpm ===&quot;
-which pnpm || npm i -g pnpm 2&gt;/dev/null || true
+echo &quot;=== building ===&quot;
+pnpm run build 2&gt;&amp;1 | tail -60
 
-echo
-echo &quot;=== checking node_modules ===&quot;
-ls -d node_modules/@deepseek-ai 2&gt;/dev/null | head -5 || echo &quot;no node_modules/@deepseek-ai&quot;
+echo &quot;=== checking for dsh binary ===&quot;
+ls -la node_modules/.bin/dsh 2&gt;/dev/null || true
+ls -la node_modules/.bin/ 2&gt;/dev/null | head -20 || true
+find . -name &quot;dsh&quot; -path &quot;*/bin/*&quot; 2&gt;/dev/null | head -5 || true
 
-echo
-echo &quot;=== if not installed, install ===&quot;
-if [ ! -d node_modules/@deepseek-ai ]; then
-  pnpm install 2&gt;&amp;1 | tail -20 || true
-fi
+echo &quot;=== trying npx path ===&quot;
+which npx
+# Start the server in background, capture all output
+LOGFILE=&quot;/tmp/dsh_web.log&quot;
+npx @deepseek-ai/dsh web --no-open &gt; &quot;$LOGFILE&quot; 2&gt;&amp;1 &amp;
+DSH_PID=$!
+echo &quot;Started dsh web with PID $DSH_PID&quot;
 
-echo
-echo &quot;=== try to build ===&quot;
-pnpm run build 2&gt;&amp;1 | tail -20 || echo &quot;BUILD FAILED (or no build script)&quot;
-
-echo
-echo &quot;=== try core feature: start web server, curl it, kill it ===&quot;
-# The README says `pnpm dsh web` starts a Web UI at http://127.0.0.1:3080.
-# We start it in the background, curl the port, then kill it.
-pnpm dsh web &amp;
-SERVER_PID=$!
-echo &quot;server pid: $SERVER_PID&quot;
-
-# wait for server to come up (up to 30s)
+# Wait for the port to come up
+echo &quot;=== waiting for server on port 3080 ===&quot;
 for i in $(seq 1 30); do
-  if curl -s http://127.0.0.1:3080 &gt;/dev/null 2&gt;&amp;1; then
-    echo &quot;server responded after ${i}s&quot;
+  if curl -s -o /dev/null -w &quot;%{http_code}&quot; http://127.0.0.1:3080/ 2&gt;/dev/null | grep -qE &quot;^(200|302|404)$&quot;; then
+    echo &quot;Server responded after ${i}s&quot;
     break
   fi
   sleep 1
+  if ! kill -0 $DSH_PID 2&gt;/dev/null; then
+    echo &quot;Process died early. Log output:&quot;
+    cat &quot;$LOGFILE&quot;
+    exit 1
+  fi
 done
 
-echo
-echo &quot;=== HTTP response from the Web UI ===&quot;
-curl -s -i http://127.0.0.1:3080 2&gt;&amp;1 | head -40 || echo &quot;curl failed&quot;
+echo &quot;=== curl the root ===&quot;
+curl -s -i http://127.0.0.1:3080/ 2&gt;&amp;1 | head -30 || true
 
-echo
-echo &quot;=== cleanup ===&quot;
-kill $SERVER_PID 2&gt;/dev/null || true
-wait $SERVER_PID 2&gt;/dev/null || true
-echo &quot;done&quot;</pre><pre class="term out">&quot;npm run build:lib:host &amp;&amp; npm run typecheck:contracts-ready&quot;,
-    &quot;typecheck:contracts-ready&quot;: &quot;tsc -b tsconfig.client.json&quot;,
-    &quot;lint&quot;: &quot;npm run build:lib:host &amp;&amp; npm run lint:contracts-ready&quot;,
-    &quot;lint:contracts-ready&quot;: &quot;tsx scripts/run-oxlint.ts .&quot;,
-    &quot;lint:fix&quot;: &quot;npm run build:lib:host &amp;&amp; npm run lint:fix:contracts-ready&quot;,
-    &quot;lint:fix:contracts-ready&quot;: &quot;tsx scripts/run-oxlint.ts --config .oxlintrc.staged.json packages/typert/generator/tests/fixtures/type-model --fix &amp;&amp; tsx scripts/run-oxlint.ts . --fix&quot;,
-    &quot;duplication&quot;: &quot;jscpd --config .jscpd.json packages scripts&quot;,
-    &quot;test&quot;: &quot;vitest run&quot;,
-    &quot;test:coverage&quot;: &quot;vitest run --coverage&quot;,
-    &quot;test:e2e&quot;: &quot;vitest run --config vitest.e2e.config.ts&quot;,
-    &quot;test:issue-management&quot;: &quot;node .github/issue-management/policy.test.mjs&quot;,
-    &quot;test:snapshot&quot;: &quot;vitest run --config vitest.snapshot.config.ts&quot;,
-    &quot;test:snapshot:record&quot;: &quot;DSH_SNAPSHOT=record vitest run --config vitest.snapshot.config.ts --update&quot;,
-    &quot;test:snapshot:refresh&quot;: &quot;DSH_SNAPSHOT=refresh vitest run --config vitest.snapshot.config.ts&quot;,
+echo &quot;=== curl a static/asset path ===&quot;
+curl -s -i http://127.0.0.1:3080/index.html 2&gt;&amp;1 | head -20 || true
 
-=== checking for pnpm ===
-/usr/local/bin/pnpm
+echo &quot;=== full server log ===&quot;
+cat &quot;$LOGFILE&quot;
 
-=== checking node_modules ===
-no node_modules/@deepseek-ai
+echo &quot;=== killing server ===&quot;
+kill $DSH_PID 2&gt;/dev/null || true
+wait $DSH_PID 2&gt;/dev/null || true
 
-=== if not installed, install ===
-+ mermaid 11.16.0
-+ micromark-extension-gfm 3.0.0
-+ oxlint 1.76.0
-+ oxlint-tsgolint 7.0.2001
-+ publint 0.3.21
-+ smol-toml 1.7.1
-+ spdx-expression-parse 5.0.0
-+ tsdown 0.22.2
-+ tsx 4.22.4 (4.23.12 is available)
-+ typescript 6.0.3 (7.0.2 is available)
-+ vite-tsconfig-paths 6.1.1
-+ vitest 4.1.8
-
- WARN  Issues with peer dependencies found
-.
-└─┬ vite-tsconfig-paths 6.1.1
-  └─┬ tsconfck 3.1.6
-    └── ✕ unmet peer typescript@^5.0.0: found 6.0.3
-
-Done in 8.4s using pnpm v9.15.9
-
-=== try to build ===
-dist/assets/langs/css-CLj8gQPS.js                            49.08 kB │ gzip:  11.90 kB │ map:    60.67 kB
-dist/assets/langs/markdown-Cvjx9yec.js                       59.38 kB │ gzip:   5.68 kB │ map:    82.36 kB
-dist/assets/langs/python-B6aJPvgy.js                         70.00 kB │ gzip:   9.17 kB │ map:    95.27 kB
-dist/assets/langs/c-BIGW1oBm.js                              72.15 kB │ gzip:  10.54 kB │ map:    95.41 kB
-dist/assets/langs/swift-D82vCrfD.js                          86.73 kB │ gzip:  14.77 kB │ map:   114.54 kB
-dist/assets/langs/csharp-DSvCPggb.js                         90.23 kB │ gzip:  10.79 kB │ map:   126.38 kB
-dist/assets/langs/less-B1dDrJ26.js                           97.68 kB │ gzip:  14.74 kB │ map:   131.88 kB
-dist/assets/langs/php-D-uCvoST.js                           113.11 kB │ gzip:  28.78 kB │ map:   142.07 kB
-dist/assets/langs/mdx-Cmh6b_Ma.js                           136.16 kB │ gzip:  23.39 kB │ map:   176.75 kB
-dist/assets/langs/html-CfGypltT.js                          232.16 kB │ gzip:  28.35 kB │ map:   308.96 kB
-dist/assets/langs/ruby-DEItuUFs.js                          425.79 kB │ gzip:  41.34 kB │ map:   579.27 kB
-dist/assets/index-C-1AiF3k.js                               443.00 kB │ gzip: 150.08 kB │ map: 1,307.63 kB
-dist</pre><div class="cta"><a href="https://github.com/deepseek-ai/deepseek-harness" rel="noopener">View deepseek-ai/deepseek-harness on GitHub &rarr;</a></div>
+echo &quot;=== done ===&quot;</pre><pre class="term out">-ai/dsh-client-ui-settings&quot;,&quot;@deepseek-ai/dsh-api-remotes&quot;]},{&quot;id&quot;:&quot;@deepseek-ai/dsh-client-ui-plan&quot;,&quot;url&quot;:&quot;/plugins/@deepseek-ai/dsh-client-ui-plan/client.js?rev=89c40a8b758d&quot;,&quot;rev&quot;:&quot;89c40a8b758d&quot;,&quot;inject&quot;:[&quot;@deepseek-ai/dsh-api-remotes&quot;,&quot;@deepseek-ai/dsh-client-locale&quot;,&quot;@deepseek-ai/dsh-client-ui-conversation&quot;]},{&quot;id&quot;:&quot;@deepseek-ai/dsh-client-ui-user-questions&quot;,&quot;url&quot;:&quot;/plugins/@deepseek-ai/dsh-client-ui-user-questions/client.js?rev=470561938a88&quot;,&quot;rev&quot;:&quot;470561938a88&quot;,&quot;inject&quot;:[&quot;@deepseek-ai/dsh-client-locale&quot;,&quot;@deepseek-ai/dsh-client-ui-conversation&quot;]},{&quot;id&quot;:&quot;@deepseek-ai/dsh-client-ui-trajectory&quot;,&quot;url&quot;:&quot;/plugins/@deepseek-ai/dsh-client-ui-trajectory/client.js?rev=fd53dd4f3eb9&quot;,&quot;rev&quot;:&quot;fd53dd4f3eb9&quot;,&quot;inject&quot;:[&quot;@deepseek-ai/dsh-client-locale&quot;,&quot;@deepseek-ai/dsh-client-runtime&quot;,&quot;@deepseek-ai/dsh-client-ui-conversation&quot;]},{&quot;id&quot;:&quot;@deepseek-ai/dsh-api-remotes&quot;,&quot;url&quot;:&quot;/plugins/@deepseek-ai/dsh-api-remotes/client.js?rev=9a16f4532366&quot;,&quot;rev&quot;:&quot;9a16f4532366&quot;,&quot;inject&quot;:[&quot;@deepseek-ai/dsh-api-gateway&quot;],&quot;immediately&quot;:true},{&quot;id&quot;:&quot;@deepseek-ai/dsh-client-ui-settings-general&quot;,&quot;url&quot;:&quot;/plugins/@deepseek-ai/dsh-client-ui-settings-general/client.js?rev=10166f08eee8&quot;,&quot;rev&quot;:&quot;10166f08eee8&quot;,&quot;inject&quot;:[&quot;@deepseek-ai/dsh-client-runtime&quot;,&quot;@deepseek-ai/dsh-client-ui-settings&quot;,&quot;@deepseek-ai/dsh-client-locale&quot;,&quot;@deepseek-ai/dsh-client-connection&quot;,&quot;@deepseek-ai/dsh-api-remotes&quot;,&quot;@deepseek-ai/dsh-client-ui-sidebar&quot;]},{&quot;id&quot;:&quot;@deepseek-ai/dsh-client-ui-theme&quot;,&quot;url&quot;:&quot;/plugins/@deepseek-ai/dsh-client-ui-theme/client.js?rev=904653a81105&quot;,&quot;rev&quot;:&quot;904653a81105&quot;,&quot;inject&quot;:[&quot;@deepseek-ai/dsh-client-connection&quot;,&quot;@deepseek-ai/dsh-client-runtime&quot;,&quot;@deepseek-ai/dsh-client-locale&quot;,&quot;@deepseek-ai/dsh-client-ui-settings&quot;,&quot;@deepseek-ai/dsh-api-remotes&quot;],&quot;immediately&quot;:true},{&quot;id&quot;:&quot;@deepseek-ai/dsh-client-locale&quot;,&quot;url&quot;:&quot;/plugins/@deepseek-ai/dsh-client-locale/client.js?rev=37c3d27d7852&quot;,&quot;rev&quot;:&quot;37c3d27d7852&quot;,&quot;inject&quot;:[&quot;@deepseek-ai/dsh-client-connection&quot;,&quot;@deepseek-ai/dsh-client-runtime&quot;,&quot;@deepseek-ai/dsh-client-ui-settings&quot;,&quot;@deepseek-ai/dsh-api-remotes&quot;],&quot;immediately&quot;:true},{&quot;id&quot;:&quot;@deepseek-ai/dsh-client-ui-conversation&quot;,&quot;url&quot;:&quot;/plugins/@deepseek-ai/dsh-client-ui-conversation/client.js?rev=14951a0b828c&quot;,&quot;rev&quot;:&quot;14951a0b828c&quot;,&quot;inject&quot;:[&quot;@deepseek-ai/dsh-client-connection&quot;,&quot;@deepseek-ai/dsh-client-locale&quot;,&quot;@deepseek-ai/dsh-client-runtime&quot;,&quot;@deepseek-ai/dsh-client-ui-settings&quot;,&quot;@deepseek-ai/dsh-api-remotes&quot;,&quot;@deepseek-ai/dsh-client-ui-layout&quot;]},{&quot;id&quot;:&quot;@deepseek-ai/dsh-client-ui-directory-picker-browse&quot;,&quot;url&quot;:&quot;/plugins/@deepseek-ai/dsh-client-ui-directory-picker-browse/client.js?rev=2b8b99cf4691&quot;,&quot;rev&quot;:&quot;2b8b99cf4691&quot;,&quot;inject&quot;:[&quot;@deepseek-ai/dsh-client-runtime&quot;,&quot;@deepseek-ai/dsh-client-ui-workspace&quot;,&quot;@deepseek-ai/dsh-client-locale&quot;]},{&quot;id&quot;:&quot;@deepseek-ai/dsh-typert-registry&quot;,&quot;url&quot;:&quot;/plugins/@deepseek-ai/dsh-typert-registry/client.js?rev=f41d56e0b747&quot;,&quot;rev&quot;:&quot;f41d56e0b747&quot;,&quot;inject&quot;:[],&quot;immediately&quot;:true},{&quot;id&quot;:&quot;@deepseek-ai/dsh-client-connection&quot;,&quot;url&quot;:&quot;/plugins/@deepseek-ai/dsh-client-connection/client.js?rev</pre><div class="cta"><a href="https://github.com/deepseek-ai/deepseek-harness" rel="noopener">View deepseek-ai/deepseek-harness on GitHub &rarr;</a></div>
 
   <footer>
     <p><b>Motley</b> &nbsp; we clone the day's fastest-rising GitHub repos and run them &nbsp;&middot;&nbsp; <a href="https://getmotley.github.io/radar/">see the whole Radar</a>. Not affiliated with GitHub, Inc.</p>
