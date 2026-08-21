@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>guillaumemeyer/watermarks-remover &mdash; run &amp; review &middot; Motley Radar</title>
-<meta name="description" content="We cloned and ran guillaumemeyer/watermarks-remover. I cloned guillaumemeyer/watermarks-remover today to see what 15,000 stars actually buys you. The repository is a Python toolkit, roughly 26,500 lines…">
+<meta name="description" content="We cloned and ran guillaumemeyer/watermarks-remover. I cloned guillaumemeyer/watermarks-remover today and read the source directly. The run harness failed with a Python SyntaxError in /tmp/rr_run.py (an…">
 <link rel="canonical" href="https://getmotley.github.io/radar/reviews/guillaumemeyer-watermarks-remover.html">
 <meta property="og:type" content="article">
 <meta property="og:title" content="guillaumemeyer/watermarks-remover — we ran it and wrote up what happened">
-<meta property="og:description" content="I cloned guillaumemeyer/watermarks-remover today to see what 15,000 stars actually buys you. The repository is a Python toolkit, roughly 26,500 lines…">
+<meta property="og:description" content="I cloned guillaumemeyer/watermarks-remover today and read the source directly. The run harness failed with a Python SyntaxError in /tmp/rr_run.py (an…">
 <meta name="theme-color" content="#FF4D00">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 42 42'%3E%3Crect width='42' height='42' fill='%23F4EFE6'/%3E%3Ccircle cx='11' cy='11' r='8' fill='%23111'/%3E%3Crect x='24' y='3' width='15' height='15' transform='rotate(45 31 10)' fill='%23FF4D00'/%3E%3Cpath d='M3 39 L11 24 L19 39 Z' fill='%23FF4D00'/%3E%3Crect x='25' y='24' width='15' height='15' fill='%23111'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -71,115 +71,12 @@
     <a class="back" href="https://getmotley.github.io/radar/">&larr; back to the Radar</a>
   </div>
 
-  <div class="kicker">Run &amp; Review &middot; 20 Aug 2026</div>
-  <h1 class="disp title">guillaumemeyer/watermarks-remover</h1><div class="badges"><span class="bdg lang">Python</span><span class="bdg stars num">&#9733; 15.5k</span><span class="bdg">MIT</span><span class="bdg num">26,562 LOC</span><span class="bdg ran">ran &#10003; tests passed</span></div><div class="article"><p>I cloned guillaumemeyer/watermarks-remover today to see what 15,000 stars actually buys you. The repository is a Python toolkit, roughly 26,500 lines across 150 files, that strips AI provenance watermarks from both text and binary files. It targets three distinct layers: Unicode text hygiene, statistical rewrite hooks for MarkLLM text watermarks, and C2PA or metadata removal from PNG, JPEG, SVG, PDF, DOCX, HTML, and Markdown. The problem it solves is concrete: vendors are embedding invisible provenance signals in generated content, and this tool provides a stdlib-first pipeline to detect and remove them.</p><p>Getting it running took one attempt. The documented usage worked as-is. I created a virtual environment at `.rrvenv` inside the cloned directory, put its `bin` on `PATH`, and ran the skill scripts directly with `python3`. No external dependencies, no system libraries to install, no pip requirements file to fight with. The project is stdlib-only by design, which the server module explicitly states in its docstring. The only friction is navigational: the runnable text cleaning logic lives at `skills/clean-user-facing-text/scripts/clean_text.py`, not at the repository root, and you have to read the tree to find it.</p><p>I fed it a text file containing zero-width characters and a Cyrillic homoglyph: `He\u200Bllo\u200c wor\u200dld\u200b from A\u0410lpha`. Running `inspect_text.py` on this input produced a usage report confirming it scans for invisible Unicode and space homoglyphs under Layer A, with flags like `--aggressive` for Latin confusables and `--strip-emoji-glue` for paranoid stripping of load-bearing invisibles. Running `clean_text.py` offered `--nfkc` for Unicode normalization, `--aggressive-homoglyphs` to map Cyrillic and fullwidth confusables to ASCII Latin, and `--in-place` for overwriting. The tool detected and processed the invisible characters exactly as advertised. The architecture is layered: Layer A handles Unicode scrubbing, Layer B handles statistical rewrite of text watermarks, and the container and image modules handle binary formats.</p><p>Reading the source confirms the implementation is serious. `image_meta.py` at 2,129 lines handles PNG, JPEG, WebP, AVIF, HEIC, BMP, GIF, and TIFF using pure stdlib `struct` and `zlib` parsing, no Pillow. It defines format signatures like `PNG_SIG` and `JPEG_SOI` directly and parses chunks manually. `container_meta.py` at 2,125 lines handles SVG, PDF, DOCX, ODT, HTML, Markdown frontmatter, and EPUB, using `zipfile` for Office formats and defining a `ZipBudgetExceeded` exception to refuse zip bombs. The HTTP service in `server.py` exposes `/inspect`, `/detect`, `/clean`, and batch variants over base64-encoded payloads, binds to loopback by default, caps batch size at 50 files via `WATERMARKS_MAX_BATCH_FILES`, and generates an OpenAPI spec dynamically. Optional tools like `exiftool` and `c2patool` are probed at runtime through a `which()` helper, and a SynthID scorer sidecar can be enabled via `WATERMARKS_SYNTHID_SCORER_URL` to keep non-commercial upstream code out of the core image. `bench_synthid_text.py` at 1,402 lines orchestrates a reproducible MarkLLM benchmark measuring clear rate, score suppression, lexical divergence, and cost.</p><p>The test suite reports 41 test files and CI is enabled. The license is MIT. The code is defensive throughout: atomic writes, binary-as-text guards, per-file failure isolation in batch endpoints, and resource limits applied via `ctrlregen_preexec_fn` for torch-based subprocesses. One rough edge is the `--force-text` flag on `clean_text.py`, which explicitly warns it will corrupt binary files by rewriting their bytes. That is honest but easy to misuse. The optional dependency chain for PDF metadata via `exiftool` or `c2patool` means full functionality requires system packages the repo does not install for you.</p><p>This is a tool for developers who need to strip provenance signals from generated content and want a transparent, auditable, stdlib-first implementation rather than a black box. It delivers on its core claims for text cleaning and binary metadata stripping. Where it bites is in the optional tooling: SynthID scoring, CtrlRegen, and PDF metadata cleaning all require external dependencies or non-commercial code that is deliberately kept out of the core repository. For plain text Unicode scrubbing and C2PA removal from common image formats, it runs out of the box with no dependencies and does exactly what it says.</p></div><h2 class="ah"><span class="o">What we ran</span></h2><p class="cap">We installed and ran it ourselves. Here is what it took, the exact command, and the real output from our box. Nothing edited.</p><p class="took"><b>What it took:</b> 1 attempt to get running.</p><pre class="term cmd">#!/bin/bash
-set -e
-cd /tmp/rr/guillaumemeyer_watermarks-remover
-
-# The repo has a service/scripts/server.py (not in the tree but referenced in source)
-# and skills with text-cleaning scripts. The text clean script is the runnable core.
-SKILL_TEXT_PY=skills/clean-user-facing-text/scripts/clean_text.py
-INSPECT_PY=skills/clean-user-facing-text/scripts/inspect_text.py
-
-# Make sure we can run the python scripts
-export PATH=&quot;/tmp/rr/guillaumemeyer_watermarks-remover/.rrvenv/bin:$PATH&quot;
-
-# Check what the clean script actually expects
-python3 &quot;$INSPECT_PY&quot; --help 2&gt;&amp;1 | head -40 || true
-echo &quot;---&quot;
-python3 &quot;$SKILL_TEXT_PY&quot; --help 2&gt;&amp;1 | head -40 || true
-
-# Create a minimal real input: text with invisible zero-width chars and homoglyphs
-# U+200B = zero-width space, U+200C = zero-width non-joiner, U+200D = zero-width joiner
-printf &#x27;He\u200Bllo\u200c wor\u200dld\u200b from A\u0410lpha&#x27; &gt; /tmp/rr/test_input.txt
-
-echo &quot;&quot;
-echo &quot;=== RAW INPUT (bytes) ===&quot;
-xxd /tmp/rr/test_input.txt
-
-echo &quot;&quot;
-echo &quot;=== VISIBLE TEXT ===&quot;
-cat /tmp/rr/test_input.txt
-echo &quot;&quot;
-
-# Try to inspect first to see what it detects
-echo &quot;&quot;
-echo &quot;=== INSPECT OUTPUT ===&quot;
-python3 &quot;$INSPECT_PY&quot; /tmp/rr/test_input.txt 2&gt;&amp;1 || true
-
-# Run the actual cleaning
-echo &quot;&quot;
-echo &quot;=== CLEAN OUTPUT ===&quot;
-python3 &quot;$SKILL_TEXT_PY&quot; /tmp/rr/test_input.txt 2&gt;&amp;1 || true
-
-# If the script writes to stdout, capture and show cleaned bytes
-echo &quot;&quot;
-echo &quot;=== CLEANED FILE (if produced) ===&quot;
-ls -la /tmp/rr/test_input_cleaned.txt 2&gt;/dev/null &amp;&amp; xxd /tmp/rr/test_input_cleaned.txt || true</pre><pre class="term out">usage: inspect_text.py [-h] [--json] [--aggressive] [--strip-emoji-glue]
-                       [--force-text]
-                       [path]
-
-Inspect text for invisible Unicode / space homoglyphs (Layer A).
-
-positional arguments:
-  path                Text file path, or - for stdin
-
-options:
-  -h, --help          show this help message and exit
-  --json              JSON report
-  --aggressive        Also flag Latin confusable / fullwidth lookalikes
-  --strip-emoji-glue  Paranoid: flag all load-bearing invisibles too (emoji
-                      glue, script joiners, flag tags, same-script
-                      fillers/selectors, orthographic Cf)
-  --force-text        Scan even when the input looks like a binary container
----
-usage: clean_text.py [-h] [-o OUTPUT] [--nfkc] [--aggressive-homoglyphs]
-                     [--no-normalize-spaces] [--strip-emoji-glue] [--stats]
-                     [--force-text] [--in-place]
-                     [path]
-
-Strip invisible Unicode / normalize space homoglyphs (Layer A).
-
-positional arguments:
-  path                  Input text file, or - for stdin
-
-options:
-  -h, --help            show this help message and exit
-  -o, --output OUTPUT   Output path (default: stdout or *.cleaned.*)
-  --nfkc                Apply Unicode NFKC after scrub
-  --aggressive-homoglyphs
-                        Map Cyrillic/fullwidth Latin confusables to ASCII
-                        Latin
-  --no-normalize-spaces
-                        Do not rewrite exotic spaces to U+0020
-  --strip-emoji-glue    Paranoid: strip all load-bearing invisibles too (emoji
-                        glue, script joiners, flag tags, same-script
-                        fillers/selectors, orthographic Cf)
-  --stats               Print stats JSON to stderr
-  --force-text          Clean even when the input looks like a binary
-                        container (this rewrites the bytes and will corrupt
-                        the file)
-  --in-place            Overwrite input file (creates .bak backup)
-
-=== RAW INPUT (bytes) ===
-00000000: 4865 e280 8b6c 6c6f e280 8c20 776f 72e2  He...llo... wor.
-00000010: 808d 6c64 e280 8b20 6672 6f6d 2041 d090  ..ld... from A..
-00000020: 6c70 6861                                lpha
-
-=== VISIBLE TEXT ===
-He​llo‌ wor‍ld​ from AАlpha
-
-=== INSPECT OUTPUT ===
-Length: 27 chars
-Suspicious: 4
-Hits:
-  [zwj_family/probable] U+200B ZERO WIDTH SPACE (Cf) x2 @ [2, 14]
-  [zwj_family/probable] U+200C ZERO WIDTH NON-JOINER (Cf) x1 @ [6]
-  [zwj_family/probable] U+200D ZERO WIDTH JOINER (Cf) x1 @ [11]
-Note: Layer A only: invisible/format Unicode and space homoglyphs (edit-based carriers).
-Note: Statistical (token-sampling) watermarks are not detectable here; use Layer B rewrite.
-Note: Inspect kinds: strip, bidi, tag_chars, variation_selector, zwj_family, private_use, space, confusable, other_cf.
-Note: Load-bearing invisibles are preserved by default during cleaning: emoji glue, CJK/Mongolian variation selectors, script joiners, complete flag tag se</pre><div class="cta"><a href="https://github.com/guillaumemeyer/watermarks-remover" rel="noopener">View guillaumemeyer/watermarks-remover on GitHub &rarr;</a></div>
+  <div class="kicker">Run &amp; Review &middot; 21 Aug 2026</div>
+  <h1 class="disp title">guillaumemeyer/watermarks-remover</h1><div class="badges"><span class="bdg lang">Python</span><span class="bdg stars num">&#9733; 16.2k</span><span class="bdg">MIT</span><span class="bdg num">26,562 LOC</span><span class="bdg">static review</span></div><div class="article"><p>I cloned guillaumemeyer/watermarks-remover today and read the source directly. The run harness failed with a Python SyntaxError in /tmp/rr_run.py (an unterminated paren on line 144), so I never executed the project. Everything below is a static read of the real source, not a runtime observation.</p><p>The repository strips AI provenance marks from generated content. It targets three layers: Unicode text hygiene, statistical text rewrite hooks for schemes like MarkLLM and SynthID, and C2PA or AI related metadata embedded in PNG, JPEG, SVG, PDF, DOCX, HTML, and Markdown. The core is pure standard library Python, with optional external probes like exiftool and c2patool used only when present on the system. A 1021 line HTTP service in service/scripts/server.py exposes inspect, detect, and clean endpoints with batch variants capped at 50 files per request via WATERMARKS_MAX_BATCH_FILES. It binds loopback by default and supports an optional bearer API key.</p><p>The architecture is split across focused modules. image_meta.py handles raster formats including PNG, JPEG, WebP, AVIF, HEIC, BMP, GIF, and TIFF with classic and BigTIFF support. container_meta.py at 2125 lines covers non raster containers like SVG, PDF, DOCX, ODT, HTML, Markdown frontmatter, and EPUB. It defines a ZipBudgetExceeded exception to refuse zip bombs and catalogs a broad tuple of zip parse errors from BadZipFile through zlib.error so corrupt archives surface correctly. The text benchmark in bench_synthid_text.py orchestrates corpus generation, removal variants, and measurement of clear rate, score suppression, lexical divergence, and cost. It imports SCHEMES from detect_text_watermark and reuses _lexical_divergence from rewrite_text, showing real internal code sharing rather than duplicated logic.</p><p>Code quality is strong from what I can see. Docstrings are specific about failure modes and name the exact exceptions a corrupt zip can raise. The optional SynthID scorer runs as a sidecar controlled by WATERMARKS_SYNTHID_SCORER_URL, keeping noncommercial upstream code out of the published image. CtrlRegen gets higher resource limits through ctrlregen_preexec_fn with env overridable caps at 32 GB address space. Batch endpoints isolate per file failures as ok:false with an error string rather than aborting the whole request. The project has 41 test files, CI is enabled, and it is MIT licensed across 150 files totaling 26562 lines with Shell at 615 lines and Python at 25947.</p><p>This is for developers building pipelines that need to inspect or remove AI provenance marks at scale. The standard library approach means minimal dependencies, and the HTTP service makes it callable from any language. The source I read is organized, defensive about parsing failures, and honest about optional tooling. I could not run it, but the code itself is credible and carefully constructed.</p></div><h2 class="ah"><span class="o">Why we couldn’t run it</span></h2><p>run harness produced no record:   File &quot;/tmp/rr_run.py&quot;, line 144
+    rec.update(strategy=&quot;go build ./... (no tests)&quot;, test_cmd=&quot;go build ./...&quot;, test_exit=0, ran=True,
+              ^
+SyntaxError: &#x27;(&#x27; was never closed
+ So this is a static read of the source, not a run.</p><div class="cta"><a href="https://github.com/guillaumemeyer/watermarks-remover" rel="noopener">View guillaumemeyer/watermarks-remover on GitHub &rarr;</a></div>
 
   <footer>
     <p><b>Motley</b> &nbsp; we clone the day's fastest-rising GitHub repos and run them &nbsp;&middot;&nbsp; <a href="https://getmotley.github.io/radar/">see the whole Radar</a>. Not affiliated with GitHub, Inc.</p>
