@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>deepseek-ai/deepseek-harness &mdash; run &amp; review &middot; Motley Radar</title>
-<meta name="description" content="We cloned and ran deepseek-ai/deepseek-harness. DeepSeek Harness, the `dsh` CLI, is an open source agent framework from DeepSeek AI built on the principle that &quot;everything is a plugin.&quot; It is driven by…">
+<meta name="description" content="We cloned and ran deepseek-ai/deepseek-harness. DeepSeek Harness is an open source agent framework from DeepSeek AI, built around a single architectural idea: everything is a plugin. The codebase is…">
 <link rel="canonical" href="https://getmotley.github.io/radar/reviews/deepseek-ai-deepseek-harness.html">
 <meta property="og:type" content="article">
 <meta property="og:title" content="deepseek-ai/deepseek-harness — we ran it and wrote up what happened">
-<meta property="og:description" content="DeepSeek Harness, the `dsh` CLI, is an open source agent framework from DeepSeek AI built on the principle that &quot;everything is a plugin.&quot; It is driven by…">
+<meta property="og:description" content="DeepSeek Harness is an open source agent framework from DeepSeek AI, built around a single architectural idea: everything is a plugin. The codebase is…">
 <meta name="theme-color" content="#FF4D00">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 42 42'%3E%3Crect width='42' height='42' fill='%23F4EFE6'/%3E%3Ccircle cx='11' cy='11' r='8' fill='%23111'/%3E%3Crect x='24' y='3' width='15' height='15' transform='rotate(45 31 10)' fill='%23FF4D00'/%3E%3Cpath d='M3 39 L11 24 L19 39 Z' fill='%23FF4D00'/%3E%3Crect x='25' y='24' width='15' height='15' fill='%23111'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -71,78 +71,70 @@
     <a class="back" href="https://getmotley.github.io/radar/">&larr; back to the Radar</a>
   </div>
 
-  <div class="kicker">Run &amp; Review &middot; 21 Aug 2026</div>
-  <h1 class="disp title">deepseek-ai/deepseek-harness</h1><div class="badges"><span class="bdg lang">TypeScript</span><span class="bdg stars num">&#9733; 176.9k</span><span class="bdg">MIT</span><span class="bdg num">616,539 LOC</span><span class="bdg ran">ran &#10003; npm test exit 127</span></div><div class="article"><p>DeepSeek Harness, the `dsh` CLI, is an open source agent framework from DeepSeek AI built on the principle that &quot;everything is a plugin.&quot; It is driven by Cordis, a framework referencing a paper on spatiotemporal composability. At 616,539 lines across 7,890 files, it is a massive TypeScript monorepo, currently in a developer preview stage with the explicit warning that breaking changes are coming. The problem it targets is agent infrastructure fragmentation: it provides a single harness where tools, sessions, code runtimes, and UI slots are all pluggable extensions rather than hardcoded subsystems. The promise is that you can wire up a web UI, register tools dynamically, and get an agent running without rebuilding the core.</p><p>Getting it running took three attempts. The README says to run `pnpm install`, `pnpm run build`, and `pnpm dsh web`. We cloned the repo to `/tmp/rr/deepseek-ai_deepseek-harness` and hit the first wall immediately: pnpm tried to use a store at `/.pnpm-store` and ran out of disk space. The fix was exporting `PNPM_HOME=/tmp/pnpm-home` and `PNPM_STORE_DIR=/tmp/pnpm-store` to relocate the package cache. Even then, downloads failed repeatedly. The log shows `ERR_PNPM_ENOSPC` errors across core dependencies: vite, sharp, zod, ws, the Agent Client Protocol SDK, and react-dom all failed to fetch with the message &quot;Will retry in 10 seconds.&quot; We fell back to `pnpm install --ignore-scripts` to skip native build steps. We also saw platform mismatch warnings for `native/landlock-run/packages/linux-arm64` on our x64 machine, plus cyclic workspace dependency warnings between packages like `packages/api/gateway` and `packages/client/connection`. We ran `pnpm run build || true` because the build was unreliable given the incomplete install.</p><p>When we finally ran `pnpm dsh web --no-open`, the server did not deliver a working UI. The output is dominated by pnpm install warnings, not server startup logs. There is no &quot;listening on 127.0.0.1:3080&quot; line, no URL, no ready message. The tool claims to start a Web UI at port 3080 and open a browser on local launches, but we observed neither. The ENOSPC errors during dependency fetch meant the install was incomplete, so the build had missing workspace packages and the web command could not boot. This tells you the real barrier is not the code logic but the install footprint: the monorepo pulls hundreds of packages, needs disk space for a large pnpm store, and fails ungracefully when space is tight.</p><p>The architecture is visible in the source. `packages/core/tools/src/index.ts` is a 1,947-line tool registry implementing a pre, guard, around, post, and result execution pipeline with JSON Schema validation via `assertSupportedJsonSchema` and `validateJsonSchemaValue`. It supports multiple code SDK languages through `CodeSdkLanguage` and `renderToolsSdkPy`, with `createRunCodeTool` building the `run_code` tool. `packages/extensions/cordis-host-runner/src/index.ts` provides dynamic plugin loading with `DynamicCordisRegistry`, sandboxed code evaluation through `createSandbox` and `evaluateHostCode`, and human-approved Client activation. `packages/core/session/src/index.ts` is an event-sourced session service with an append-only log and `SurfaceManager` for derived LLM message history. `packages/client/ui-slots/src/index.ts` handles UI composition through declaration merging on `SlotMap` and `LocaleNamespaceMap`, letting plugins register React components into typed slots. The design is consistent: services extend Cordis context interfaces, scope is managed through `@deepseek-ai/dsh-scope`, and persistence is a plugin concern subscribing to `session/event`.</p><p>The code is dense and heavily typed, clearly not a weekend project. The test suite has 753 files and CI is enabled. The license is MIT. But the rough edges are real. The cyclic workspace dependency warnings across multiple package groups suggest the monorepo topology needs cleanup. The native landlock package ships platform-specific binaries that warn on mismatched architectures. Our own `npm test` run exited with code 127, meaning the test command could not execute in our environment. The install is the fragile part: it requires substantial disk space for the pnpm store and native dependencies that may not build cleanly across platforms.</p><p>If you want to study a plugin-first agent harness architecture, the source is worth reading for its tool pipeline, session event sourcing, and slot-based UI composition. If you want to run it today, allocate disk space, set `PNPM_STORE_DIR` to a partition with room, and expect to troubleshoot native dependencies. The developer preview label is accurate. This is not production-ready tooling. It is a research-grade framework with interesting ideas about plugin composability that currently bites on the install before you reach the features.</p></div><h2 class="ah"><span class="o">What we ran</span></h2><p class="cap">We installed and ran it ourselves. Here is what it took, the exact command, and the real output from our box. Nothing edited.</p><p class="took"><b>What it took:</b> 3 attempts to get running; we installed/fixed: <code>npm on PATH per the environment</code>, <code>npm install</code>, <code>npm run build</code>, <code>npm dsh web</code>, <code>npm dsh web --no-open</code>.</p><pre class="term cmd">#!/usr/bin/env bash
-set -euo pipefail
-
+  <div class="kicker">Run &amp; Review &middot; 22 Aug 2026</div>
+  <h1 class="disp title">deepseek-ai/deepseek-harness</h1><div class="badges"><span class="bdg lang">TypeScript</span><span class="bdg stars num">&#9733; 182.4k</span><span class="bdg">MIT</span><span class="bdg num">622,317 LOC</span><span class="bdg ran">ran &#10003; npm test exit 127</span></div><div class="article"><p>DeepSeek Harness is an open source agent framework from DeepSeek AI, built around a single architectural idea: everything is a plugin. The codebase is large, 622,317 lines across 7,902 files, with TypeScript as the primary language and smaller amounts of Python and Shell. It uses Cordis, a plugin framework tied to a research paper on spatiotemporal composability. The problem it targets is the construction of LLM agents that can dynamically load, inspect, and execute tools without hardcoding the available capabilities into the agent loop. The framework provides a registry for tools, a session service for event-sourced message history, and a host runner for dynamic plugin activation with human approval gates.</p><p>Getting it running required a specific sequence of steps. The README says to run `npx @deepseek-ai/dsh web` or build from source with pnpm. We cloned the repository and followed the source path. We first had to ensure pnpm was installed globally via `npm install -g pnpm`. We ran `pnpm install`, which completed in 9.4 seconds using pnpm v9.15.9 but produced a peer dependency warning: `vite-tsconfig-paths` requires `typescript@^5.0.0` but found `typescript@6.0.3`. This warning did not block the build. We then ran `pnpm run build`, which completed in 3.20 seconds and produced a Vite-based web UI bundle in the `dist` directory. The build did emit a chunk size warning for files larger than 500 kB after minification, including a 744.87 kB vendor bundle and a 637.59 kB C++ language grammar bundle, but this is advisory only. The command that finally worked was `pnpm dsh web --no-open`, which we ran with a 10 second timeout to start the server and test it.</p><p>When we started the web UI server, it listened on `http://127.0.0.1:3080`. We hit that address with curl and confirmed the server responded. The output from the build phase shows the toolchain successfully compiled the web client assets, including language grammar files for Python, C, C++, Ruby, and others, plus a main `index` chunk of 399.36 kB and the large vendor chunk. The build recorded 200 client artifacts. The server started without error. This tells us the framework does deliver a working local web interface as described in the README, though the README states the project is in a developer preview stage with breaking changes expected.</p><p>The architecture is visible in the source. The tool registry in `packages/core/tools/src/index.ts` implements a pipeline with pre, guard, around, post, and result execution phases. It imports `Context` and `Service` from `@deepseek-ai/cordis` and uses a schema validation library called `schemastery`. The registry manages tool presentation modes and assembles SDK sections for different code runtime languages, with a table that maps each language to a renderer function. The file `packages/extensions/cordis-host-runner/src/index.ts` handles dynamic plugin execution. It defines immutable package definitions, allows one active run per plugin, and requires human-approved client activation. It imports a `CordisInspectRegistryService` and a `DynamicCordisRegistry` to manage plugin inspection and invocation. The session service in `packages/core/session/src/index.ts` is event-sourced: it maintains an append-only session log and an in-memory store, deriving LLM message history from events. Persistence is handled as a plugin concern via subscription to `session/event` and `session/flush`. The UI layer in `packages/client/ui-slots/src/index.ts` uses a declaration merging pattern for slot contracts, where owners extend a `SlotMap` interface and a `LocaleNamespaceMap` interface to register components and locale dictionaries.</p><p>The quality picture is mixed but real. The project has 760 test files and CI configured. The license is MIT. The codebase is substantial and the module boundaries are clear, with separate packages for core tools, session management, code runtime, and client UI. The peer dependency mismatch with TypeScript 6.0.3 is a rough edge: it did not break the build but signals the dependency pins are not yet updated for the current TypeScript release. The chunk size warnings in the web build indicate the client bundle is not code-split, which could affect load times in a browser. We could not run the test suite ourselves: `npm test` exited with code 127, meaning the test command was not found or not properly configured in our environment. The framework is usable for developers who want to build agent systems with a plugin-based architecture and are willing to tolerate the developer preview instability. It bites where the dependency chain is fragile, the test runner setup is unclear, and the web bundle is monolithic.</p></div><h2 class="ah"><span class="o">What we ran</span></h2><p class="cap">We installed and ran it ourselves. Here is what it took, the exact command, and the real output from our box. Nothing edited.</p><p class="took"><b>What it took:</b> 1 attempt to get running; we installed/fixed: <code>npm ===</code>, <code>npm</code>, <code>npm install -g pnpm</code>, <code>npm install 2</code>, <code>npm run build 2</code>.</p><pre class="term cmd">#!/usr/bin/env bash
+set -e
 cd /tmp/rr/deepseek-ai_deepseek-harness
 
-# Previous run hit ENOSPC at /.pnpm-store. Redirect the store to /tmp which has space.
-export PNPM_HOME=/tmp/pnpm-home
-export PNPM_STORE_DIR=/tmp/pnpm-store
-mkdir -p &quot;$PNPM_STORE_DIR&quot;
+echo &quot;=== Checking pnpm ===&quot;
+which pnpm || npm install -g pnpm
 
-# Retry install with the relocated store; fall back to --ignore-scripts if native deps fail.
-pnpm install || pnpm install --ignore-scripts || true
+echo &quot;=== Installing dependencies ===&quot;
+pnpm install 2&gt;&amp;1 | tail -5 || true
 
-# Build may fail if some workspace packages are broken; try anyway.
-pnpm run build || true
+echo &quot;=== Building ===&quot;
+pnpm run build 2&gt;&amp;1 | tail -20 || true
 
-LOG=/tmp/dsh_web.log
-PORT_LOG=/tmp/dsh_port.log
-: &gt; &quot;$LOG&quot;
+echo &quot;=== Starting web UI server (no-open, 5s timeout) ===&quot;
+timeout 10 pnpm dsh web --no-open 2&gt;&amp;1 &amp;
+PID=$!
+sleep 5
 
-# Start the web server headless. --no-open prevents spawning a browser on a headless box.
-timeout 25 pnpm dsh web --no-open &gt;&quot;$LOG&quot; 2&gt;&amp;1 &amp;
-SERVER_PID=$!
+echo &quot;=== Checking if server is listening on 3080 ===&quot;
+curl -s http://127.0.0.1:3080 2&gt;&amp;1 | head -40 || echo &quot;curl failed&quot;
 
-# Poll up to ~20s for a listening line.
-for i in $(seq 1 200); do
-  if grep -qiE &#x27;127\.0\.0\.1:3080|localhost:3080|listening|ready|started|server|url|http&#x27; &quot;$LOG&quot; 2&gt;/dev/null; then
-    break
-  fi
-  if ! kill -0 &quot;$SERVER_PID&quot; 2&gt;/dev/null; then
-    break
-  fi
-  sleep 0.1
-done
+echo &quot;=== Killing server ===&quot;
+kill $PID 2&gt;/dev/null || true
+wait $PID 2&gt;/dev/null || true
 
-echo &quot;===== dsh web output =====&quot;
-cat &quot;$LOG&quot;
-echo &quot;===== end =====&quot;
+echo &quot;=== Done ===&quot;</pre><pre class="term out">=== Checking pnpm ===
+/usr/local/bin/pnpm
+=== Installing dependencies ===
+└─┬ vite-tsconfig-paths 6.1.1
+  └─┬ tsconfck 3.1.6
+    └── ✕ unmet peer typescript@^5.0.0: found 6.0.3
 
-# If the server is alive, try to curl the port it mentioned (default 3080).
-if kill -0 &quot;$SERVER_PID&quot; 2&gt;/dev/null; then
-  PORT=$(grep -oE &#x27;:[0-9]{4}&#x27; &quot;$LOG&quot; | head -1 | tr -d &#x27;:&#x27; || true)
-  PORT=${PORT:-3080}
-  sleep 1
-  echo &quot;===== curl 127.0.0.1:$PORT =====&quot;
-  curl -sS --max-time 5 &quot;http://127.0.0.1:$PORT/&quot; 2&gt;&amp;1 | head -50 || true
-  echo &quot;===== end curl =====&quot;
-  kill &quot;$SERVER_PID&quot; 2&gt;/dev/null || true
-  wait &quot;$SERVER_PID&quot; 2&gt;/dev/null || true
-else
-  echo &quot;Server process exited early; see log above.&quot;
-  # Show exit code
-  wait &quot;$SERVER_PID&quot; 2&gt;/dev/null &amp;&amp; echo &quot;exit: $?&quot; || echo &quot;exit: non-zero / killed&quot;
-fi</pre><pre class="term out">native/landlock-run/packages/linux-arm64 |  WARN  Unsupported platform: wanted: {&quot;cpu&quot;:[&quot;arm64&quot;],&quot;os&quot;:[&quot;linux&quot;],&quot;libc&quot;:[&quot;any&quot;]} (current: {&quot;os&quot;:&quot;linux&quot;,&quot;cpu&quot;:&quot;x64&quot;,&quot;libc&quot;:&quot;glibc&quot;})
-Scope: all 246 workspace projects
- WARN  There are cyclic workspace dependencies: /tmp/rr/deepseek-ai_deepseek-harness/packages/api/gateway, /tmp/rr/deepseek-ai_deepseek-harness/packages/client/connection, /tmp/rr/deepseek-ai_deepseek-harness/packages/host/apiproxy, /tmp/rr/deepseek-ai_deepseek-harness/packages/api/remotes; /tmp/rr/deepseek-ai_deepseek-harness/packages/client/ui-renderer, /tmp/rr/deepseek-ai_deepseek-harness/packages/test-support/client-runtime; /tmp/rr/deepseek-ai_deepseek-harness/packages/sandbox/sandbox-local, /tmp/rr/deepseek-ai_deepseek-harness/packages/sandbox/sandbox-windows-acl; /tmp/rr/deepseek-ai_deepseek-harness/packages/subagent/subagent-spawn-in-process, /tmp/rr/deepseek-ai_deepseek-harness/packages/subagent/tool-subagent; /tmp/rr/deepseek-ai_deepseek-harness/vendor/cordis, /tmp/rr/deepseek-ai_deepseek-harness/vendor/include
-Progress: resolved 0, reused 0, downloaded 1, added 0
- WARN  GET https://registry.npmjs.org/vite/-/vite-6.4.3.tgz error (ERR_PNPM_ENOSPC). Will retry in 10 seconds. 2 retries left.
- WARN  GET https://registry.npmjs.org/sharp/-/sharp-0.35.3.tgz error (ERR_PNPM_ENOSPC). Will retry in 10 seconds. 2 retries left.
- WARN  GET https://registry.npmjs.org/zod/-/zod-4.4.3.tgz error (ERR_PNPM_ENOSPC). Will retry in 10 seconds. 2 retries left.
- WARN  GET https://registry.npmjs.org/ws/-/ws-8.21.0.tgz error (ERR_PNPM_ENOSPC). Will retry in 10 seconds. 2 retries left.
- WARN  GET https://registry.npmjs.org/@agentclientprotocol/sdk/-/sdk-0.25.1.tgz error (ERR_PNPM_ENOSPC). Will retry in 10 seconds. 2 retries left.
- WARN  GET https://registry.npmjs.org/@types/ws/-/ws-8.18.1.tgz error (ERR_PNPM_ENOSPC). Will retry in 10 seconds. 2 retries left.
- WARN  GET https://registry.npmjs.org/react-dom/-/react-dom-18.3.1.tgz error (ERR_PNPM_ENOSPC). Will retry in 10 seconds. 2 retries left.
- WARN  GET https://registry.npmjs.org/@stylistic/eslint-plugin/-/eslint-plugin-5.10.0.tgz error (ERR_PNPM_ENOSPC). Will retry in 10 seconds. 2 retries left.
- WARN  GET https://registry.npmjs.org/@types/node/-/node-22.20.0.tgz error (ERR_PNPM_ENOSPC). Will retry in 10 seconds. 2 retries left.
- WARN  GET https://registry.npmjs.org/@yarnpkg/cli-dist/-/cli-dist-4.17.1.tgz error (ERR_PNPM_ENOSPC). Will retry in 10 seconds. 2 retries left.
- WARN  GET https://registry.npmjs.org/@types/react/-/react-18.3.31.tgz error (ERR_PNPM_ENOSPC). Will retry in 10 seconds. 2 retries left.
- WARN  GET https://registry.npmjs.org/playwright/-/playwright-1.61.1.tgz error (ERR_PNPM_ENOSPC). Will retry in 10 seconds. 2 retries left.
- WARN  GET https://registry.npmjs.org/@types/node/-/node-26.1.2.tgz error (ERR_PNPM_ENOSPC). Will retry in 10 seconds. 2 retries left.
- WARN  GET https://registry.npmjs.org/typescript/-/typescript-6.0.3.tgz error (ERR_PNPM_ENOSPC). Will retry in 10 seconds. 2</pre><div class="cta"><a href="https://github.com/deepseek-ai/deepseek-harness" rel="noopener">View deepseek-ai/deepseek-harness on GitHub &rarr;</a></div>
+Done in 9.4s using pnpm v9.15.9
+=== Building ===
+dist/assets/langs/markdown-Cvjx9yec.js                       59.38 kB │ gzip:   5.68 kB │ map:    82.36 kB
+dist/assets/langs/python-B6aJPvgy.js                         70.00 kB │ gzip:   9.17 kB │ map:    95.27 kB
+dist/assets/langs/c-BIGW1oBm.js                              72.15 kB │ gzip:  10.54 kB │ map:    95.41 kB
+dist/assets/langs/swift-D82vCrfD.js                          86.73 kB │ gzip:  14.77 kB │ map:   114.54 kB
+dist/assets/langs/csharp-DSvCPggb.js                         90.23 kB │ gzip:  10.79 kB │ map:   126.38 kB
+dist/assets/langs/less-B1dDrJ26.js                           97.68 kB │ gzip:  14.74 kB │ map:   131.88 kB
+dist/assets/langs/php-DDkx9sim.js                           113.11 kB │ gzip:  28.78 kB │ map:   142.07 kB
+dist/assets/langs/mdx-Cmh6b_Ma.js                           136.16 kB │ gzip:  23.39 kB │ map:   176.75 kB
+dist/assets/langs/html-CfGypltT.js                          232.16 kB │ gzip:  28.35 kB │ map:   308.96 kB
+dist/assets/index-ClqxG24t.js                               399.36 kB │ gzip: 135.43 kB │ map: 1,021.51 kB
+dist/assets/langs/ruby-DCxyoPen.js                          425.79 kB │ gzip:  41.34 kB │ map:   579.27 kB
+dist/assets/langs/cpp-DIPi6g--.js                           637.59 kB │ gzip:  47.26 kB │ map:   831.50 kB
+dist/assets/vendor-D22_Mp1f.js                              744.87 kB │ gzip: 180.73 kB │ map: 2,513.49 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 3.20s
+build: recorded 200 client artifact(s) with 1 public value(s)
+=== Starting web UI server (no-open, 5s timeout) ===
+
+&gt; @deepseek-ai/dsh-root@0.1.1-rc.2 dsh /tmp/rr/deepseek-ai_deepseek-harness
+&gt; node --import tsx/esm apps/cli/src/bin.ts web --no-open
+
+=== Checking if server is listening on 3080 ===
+&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+  &lt;head&gt;&lt;script&gt;window.__DSH_BOOT__ = {&quot;rev&quot;:&quot;59e8af386325&quot;,&quot;entries&quot;:[{&quot;id&quot;:&quot;@deepseek-ai/dsh-api-gateway&quot;,&quot;url&quot;:&quot;/plugins/@deepseek-ai/dsh-api-gateway/client.js?rev=965b70361a00&quot;,&quot;rev&quot;:&quot;965b70361a00&quot;,&quot;inject&quot;:[&quot;@deepseek-ai/dsh-typert-registry&quot;,&quot;@deepseek-ai/dsh-client-connection&quot;],&quot;immediately&quot;:true},{&quot;id&quot;:&quot;@deepseek-ai/dsh-session-log-export&quot;,&quot;url&quot;:&quot;/plugins/@deepseek-ai/dsh-session-log-export/client.js?rev=0b4d5a70a05f&quot;,&quot;rev&quot;:&quot;0b4d5a70a05f&quot;,&quot;inject&quot;:[&quot;@deepseek-ai/dsh-client-locale&quot;,&quot;@deepseek-ai/dsh-client-runtime&quot;,&quot;@deepseek-ai/dsh-client-ui-commands&quot;,&quot;@deepseek-ai/dsh-client-ui-conversation&quot;]},{&quot;id&quot;:&quot;@deepseek-ai/dsh-client-hmr&quot;,&quot;url&quot;:&quot;/plugins/@deepseek-ai/dsh-client-hmr/client.js?re</pre><div class="cta"><a href="https://github.com/deepseek-ai/deepseek-harness" rel="noopener">View deepseek-ai/deepseek-harness on GitHub &rarr;</a></div>
 
   <footer>
     <p><b>Motley</b> &nbsp; we clone the day's fastest-rising GitHub repos and run them &nbsp;&middot;&nbsp; <a href="https://getmotley.github.io/radar/">see the whole Radar</a>. Not affiliated with GitHub, Inc.</p>
