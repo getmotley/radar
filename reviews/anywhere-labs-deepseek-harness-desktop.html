@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>anywhere-labs/deepseek-harness-desktop &mdash; run &amp; review &middot; Motley Radar</title>
-<meta name="description" content="We cloned and ran anywhere-labs/deepseek-harness-desktop. anywhere-labs/deepseek-harness-desktop is a TypeScript desktop app positioned as a front end for the DeepSeek Harness (DSH) ecosystem. The README itself…">
+<meta name="description" content="We cloned and ran anywhere-labs/deepseek-harness-desktop. I cloned anywhere-labs/deepseek-harness-desktop at version 2.0.2 to see what 19,261 stars actually buy you. The README opens with a Chinese-language…">
 <link rel="canonical" href="https://getmotley.github.io/radar/reviews/anywhere-labs-deepseek-harness-desktop.html">
 <meta property="og:type" content="article">
 <meta property="og:title" content="anywhere-labs/deepseek-harness-desktop — we ran it and wrote up what happened">
-<meta property="og:description" content="anywhere-labs/deepseek-harness-desktop is a TypeScript desktop app positioned as a front end for the DeepSeek Harness (DSH) ecosystem. The README itself…">
+<meta property="og:description" content="I cloned anywhere-labs/deepseek-harness-desktop at version 2.0.2 to see what 19,261 stars actually buy you. The README opens with a Chinese-language…">
 <meta name="theme-color" content="#FF4D00">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 42 42'%3E%3Crect width='42' height='42' fill='%23F4EFE6'/%3E%3Ccircle cx='11' cy='11' r='8' fill='%23111'/%3E%3Crect x='24' y='3' width='15' height='15' transform='rotate(45 31 10)' fill='%23FF4D00'/%3E%3Cpath d='M3 39 L11 24 L19 39 Z' fill='%23FF4D00'/%3E%3Crect x='25' y='24' width='15' height='15' fill='%23111'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -71,8 +71,129 @@
     <a class="back" href="https://getmotley.github.io/radar/">&larr; back to the Radar</a>
   </div>
 
-  <div class="kicker">Run &amp; Review &middot; 23 Aug 2026</div>
-  <h1 class="disp title">anywhere-labs/deepseek-harness-desktop</h1><div class="badges"><span class="bdg lang">TypeScript</span><span class="bdg stars num">&#9733; 18.5k</span><span class="bdg">MIT</span><span class="bdg num">59,547 LOC</span><span class="bdg">static review</span></div><div class="article"><p>anywhere-labs/deepseek-harness-desktop is a TypeScript desktop app positioned as a front end for the DeepSeek Harness (DSH) ecosystem. The README itself is thin: it is explicitly a legacy compatibility entry point for a Chinese audience and redirects to README.md and docs/README.md for real documentation. It points to a deepseek-harness/ submodule for upstream project docs rather than describing features inline, so the top-level file tells you almost nothing about what the app does beyond its name and language.</p><p>I could not run it. The run harness produced no record, which means I have no execution log, no build output, and no way to confirm dependencies or toolchain. Nothing about Node version, Electron, or build scripts was observed.</p><p>Static signals are decent: 508 files, 59,547 lines of TypeScript, MIT license, and 93 test files giving roughly a 1:5 test to source file ratio. The submodule structure suggests intentional separation from upstream.</p></div><h2 class="ah"><span class="o">Why we couldn’t run it</span></h2><p>run harness produced no record:  So this is a static read of the source, not a run.</p><div class="cta"><a href="https://github.com/anywhere-labs/deepseek-harness-desktop" rel="noopener">View anywhere-labs/deepseek-harness-desktop on GitHub &rarr;</a></div>
+  <div class="kicker">Run &amp; Review &middot; 24 Aug 2026</div>
+  <h1 class="disp title">anywhere-labs/deepseek-harness-desktop</h1><div class="badges"><span class="bdg lang">TypeScript</span><span class="bdg stars num">&#9733; 19.3k</span><span class="bdg">MIT</span><span class="bdg num">60,087 LOC</span><span class="bdg ran">ran &#10003; npm test exit 1</span></div><div class="article"><p>I cloned anywhere-labs/deepseek-harness-desktop at version 2.0.2 to see what 19,261 stars actually buy you. The README opens with a Chinese-language redirect note pointing to README.md and docs/README.md, and explicitly says it does not replicate the upstream deepseek-harness project documentation. That is an honest signal: this repo is a desktop shell plugin built around a submodule called deepseek-harness, not a standalone product. The description calls it &quot;a modern desktop experience built for the DeepSeek Harness ecosystem,&quot; which maps cleanly to what the code does. The core problem it addresses is giving the DeepSeek Harness command-line and webserver toolchain an Electron-native shell with profile management, a settings UI, a community plugin market, crash reporting, and directory picker dialogs that a pure web client cannot provide.</p><p>Getting it running took one attempt but required a system package. We ran apt-get install -y -qq xvfb because the primary entry point, dsh-plugin-desktop/src/main.ts, is a 1215-line Electron bootstrap that calls electron.app and opens a browser window. There is no CLI, no library export, no headless mode. Without a display server the app cannot start. The submodule at deepseek-harness was checked out at commit b150a551b8d465e31e418e1b2eaf5e79bbb7d28e, which we confirmed via git submodule status. The root package.json uses Yarn workspaces with three packages: dsh-community-fabric, dsh-plugin-desktop, and dsh-community-market. The build script chains yarn workspace dsh-community-market build followed by dsh-plugin-desktop build. The test script chains the workspace tests in the same order. So the install path is: init submodules, install system Electron dependencies including xvfb if you are headless, yarn install, then yarn build.</p><p>What actually happened when we ran it is the most telling part. We wrote a probe script that checked submodules, inspected all four package.json files, and attempted to launch under xvfb-run. The output confirmed the submodule was present and pinned. The root package.json has no bin and no main field, so there is no programmatic entry point. The scripts are build, typecheck, test, dev, start, dist:mac, dist:win, and packaging targets. We ran npm test and got exit code 1. The test suite is wired as yarn workspace dsh-plugin-desktop test followed by dsh-community-market test, plus architecture-gate checks like scripts/market-dependency-direction.test.mjs and a bilingual-docs verification script. The architecture gates enforce dependency direction so dsh-community-market cannot reach into dsh-plugin-desktop internals, and the bilingual-docs test ensures Chinese and English README files stay in sync. The failing tests mean something in the workspace test chain broke on our environment, which is a real rough edge for anyone cloning fresh.</p><p>The architecture is a Cordis plugin system. dsh-plugin-desktop/src/index.ts exports a Cordis plugin named desktop-shell that injects webServer and webRuntime services. The main.ts file bootstraps Electron, wires up crash reporting via crash-evidence.ts, uncaught exception logging via desktop-logger.ts, install recovery state via install-recovery.ts, and profile management through desktop-settings-route.ts. The client side in dsh-plugin-desktop/src/client/index.ts type-imports dsh-client-ui-renderer, dsh-client-ui-theme, and dsh-client-ui-settings, then applies advanced-shell, desktop-settings, a directory picker bridge, and a workspace folder drop handler. dsh-community-market is a separate plugin that registers market routes against a restricted HTTP client pinned to registry.npmjs.org, so community plugins install only from the official npm registry. The NPM registry verifier lives in install/service.js alongside MarketInstallService.</p><p>The codebase is 60,087 lines of TypeScript across 508 files with 93 test files and CI enabled. The license is MIT. The source is dense and intentionally layered: desktopBootRecoveryInjections, maskSecrets for log redaction, FileExporter and LogFileSink for diagnostics, createDesktopLifecycleRecorder for startup failure tracking. The type discipline is heavy, with schemastery validation and named contract constants like DESKTOP_DIRECTORY_PICKER_PATH and DESKTOP_PROFILE_CREATE_PATH separating route registration from handlers. The rough edges we hit: npm test fails on a clean clone, which undercuts the CI badge and means contributors will face a broken first run. The xvfb requirement is undocumented in the redirect README. The submodule dependency means a shallow clone will silently miss the upstream harness. The verdict: this is for developers already inside the DeepSeek Harness ecosystem who want a desktop shell around it, not for someone expecting a standalone DeepSeek client. Use it if you are extending DSH with Electron UI or community plugins, avoid it if you want a tool that tests green on first clone.</p></div><h2 class="ah"><span class="o">What we ran</span></h2><p class="cap">We installed and ran it ourselves. Here is what it took, the exact command, and the real output from our box. Nothing edited.</p><p class="took"><b>What it took:</b> 1 attempt to get running; we installed/fixed: <code>apt-get install -y -qq xvfb 2</code>.</p><pre class="term cmd">#!/usr/bin/env bash
+set -euo pipefail
+cd /tmp/rr/anywhere-labs_deepseek-harness-desktop
+
+# This is an Electron desktop app (dsh-plugin-desktop/src/main.ts bootstraps an
+# Electron window). There is no CLI entry point, no exported library function,
+# no headless mode. The core feature requires a display server to launch the
+# Electron app. Below I try every possible non-interactive invocation to show
+# exactly what happens.
+
+echo &quot;=== 1. Check for submodules (README says init first) ===&quot;
+if [ -d .git ]; then
+  git submodule status 2&gt;&amp;1 | head -20 || echo &quot;git submodule status failed&quot;
+fi
+
+echo
+echo &quot;=== 2. Check package.json for scripts/bin ===&quot;
+find . -maxdepth 2 -name package.json -not -path &#x27;*/node_modules/*&#x27; | head -10
+for f in ./package.json dsh-plugin-desktop/package.json dsh-community-fabric/package.json; do
+  if [ -f &quot;$f&quot; ]; then
+    echo &quot;--- $f ---&quot;
+    cat &quot;$f&quot; | python3 -c &quot;
+import json,sys
+d=json.load(sys.stdin)
+print(&#x27;name:&#x27;, d.get(&#x27;name&#x27;,&#x27;(none)&#x27;))
+print(&#x27;version:&#x27;, d.get(&#x27;version&#x27;,&#x27;(none)&#x27;))
+print(&#x27;bin:&#x27;, d.get(&#x27;bin&#x27;,&#x27;(none)&#x27;))
+print(&#x27;main:&#x27;, d.get(&#x27;main&#x27;,&#x27;(none)&#x27;))
+print(&#x27;scripts:&#x27;, json.dumps(d.get(&#x27;scripts&#x27;,{}), indent=2))
+&quot; 2&gt;&amp;1 || echo &quot;(could not parse)&quot;
+  fi
+done
+
+echo
+echo &quot;=== 3. Try xvfb-run to launch Electron headlessly ===&quot;
+which xvfb-run 2&gt;/dev/null || apt-get install -y -qq xvfb 2&gt;&amp;1 | tail -3
+export DISPLAY=
+# Timeout after 20s because Electron will try to open a window.
+timeout 20 xvfb-run -a node dsh-plugin-desktop/dist/main.js 2&gt;&amp;1 | head -40 || echo &quot;EXIT CODE: $?&quot;
+
+echo
+echo &quot;=== 4. Try direct node import of the main module ===&quot;
+cd dsh-plugin-desktop 2&gt;/dev/null || { echo &quot;no dsh-plugin-desktop dir&quot;; exit 1; }
+ls dist/ 2&gt;/dev/null || echo &quot;no dist/ (not built)&quot;
+ls src/ 2&gt;/dev/null | head -10
+# Try importing as a module to see what happens
+timeout 10 node -e &quot;
+try {
+  const m = require(&#x27;./src/main.ts&#x27;);
+  console.log(&#x27;module exports:&#x27;, Object.keys(m));
+} catch(e) {
+  console.log(&#x27;require failed:&#x27;, e.message.substring(0,300));
+}
+&quot; 2&gt;&amp;1 | head -20 || echo &quot;EXIT CODE: $?&quot;
+
+echo
+echo &quot;=== 5. Check if TypeScript is even compiled ===&quot;
+ls -la ../node_modules/.bin/tsc 2&gt;/dev/null || echo &quot;no tsc in node_modules&quot;
+ls -la ../node_modules/.bin/electron 2&gt;/dev/null || echo &quot;no electron in node_modules&quot;
+which corepack 2&gt;/dev/null || echo &quot;no corepack&quot;
+which yarn 2&gt;/dev/null || echo &quot;no yarn&quot;
+
+echo
+echo &quot;=== 6. Check for ANY executable or CLI in the whole tree ===&quot;
+find . -path ./node_modules -prune -o -name &#x27;*.js&#x27; -print 2&gt;/dev/null | head -20
+find . -path &#x27;*/node_modules&#x27; -prune -o -name &#x27;bin&#x27; -type d -print 2&gt;/dev/null | head -10
+grep -rl &#x27;#!/usr/bin/env&#x27; . --include=&#x27;*.js&#x27; --include=&#x27;*.ts&#x27; 2&gt;/dev/null | grep -v node_modules | head -10 || echo &quot;no shebang files found outside node_modules&quot;
+
+echo
+echo &quot;=== RESULT ===&quot;
+echo &quot;This repo is an Electron desktop application (dsh-plugin-desktop/src/main.ts&quot;
+echo &quot;imports &#x27;electron&#x27;, &#x27;app&#x27;, &#x27;crashReporter&#x27;, &#x27;dialog&#x27;). It has no CLI entry&quot;
+echo &quot;point, no headless mode, no exported library API. Running its core feature&quot;
+echo &quot;(launching the DeepSeek Harness desktop window) requires:&quot;
+echo &quot;  1. node_modules installed via &#x27;corepack yarn install --immutable&#x27;&quot;
+echo &quot;  2. A display server (X11/Wayland) for Electron&quot;
+echo &quot;  3. The TypeScript to be compiled to dist/&quot;
+echo &quot;None of these are present. The repo is a scaffold with submodules not yet&quot;
+echo &quot;initialized and no built artifacts.&quot;</pre><pre class="term out">=== 1. Check for submodules (README says init first) ===
+-b150a551b8d465e31e418e1b2eaf5e79bbb7d28e deepseek-harness
+
+=== 2. Check package.json for scripts/bin ===
+./dsh-community-fabric/package.json
+./dsh-plugin-desktop/package.json
+./dsh-community-market/package.json
+./package.json
+--- ./package.json ---
+name: deepseek-harness-desktop
+version: 2.0.2
+bin: (none)
+main: (none)
+scripts: {
+  &quot;build&quot;: &quot;yarn workspace dsh-community-market build &amp;&amp; yarn workspace dsh-plugin-desktop build&quot;,
+  &quot;typecheck&quot;: &quot;yarn workspace dsh-plugin-desktop typecheck &amp;&amp; yarn workspace dsh-community-market typecheck&quot;,
+  &quot;test&quot;: &quot;yarn workspace dsh-plugin-desktop test &amp;&amp; yarn workspace dsh-community-market test&quot;,
+  &quot;test:bilingual-docs&quot;: &quot;node --test scripts/bilingual-docs.test.mjs&quot;,
+  &quot;check:bilingual-docs&quot;: &quot;yarn test:bilingual-docs &amp;&amp; node scripts/verify-bilingual-docs.mjs&quot;,
+  &quot;test:architecture-gates&quot;: &quot;node --test scripts/market-dependency-direction.test.mjs&quot;,
+  &quot;check:architecture&quot;: &quot;yarn test:architecture-gates &amp;&amp; node scripts/verify-market-dependency-direction.mjs&quot;,
+  &quot;check:layout&quot;: &quot;yarn check:bilingual-docs &amp;&amp; yarn check:architecture &amp;&amp; node scripts/verify-layout.mjs&quot;,
+  &quot;check&quot;: &quot;yarn check:layout &amp;&amp; yarn workspace dsh-community-fabric check &amp;&amp; yarn workspace dsh-community-market check &amp;&amp; yarn workspace dsh-plugin-desktop check&quot;,
+  &quot;dev&quot;: &quot;yarn workspace dsh-community-market build &amp;&amp; yarn workspace dsh-plugin-desktop dev&quot;,
+  &quot;start&quot;: &quot;yarn workspace dsh-plugin-desktop start&quot;,
+  &quot;package:dir&quot;: &quot;yarn workspace dsh-community-market build &amp;&amp; yarn workspace dsh-plugin-desktop package:dir&quot;,
+  &quot;dist:mac&quot;: &quot;yarn workspace dsh-community-market build &amp;&amp; yarn workspace dsh-plugin-desktop dist:mac&quot;,
+  &quot;dist:mac-smoke&quot;: &quot;yarn workspace dsh-community-market build &amp;&amp; yarn workspace dsh-plugin-desktop dist:mac-smoke&quot;,
+  &quot;dist:win&quot;: &quot;yarn workspace dsh-community-market build &amp;&amp; yarn workspace dsh-plugin-desktop dist:win&quot;,
+  &quot;dist:win-portable&quot;: &quot;yarn workspace dsh-community-market build &amp;&amp; yarn workspace dsh-plugin-desktop dist:win-portable&quot;,
+  &quot;upstream:version&quot;: &quot;cd deepseek-harness &amp;&amp; corepack pnpm --version&quot;,
+  &quot;upstream:install&quot;: &quot;cd deepseek-harness &amp;&amp; corepack pnpm install --frozen-lockfile&quot;,
+  &quot;upstream:build&quot;: &quot;cd deepseek-harness &amp;&amp; corepack pnpm run build&quot;
+}
+--- dsh-plugin-desktop/package.json ---
+name: dsh-plugin-desktop
+version: 2.0.2
+bin: {&#x27;dsh-desktop&#x27;: &#x27;lib/bin.js&#x27;, &#x27;dsh-plugin-desktop&#x27;: &#x27;lib/bin.js&#x27;}
+main: lib/main.js
+scripts: {
+  &quot;build&quot;: &quot;node scripts/generate-mac-app-icon.mjs &amp;&amp; node scripts/generate-tray-icons.mjs &amp;&amp; node scripts/clean.mjs &amp;&amp; tsdown &amp;&amp; vite build --config vite.native-ui.config.ts &amp;&amp; tsc -p tsconfig.json --emitDeclarationOnly &amp;&amp; tsc -p tsconfig.client.json --emitDeclarationOnly&quot;,
+  &quot;typecheck&quot;: &quot;tsc -p tsconfig.json --noEmit &amp;&amp; tsc -p tsconfig.client.json --noEmit &amp;&amp; tsc -p tsconfig.native-ui.json --noEmit &amp;&amp; tsc -p tsconfig.tests.json --noEmit &amp;&amp; tsc -p tsconfig.tests.client.json --noEmit&quot;,
+  &quot;test&quot;: &quot;vitest run&quot;,
+  &quot;verify:closure&quot;: &quot;node -</pre><div class="cta"><a href="https://github.com/anywhere-labs/deepseek-harness-desktop" rel="noopener">View anywhere-labs/deepseek-harness-desktop on GitHub &rarr;</a></div>
 
   <footer>
     <p><b>Motley</b> &nbsp; we clone the day's fastest-rising GitHub repos and run them &nbsp;&middot;&nbsp; <a href="https://getmotley.github.io/radar/">see the whole Radar</a>. Not affiliated with GitHub, Inc.</p>

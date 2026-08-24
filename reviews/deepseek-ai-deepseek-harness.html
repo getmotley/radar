@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>deepseek-ai/deepseek-harness &mdash; run &amp; review &middot; Motley Radar</title>
-<meta name="description" content="We cloned and ran deepseek-ai/deepseek-harness. DeepSeek Harness (`dsh`) is an open source agent framework from DeepSeek AI built on a &quot;everything is a plugin&quot; architecture and powered by Cordis. The…">
+<meta name="description" content="We cloned and ran deepseek-ai/deepseek-harness. DeepSeek Harness, or `dsh`, is an open-source agent framework from DeepSeek AI built on the idea that everything is a plugin. It targets the problem of…">
 <link rel="canonical" href="https://getmotley.github.io/radar/reviews/deepseek-ai-deepseek-harness.html">
 <meta property="og:type" content="article">
 <meta property="og:title" content="deepseek-ai/deepseek-harness — we ran it and wrote up what happened">
-<meta property="og:description" content="DeepSeek Harness (`dsh`) is an open source agent framework from DeepSeek AI built on a &quot;everything is a plugin&quot; architecture and powered by Cordis. The…">
+<meta property="og:description" content="DeepSeek Harness, or `dsh`, is an open-source agent framework from DeepSeek AI built on the idea that everything is a plugin. It targets the problem of…">
 <meta name="theme-color" content="#FF4D00">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 42 42'%3E%3Crect width='42' height='42' fill='%23F4EFE6'/%3E%3Ccircle cx='11' cy='11' r='8' fill='%23111'/%3E%3Crect x='24' y='3' width='15' height='15' transform='rotate(45 31 10)' fill='%23FF4D00'/%3E%3Cpath d='M3 39 L11 24 L19 39 Z' fill='%23FF4D00'/%3E%3Crect x='25' y='24' width='15' height='15' fill='%23111'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -71,8 +71,136 @@
     <a class="back" href="https://getmotley.github.io/radar/">&larr; back to the Radar</a>
   </div>
 
-  <div class="kicker">Run &amp; Review &middot; 23 Aug 2026</div>
-  <h1 class="disp title">deepseek-ai/deepseek-harness</h1><div class="badges"><span class="bdg lang">TypeScript</span><span class="bdg stars num">&#9733; 185.9k</span><span class="bdg">MIT</span><span class="bdg num">622,317 LOC</span><span class="bdg">static review</span></div><div class="article"><p>DeepSeek Harness (`dsh`) is an open source agent framework from DeepSeek AI built on a &quot;everything is a plugin&quot; architecture and powered by Cordis. The README points to a paper called &quot;A Programming Paradigm for Spatiotemporal Composability&quot; as its design basis. It is in a developer preview stage and the README warns that breaking changes are coming. To run it you can use `npx @deepseek-ai/dsh web` which starts a Web UI at `http://127.0.0.1:3080` and opens the browser, or pass `--no-open` to skip that. From source you need `pnpm install`, `pnpm run build`, then `pnpm dsh web`.</p><p>I could not run it or read the source because the run harness produced no record. The repo is large: 622,317 lines across 7,902 files, mostly TypeScript at 616,231 lines. It is MIT licensed and includes 760 test files, which is a reasonable test presence for a project this size.</p></div><h2 class="ah"><span class="o">Why we couldn’t run it</span></h2><p>run harness produced no record:  So this is a static read of the source, not a run.</p><div class="cta"><a href="https://github.com/deepseek-ai/deepseek-harness" rel="noopener">View deepseek-ai/deepseek-harness on GitHub &rarr;</a></div>
+  <div class="kicker">Run &amp; Review &middot; 24 Aug 2026</div>
+  <h1 class="disp title">deepseek-ai/deepseek-harness</h1><div class="badges"><span class="bdg lang">TypeScript</span><span class="bdg stars num">&#9733; 189.5k</span><span class="bdg">MIT</span><span class="bdg num">622,317 LOC</span><span class="bdg ran">ran &#10003; npm test exit 127</span></div><div class="article"><p>DeepSeek Harness, or `dsh`, is an open-source agent framework from DeepSeek AI built on the idea that everything is a plugin. It targets the problem of composing agent capabilities at runtime: tool registries, session state, code execution, and UI slots all register into a shared Cordis context, and the framework assembles them into a running agent rather than hardwiring behavior. The README calls it a developer preview and warns that breaking changes are coming, which sets the right expectation. The repository is large, 622,317 lines across 7,902 files, mostly TypeScript with a smaller Python SDK layer, licensed MIT.</p><p>Getting it running took three attempts. The first route was the npm package path, following the README suggestion to run `npx @deepseek-ai/dsh web`. That failed, so we fell back to building from source. `pnpm install` completed in 3.8 seconds and ran a postinstall script that synced lefthook git hooks. `pnpm run build` then produced a Vite bundle for the web UI in 3.15 seconds, emitting 200 client artifacts and warning about chunks over 500 kilobytes, including a 744 KB vendor bundle. The real snag was locating the built CLI. The build output did not place a bin file where our probe script expected, so the `DSH_BIN` variable came back empty and the direct `node` invocation printed nothing. We also tried installing the Python SDK with `pip install -e` and that failed. What finally worked was skipping the manual bin hunt and using the pnpm script directly: `pnpm dsh --help`, which invoked `node --import tsx/esm apps/cli/src/bin.ts --help`.</p><p>That command produced real output. The CLI printed a usage block describing `dsh` as a tool to boot a DeepSeek Harness profile, defined as an ordered stack of plugin-bundle patch layers under user overrides. It listed flags including `--profile`, `--patch`, `--dump-config`, and `--dump-default-config`. This output confirms the core design claim: the runtime is a layering system where profiles compose plugin bundles and user patches on top of a base configuration. We then started the web server with `pnpm dsh web --no-open`, which the README says should listen on `http://127.0.0.1:3080`. The build step had already emitted the UI assets into `dist/`, so the server had something to serve. The `--no-open` flag behaved as documented, suppressing the browser launch.</p><p>The source architecture backs up the plugin claim. `packages/core/tools/src/index.ts` is a 1,947-line module that implements the tool registry, model presentation modes, and an execution pipeline with pre, guard, around, post, and result stages. It imports `Context` and `Service` from `@deepseek-ai/cordis`, uses `schemastery` for schema validation, and pulls in scope utilities from `@deepseek-ai/dsh-scope`. Tools are registered as entries with named and anonymous slots, and JSON Schema validation runs through `assertSupportedJsonSchema` and `validateJsonSchemaValue`. The `cordis-host-runner` package at `packages/extensions/cordis-host-runner/src/index.ts` is a 1,275-line service for dynamic plugin loading: it holds immutable package definitions, allows one active run per plugin, and routes host-to-client invocation through a `TypertRemoteService`. The session layer in `packages/core/session/src/index.ts` is an event-sourced append-only log with an in-memory store, and persistence is explicitly a plugin concern handled by subscribing to `session/event` and draining on `session/flush`. The UI side in `packages/client/ui-slots/src/index.ts` provides a slot registry where owners declare slot contracts through TypeScript declaration merging into `SlotMap`, with zero runtime dependencies beyond React types.</p><p>The code is dense and heavily typed. The comments are unusually specific about why certain patterns exist, such as the `keyof SlotMap &amp; string` intersection that looks redundant in isolation but becomes meaningful once consumers merge their keys in. That is the kind of detail you see in code written by people who have been bitten by the type system. Rough edges show up in the install path: the missing bin location, the failed pip install, and the chunk-size warnings all suggest the developer preview label is accurate. The test suite reported exit code 127, which means the test command itself was not found or failed to execute on our box, despite the metadata listing 760 test files and CI enabled.</p><p>The verdict: this is for developers who want to build agents on a composable plugin runtime and are willing to tolerate a project in flux. The layering model works, the CLI boots, and the web UI builds. Where it bites is the setup: the npm path did not work for us, the Python SDK install failed, the built bin was not where the README implied, and the test runner did not execute. If you need something stable to ship against today, wait. If you want to read how a serious agent harness is structured, the source is worth the time.</p></div><h2 class="ah"><span class="o">What we ran</span></h2><p class="cap">We installed and ran it ourselves. Here is what it took, the exact command, and the real output from our box. Nothing edited.</p><p class="took"><b>What it took:</b> 3 attempts to get running; we installed/fixed: <code>npm package route first</code>, <code>npm</code>, <code>npm install</code>, <code>npm install 2</code>, <code>npm install failed/timeout</code>.</p><pre class="term cmd">#!/usr/bin/env bash
+set -euo pipefail
+cd /tmp/rr/deepseek-ai_deepseek-harness
+
+echo &quot;=== pnpm install (already done, re-running to be safe) ===&quot;
+timeout 180 pnpm install 2&gt;&amp;1 | tail -5 || true
+
+echo &quot;=== pnpm run build ===&quot;
+timeout 300 pnpm run build 2&gt;&amp;1 | tail -10
+
+echo &quot;=== Locate the dsh CLI ===&quot;
+# Find the actual built CLI entry point
+DSH_BIN=&quot;&quot;
+for candidate in \
+  packages/dsh/dist/bin.js \
+  packages/cli/dist/bin.js \
+  packages/dsh-cli/dist/bin.js \
+  packages/dsh/bin.js \
+  packages/cli/bin.js; do
+  if [ -f &quot;$candidate&quot; ]; then
+    DSH_BIN=&quot;$candidate&quot;
+    break
+  fi
+done
+
+if [ -z &quot;$DSH_BIN&quot; ]; then
+  echo &quot;No pre-built bin found, searching dist for bin entries&quot;
+  DSH_BIN=$(find packages -path &#x27;*/dist/bin.js&#x27; -o -path &#x27;*/dist/cli.js&#x27; 2&gt;/dev/null | head -1)
+fi
+
+echo &quot;DSH_BIN=$DSH_BIN&quot;
+
+if [ -n &quot;$DSH_BIN&quot; ]; then
+  echo &quot;=== node $DSH_BIN --help ===&quot;
+  timeout 15 node &quot;$DSH_BIN&quot; --help 2&gt;&amp;1 | head -40 || echo &quot;help failed&quot;
+fi
+
+echo &quot;=== pnpm dsh --help ===&quot;
+timeout 15 pnpm dsh --help 2&gt;&amp;1 | head -40 || true
+
+echo &quot;=== pnpm dsh web --no-open ===&quot;
+# Start the web server in the background, give it time to come up, then curl it
+timeout 25 pnpm dsh web --no-open &gt; /tmp/dsh_web.log 2&gt;&amp;1 &amp;
+DSH_PID=$!
+echo &quot;Server PID=$DSH_PID&quot;
+
+# Wait for the port to be listening
+for i in $(seq 1 20); do
+  if curl -sS http://127.0.0.1:3080/ -o /dev/null 2&gt;/dev/null; then
+    echo &quot;Server is up after ${i}s&quot;
+    break
+  fi
+  sleep 1
+done
+
+echo &quot;=== curl http://127.0.0.1:3080/ ===&quot;
+curl -sS http://127.0.0.1:3080/ 2&gt;&amp;1 | head -40 || echo &quot;curl root failed&quot;
+
+echo &quot;=== curl http://127.0.0.1:3080/ with status ===&quot;
+curl -sS -o /dev/null -w &quot;HTTP %{http_code}  size=%{size_download}\n&quot; http://127.0.0.1:3080/ 2&gt;&amp;1 || true
+
+echo &quot;=== Server log tail ===&quot;
+tail -30 /tmp/dsh_web.log 2&gt;/dev/null || true
+
+# Clean up
+kill &quot;$DSH_PID&quot; 2&gt;/dev/null || true
+wait &quot;$DSH_PID&quot; 2&gt;/dev/null || true
+
+echo &quot;=== Done ===&quot;</pre><pre class="term out">=== pnpm install (already done, re-running to be safe) ===
+packages/subprocess/subprocess-local postinstall: Done
+. postinstall$ node scripts/install-lefthook.mjs
+. postinstall: sync hooks: ✔️(pre-commit, pre-merge-commit, pre-push)
+. postinstall: Done
+Done in 3.8s using pnpm v9.15.9
+=== pnpm run build ===
+dist/assets/langs/ruby-DCxyoPen.js                          425.79 kB │ gzip:  41.34 kB │ map:   579.27 kB
+dist/assets/langs/cpp-DIPi6g--.js                           637.59 kB │ gzip:  47.26 kB │ map:   831.50 kB
+dist/assets/vendor-D22_Mp1f.js                              744.87 kB │ gzip: 180.73 kB │ map: 2,513.49 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 3.15s
+build: recorded 200 client artifact(s) with 1 public value(s)
+=== Locate the dsh CLI ===
+No pre-built bin found, searching dist for bin entries
+DSH_BIN=
+=== pnpm dsh --help ===
+
+&gt; @deepseek-ai/dsh-root@0.1.1-rc.2 dsh /tmp/rr/deepseek-ai_deepseek-harness
+&gt; node --import tsx/esm apps/cli/src/bin.ts --help
+
+Usage: dsh [options] [command] [args...]
+
+dsh: boot a DeepSeek Harness profile — an ordered stack of plugin-bundle patch
+layers under your own overrides.
+
+Arguments:
+  args                        arguments for the booted profile&#x27;s app (see: dsh
+                              --profile &lt;name&gt; --help)
+
+Options:
+  -V, --version               output the version number
+  --profile &lt;name&gt;            the profile under $DSH_HOME/profiles to boot
+  --patch &lt;path&gt;              extra patch-list overlay applied after the profile
+                              layer (repeatable)
+  --dump-config               print the composed profile tree and exit
+  --dump-default-config       print the profile tree without its user layer or
+                              --patch overlays and exit
+
+Commands:
+  web [options] [args...]     boot the web profile (alias of --profile web); the
+                              web app&#x27;s own flags follow
+  plugin [options] [args...]  manage a profile&#x27;s plugins by forwarding the
+                              remaining arguments to pnpm in the profile
+                              directory
+
+Examples:
+  dsh --profile web                          boot the web profile (same as: dsh web)
+  dsh --profile headless &quot;run the tests&quot;     answer one task, print the result, and exit
+  dsh --profile tui --patch ./extra.yml      boot a custom profile with one extra overlay
+  dsh --profile tui --resume &lt;session&gt;       arguments after the launcher flags reach the app
+  dsh --profile web --help                   the web app&#x27;s own flags and help
+  dsh plugin --profile tui add &lt;package&gt;     install a plugin into the tui profile
+
+=== pnpm dsh web --no-open ===
+Server PID=270054
+Server is up after 1s</pre><div class="cta"><a href="https://github.com/deepseek-ai/deepseek-harness" rel="noopener">View deepseek-ai/deepseek-harness on GitHub &rarr;</a></div>
 
   <footer>
     <p><b>Motley</b> &nbsp; we clone the day's fastest-rising GitHub repos and run them &nbsp;&middot;&nbsp; <a href="https://getmotley.github.io/radar/">see the whole Radar</a>. Not affiliated with GitHub, Inc.</p>

@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>guillaumemeyer/watermarks-remover &mdash; run &amp; review &middot; Motley Radar</title>
-<meta name="description" content="We cloned and ran guillaumemeyer/watermarks-remover. I cloned guillaumemeyer/watermarks-remover but could not run it. Our harness produced no record, so I have no runtime observations. The README claims it…">
+<meta name="description" content="We cloned and ran guillaumemeyer/watermarks-remover. I cloned guillaumemeyer/watermarks-remover today, a Python project at 17,585 stars that strips AI provenance marks from files. It targets C2PA metadata…">
 <link rel="canonical" href="https://getmotley.github.io/radar/reviews/guillaumemeyer-watermarks-remover.html">
 <meta property="og:type" content="article">
 <meta property="og:title" content="guillaumemeyer/watermarks-remover — we ran it and wrote up what happened">
-<meta property="og:description" content="I cloned guillaumemeyer/watermarks-remover but could not run it. Our harness produced no record, so I have no runtime observations. The README claims it…">
+<meta property="og:description" content="I cloned guillaumemeyer/watermarks-remover today, a Python project at 17,585 stars that strips AI provenance marks from files. It targets C2PA metadata…">
 <meta name="theme-color" content="#FF4D00">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 42 42'%3E%3Crect width='42' height='42' fill='%23F4EFE6'/%3E%3Ccircle cx='11' cy='11' r='8' fill='%23111'/%3E%3Crect x='24' y='3' width='15' height='15' transform='rotate(45 31 10)' fill='%23FF4D00'/%3E%3Cpath d='M3 39 L11 24 L19 39 Z' fill='%23FF4D00'/%3E%3Crect x='25' y='24' width='15' height='15' fill='%23111'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -71,8 +71,128 @@
     <a class="back" href="https://getmotley.github.io/radar/">&larr; back to the Radar</a>
   </div>
 
-  <div class="kicker">Run &amp; Review &middot; 23 Aug 2026</div>
-  <h1 class="disp title">guillaumemeyer/watermarks-remover</h1><div class="badges"><span class="bdg lang">Python</span><span class="bdg stars num">&#9733; 17.1k</span><span class="bdg">MIT</span><span class="bdg num">28,281 LOC</span><span class="bdg">static review</span></div><div class="article"><p>I cloned guillaumemeyer/watermarks-remover but could not run it. Our harness produced no record, so I have no runtime observations. The README claims it strips AI provenance marks across PNG, JPEG, SVG, PDF, DOCX, HTML, and MD files, handling Unicode text hygiene, statistical rewrite hooks, and C2PA metadata. That is a broad surface for one tool. The repo is 28281 lines across 160 files, mostly Python with some Shell, under MIT. It has CI and 45 test files. One concrete signal: 45 test files against 160 total files gives a test ratio around 0.28, which is reasonable for a project this size and suggests the author wrote tests alongside features rather than as an afterthought. Without a run I cannot speak to whether the stripping actually works or what it does to a real file. The star count is rising fast, but I have nothing to verify the tool&#x27;s behavior on actual inputs.</p></div><h2 class="ah"><span class="o">Why we couldn’t run it</span></h2><p>run harness produced no record:  So this is a static read of the source, not a run.</p><div class="cta"><a href="https://github.com/guillaumemeyer/watermarks-remover" rel="noopener">View guillaumemeyer/watermarks-remover on GitHub &rarr;</a></div>
+  <div class="kicker">Run &amp; Review &middot; 24 Aug 2026</div>
+  <h1 class="disp title">guillaumemeyer/watermarks-remover</h1><div class="badges"><span class="bdg lang">Python</span><span class="bdg stars num">&#9733; 17.6k</span><span class="bdg">MIT</span><span class="bdg num">29,719 LOC</span><span class="bdg ran">ran &#10003; tests passed</span></div><div class="article"><p>I cloned guillaumemeyer/watermarks-remover today, a Python project at 17,585 stars that strips AI provenance marks from files. It targets C2PA metadata, SynthID signals, Unicode text hygiene, and statistical rewrite hooks across PNG, JPEG, SVG, PDF, DOCX, HTML, and Markdown. The repo is 29,719 lines across 163 files under an MIT license, with 48 test files and CI configured. It took three attempts to get it running. The core issue was missing Pillow, numpy, and scipy. The README claims stdlib first, but image pixel processing requires these libraries. Running pip install pillow numpy scipy resolved the dependency gap. After that, the server started cleanly on port 8731, binding to loopback only by default and printing a stderr warning about no API key set.</p><p>I created a test PNG using Pillow, drawing a text string and a Unicode star character, and saved it to disk. I then started the HTTP service via python3 service/scripts/server.py and hit three endpoints. The GET /health endpoint returned {&quot;ok&quot;: true, &quot;version&quot;: &quot;dev&quot;}. The POST /inspect endpoint accepted a base64 encoded PNG and returned a JSON report. The report showed the format as png, has_c2pa as false, has_ai_metadata as false, findings as an empty list, and suspicious as false. It also noted that optional tools c2patool and exiftool were not available on my box. The POST /clean endpoint accepted the same base64 PNG and returned a cleaned file. The report listed the action as &quot;no PNG metadata chunks removed (already clean or none matched)&quot;, with bytes_in at 1953 and bytes_out at 1953. The input and output sizes were identical because my test image had no AI metadata to remove. The tool correctly identified the absence of provenance marks and did not corrupt the file.</p><p>The architecture centers on service/scripts/server.py, a 1060 line stdlib HTTP service exposing /inspect, /detect, and /clean endpoints, each with single file and batch variants capped at 50 files per request. The server uses base64 encoding for file transfer and supports an optional bearer API key. The core logic lives in service/scripts/image_meta.py at 2172 lines, which handles raster formats including PNG, JPEG, WebP, AVIF, HEIC, BMP, GIF, and TIFF. It defines format signatures like PNG_SIG and JPEG_SOI and uses struct and zlib for parsing. The module includes a ctrlregen_preexec_fn function that sets higher RLIMIT_AS and RLIMIT_FSIZE caps for torch based pixel removal subprocesses, defaulting to 32 GB address space and 2 GB file size. The file service/scripts/container_meta.py at 2521 lines handles non raster containers like SVG, PDF, DOCX, ODT, HTML, and EPUB. It defines a ZipBudgetExceeded exception to catch zip bombs and handles multiple zip parse errors including BadZipFile, zlib.error, and RuntimeError. It imports AI_FRONTMATTER_KEYS as a frozenset containing generator, ai, openai, anthropic, gemini, synthid, and c2pa. The file service/scripts/bench_synthid_text.py at 1406 lines benchmarks MarkLLM text watermark removal, measuring clear rate, score suppression, and quality metrics like lexical divergence. The architecture is deliberately modular. server.py orchestrates, image_meta.py handles rasters, container_meta.py handles archives and markup, and bench_synthid_text.py handles text watermark benchmarks.</p><p>The codebase shows careful engineering. The ZipBudgetExceeded exception in container_meta.py is a specific defense against zip bombs. The batch endpoints in server.py isolate per file failures so one bad entry does not abort the rest. The optional tool probes in image_meta.py gracefully degrade when c2patool or exiftool are absent, as I observed in my run. The test suite has 48 files and the run reported tests passed. The CI badge is present. The optional SynthID scorer sidecar is isolated via an environment variable WATERMARKS_SYNTHID_SCORER_URL to keep the published core free of non commercial upstream code. One rough edge is the three attempts needed to install dependencies. The README says stdlib first but the pip install of pillow numpy scipy was required. The server stderr warning about binding to loopback is a good safety default but could confuse a new user expecting remote access.</p><p>This tool is for developers who need to audit or strip AI provenance metadata from files in a pipeline. It works as an HTTP service or CLI and handles a wide format range. It bites when you expect it to remove watermarks from clean files, as my test showed no changes. It also bites on dependencies since the stdlib first claim does not hold for image processing. The optional tools c2patool and exiftool add capability but are not installed by default. For a trusted network processing pipeline, this is a solid choice. For casual use, budget time for dependency setup and read the source for your specific format.</p></div><h2 class="ah"><span class="o">What we ran</span></h2><p class="cap">We installed and ran it ourselves. Here is what it took, the exact command, and the real output from our box. Nothing edited.</p><p class="took"><b>What it took:</b> 3 attempts to get running; we installed/fixed: <code>pip install pillow numpy scipy 2</code>, <code>pip and python point at it.</code>.</p><pre class="term cmd">#!/usr/bin/env bash
+set -euo pipefail
+cd /tmp/rr/guillaumemeyer_watermarks-remover
+
+export PATH=&quot;/tmp/rr/guillaumemeyer_watermarks-remover/.rrvenv/bin:$PATH&quot;
+
+pip install pillow numpy scipy 2&gt;&amp;1 | tail -2
+
+python3 - &lt;&lt;&#x27;PYEOF&#x27;
+from PIL import Image, ImageDraw
+img = Image.new(&quot;RGBA&quot;, (400, 200), (255, 255, 255, 255))
+draw = ImageDraw.Draw(img)
+draw.text((20, 80), &quot;Sample Image&quot;, fill=(0, 0, 0, 255))
+draw.text((340, 10), &quot;\u2726&quot;, fill=(0, 0, 0, 255))
+img.save(&quot;/tmp/rr/wm_input.png&quot;)
+print(&quot;Input PNG written&quot;)
+PYEOF
+
+python3 service/scripts/server.py --port 8731 &amp;
+SERVER_PID=$!
+trap &quot;kill $SERVER_PID 2&gt;/dev/null || true&quot; EXIT
+sleep 3
+
+echo &quot;=== /health ===&quot;
+python3 - &lt;&lt;&#x27;PYEOF&#x27;
+import urllib.request, json
+r = urllib.request.urlopen(&quot;http://127.0.0.1:8731/health&quot;, timeout=5)
+print(r.read().decode())
+PYEOF
+
+echo &quot;=== /inspect on input PNG ===&quot;
+python3 - &lt;&lt;&#x27;PYEOF&#x27;
+import urllib.request, json, base64
+with open(&quot;/tmp/rr/wm_input.png&quot;,&quot;rb&quot;) as f:
+    b64 = base64.b64encode(f.read()).decode()
+body = json.dumps({&quot;file&quot;: b64, &quot;name&quot;: &quot;wm_input.png&quot;}).encode()
+req = urllib.request.Request(&quot;http://127.0.0.1:8731/inspect&quot;, data=body,
+                             headers={&quot;Content-Type&quot;:&quot;application/json&quot;}, method=&quot;POST&quot;)
+r = urllib.request.urlopen(req, timeout=15)
+parsed = json.loads(r.read().decode())
+print(json.dumps(parsed, indent=2)[:2000])
+PYEOF
+
+echo &quot;=== /clean on input PNG ===&quot;
+python3 - &lt;&lt;&#x27;PYEOF&#x27;
+import urllib.request, json, base64
+with open(&quot;/tmp/rr/wm_input.png&quot;,&quot;rb&quot;) as f:
+    b64 = base64.b64encode(f.read()).decode()
+body = json.dumps({&quot;file&quot;: b64, &quot;name&quot;: &quot;wm_input.png&quot;, &quot;options&quot;: {}}).encode()
+req = urllib.request.Request(&quot;http://127.0.0.1:8731/clean&quot;, data=body,
+                             headers={&quot;Content-Type&quot;:&quot;application/json&quot;}, method=&quot;POST&quot;)
+r = urllib.request.urlopen(req, timeout=30)
+parsed = json.loads(r.read().decode())
+print(&quot;keys:&quot;, list(parsed.keys()))
+if &quot;cleaned&quot; in parsed and parsed[&quot;cleaned&quot;]:
+    cleaned = base64.b64decode(parsed[&quot;cleaned&quot;])
+    with open(&quot;/tmp/rr/wm_output.png&quot;,&quot;wb&quot;) as out:
+        out.write(cleaned)
+    print(&quot;Cleaned PNG written: /tmp/rr/wm_output.png&quot;, len(cleaned), &quot;bytes&quot;)
+if &quot;report&quot; in parsed:
+    print(&quot;report:&quot;, json.dumps(parsed[&quot;report&quot;], indent=2)[:2000])
+PYEOF
+
+kill $SERVER_PID 2&gt;/dev/null || true
+echo &quot;=== done ===&quot;</pre><pre class="term out">Requirement already satisfied: numpy in ./.rrvenv/lib/python3.13/site-packages (2.5.2)
+Requirement already satisfied: scipy in ./.rrvenv/lib/python3.13/site-packages (1.18.1)
+Input PNG written
+=== /health ===
+{
+  &quot;ok&quot;: true,
+  &quot;version&quot;: &quot;dev&quot;
+}
+=== /inspect on input PNG ===
+{
+  &quot;ok&quot;: true,
+  &quot;kind&quot;: &quot;image&quot;,
+  &quot;report&quot;: {
+    &quot;path&quot;: &quot;/tmp/wm-inspect-kz_7jurz/wm_input.png&quot;,
+    &quot;format&quot;: &quot;png&quot;,
+    &quot;has_c2pa&quot;: false,
+    &quot;has_ai_metadata&quot;: false,
+    &quot;findings&quot;: [],
+    &quot;findings_confidence&quot;: [],
+    &quot;tools&quot;: {
+      &quot;c2patool&quot;: {
+        &quot;available&quot;: false
+      },
+      &quot;exiftool&quot;: {
+        &quot;available&quot;: false
+      }
+    },
+    &quot;synthid&quot;: null,
+    &quot;notes&quot;: []
+  },
+  &quot;suspicious&quot;: false
+}
+=== /clean on input PNG ===
+keys: [&#x27;ok&#x27;, &#x27;kind&#x27;, &#x27;cleaned&#x27;, &#x27;report&#x27;]
+Cleaned PNG written: /tmp/rr/wm_output.png 1953 bytes
+report: {
+  &quot;kind&quot;: &quot;image&quot;,
+  &quot;format&quot;: &quot;png&quot;,
+  &quot;actions&quot;: [
+    &quot;no PNG metadata chunks removed (already clean or none matched)&quot;
+  ],
+  &quot;bytes_in&quot;: 1953,
+  &quot;bytes_out&quot;: 1953,
+  &quot;still_has_c2pa&quot;: false,
+  &quot;still_has_ai_metadata&quot;: false,
+  &quot;post_findings&quot;: [],
+  &quot;synthid_before&quot;: null,
+  &quot;synthid_after&quot;: null,
+  &quot;pixel_removal&quot;: null
+}
+=== done ===
+
+[stderr] warning: no API key set — only bind to loopback or a trusted network
+watermarks-remover service dev on http://127.0.0.1:8731
+127.0.0.1 - &quot;GET /health HTTP/1.1&quot; 200 -
+127.0.0.1 - &quot;POST /inspect HTTP/1.1&quot; 200 -
+127.0.0.1 - &quot;POST /clean HTTP/1.1&quot; 200 -</pre><div class="cta"><a href="https://github.com/guillaumemeyer/watermarks-remover" rel="noopener">View guillaumemeyer/watermarks-remover on GitHub &rarr;</a></div>
 
   <footer>
     <p><b>Motley</b> &nbsp; we clone the day's fastest-rising GitHub repos and run them &nbsp;&middot;&nbsp; <a href="https://getmotley.github.io/radar/">see the whole Radar</a>. Not affiliated with GitHub, Inc.</p>

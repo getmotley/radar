@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>awesome-dsh-plugin/awesome-dsh-plugin &mdash; run &amp; review &middot; Motley Radar</title>
-<meta name="description" content="We cloned and ran awesome-dsh-plugin/awesome-dsh-plugin. This is a curated awesome-list of community plugins for DeepSeek Harness, an open-source agent framework from DeepSeek. The README describes it as a CLI…">
+<meta name="description" content="We cloned and ran awesome-dsh-plugin/awesome-dsh-plugin. I cloned awesome-dsh-plugin today expecting a list and found something denser. The repo bills itself as a curated list of community plugins for DeepSeek…">
 <link rel="canonical" href="https://getmotley.github.io/radar/reviews/awesome-dsh-plugin-awesome-dsh-plugin.html">
 <meta property="og:type" content="article">
 <meta property="og:title" content="awesome-dsh-plugin/awesome-dsh-plugin — we ran it and wrote up what happened">
-<meta property="og:description" content="This is a curated awesome-list of community plugins for DeepSeek Harness, an open-source agent framework from DeepSeek. The README describes it as a CLI…">
+<meta property="og:description" content="I cloned awesome-dsh-plugin today expecting a list and found something denser. The repo bills itself as a curated list of community plugins for DeepSeek…">
 <meta name="theme-color" content="#FF4D00">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 42 42'%3E%3Crect width='42' height='42' fill='%23F4EFE6'/%3E%3Ccircle cx='11' cy='11' r='8' fill='%23111'/%3E%3Crect x='24' y='3' width='15' height='15' transform='rotate(45 31 10)' fill='%23FF4D00'/%3E%3Cpath d='M3 39 L11 24 L19 39 Z' fill='%23FF4D00'/%3E%3Crect x='25' y='24' width='15' height='15' fill='%23111'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -71,8 +71,59 @@
     <a class="back" href="https://getmotley.github.io/radar/">&larr; back to the Radar</a>
   </div>
 
-  <div class="kicker">Run &amp; Review &middot; 23 Aug 2026</div>
-  <h1 class="disp title">awesome-dsh-plugin/awesome-dsh-plugin</h1><div class="badges"><span class="bdg lang">Python</span><span class="bdg stars num">&#9733; 11.6k</span><span class="bdg">unknown</span><span class="bdg num">6,644 LOC</span><span class="bdg">static review</span></div><div class="article"><p>This is a curated awesome-list of community plugins for DeepSeek Harness, an open-source agent framework from DeepSeek. The README describes it as a CLI coding agent with Web and headless modes, built on a &quot;everything is a plugin&quot; architecture covering models, tools, sandboxing, session storage, UI, and the agent loop itself. Plugins are installable via `dsh plugin add` and declare a `dsh.bundle` manifest. The repo also points to dsh-market, an optional plugin marketplace UI.</p><p>I could not run it. There was no run record produced, and the source was not readable through the harness, so I have no observed behavior to report.</p><p>From the static signals: 6,644 lines across 2,015 files is what you expect from an awesome-list, mostly small plugin entries rather than a codebase. The test ratio is thin at 10 test files. License is unknown, which is a real gap for a curated list meant for public reuse. CI is configured.</p></div><h2 class="ah"><span class="o">Why we couldn’t run it</span></h2><p>run harness produced no record:  So this is a static read of the source, not a run.</p><div class="cta"><a href="https://github.com/awesome-dsh-plugin/awesome-dsh-plugin" rel="noopener">View awesome-dsh-plugin/awesome-dsh-plugin on GitHub &rarr;</a></div>
+  <div class="kicker">Run &amp; Review &middot; 24 Aug 2026</div>
+  <h1 class="disp title">awesome-dsh-plugin/awesome-dsh-plugin</h1><div class="badges"><span class="bdg lang">Python</span><span class="bdg stars num">&#9733; 12.0k</span><span class="bdg">unknown</span><span class="bdg num">6,644 LOC</span><span class="bdg ran">ran &#10003; import failed</span></div><div class="article"><p>I cloned awesome-dsh-plugin today expecting a list and found something denser. The repo bills itself as a curated list of community plugins for DeepSeek Harness, the open source agent framework from DeepSeek where everything is a plugin: models, tools, sandboxes, session storage, UI, even the agent loop itself. Plugins install via `dsh plugin add` and declare a `dsh.bundle` manifest. So the problem this solves is discovery. There are 2058 entries spread across 21 categories as of my run, and a companion marketplace repo called dsh-market aggregates them. This is not a hand edited README. It is a build pipeline that generates the READMEs from structured data.</p><p>Getting it running took two attempts. There is no package.json in the repo, which is the first thing that bites you. The scripts import Node modules at runtime. Specifically `scripts/lib/entries.mjs`, which `scripts/generate-readme.mjs` pulls in, requires `js-yaml` at import time. With no package.json, there is nothing telling you to install it. The fix was `npm install js-yaml`, which dropped a local `node_modules` into the repo root. After that the Python and Node scripts cooperated. The test suite the repo ships reported import failed on the first attempt, consistent with the missing dependency. Ten test files exist in the metadata but the suite itself was not helpful here. The real validation came from running the scripts directly.</p><p>I ran `scripts/reorder-categories.py` as an idempotent demo, feeding it the same category order already in the file. The script reads `site/locales.mjs`, finds two `categories` blocks via regex, reads `CAT_IDS` from `scripts/lib/entries.mjs`, asserts the English and Chinese category sets match each other and the target, rewrites `CAT_IDS`, rewrites both locale blocks, then shells out to `node scripts/generate-readme.mjs`. My input was the existing order: ui, usage, theme, model, identity, session, memory, tools, browser, vision, voice, docs, skill, workflow, git, notify, dev, security, remote, market, fun. The output told me a lot. It printed &quot;README.md: up to date (2058 entries)&quot; and the same for the Chinese README. It flagged 6 entries awaiting translation, listing real repo URLs like domparent/OLEDCare and chenbin-dev/dsh-auth-everying. Then it confirmed both files were updated and printed the final CAT_IDS. The category order was unchanged because I passed the same order back in, which is exactly what idempotent means. The tool delivered: the pipeline ran end to end, the READMEs regenerated, and the translation gaps surfaced.</p><p>The architecture is a static site generator disguised as a list. Plugin entries live in `data/plugins/*.yml`. The build reads those YAML files, applies the category taxonomy from `CAT_IDS` in `scripts/lib/entries.mjs`, and emits both `README.md` and `README.zh.md` via `generate-readme.mjs`. Locals come from `site/locales.mjs`, which holds parallel English and Chinese category name maps. `reorder-categories.py` is a taxonomy reshaper: it rewrites the category order in three places at once and regenerates the READMEs so they stay consistent. The repo is 6644 lines across 2188 files, mostly Python and Shell, with 6411 lines of Python and 233 of Shell. CI is enabled. License is unknown, which is a real gap for a list you might fork or vendor. The READMEs are generated artifacts, and the script warns that editing them by hand gets undone on the next generate run. That warning is in the docstring of `reorder-categories.py` itself.</p><p>The rough edges are what you would expect from a repo that grew to 2058 entries. No package.json means the Node tooling has no declared dependencies, so you discover them by running and failing. The test suite exists but reported import failed on first run, which suggests the tests assume a setup that is not documented. The six untranslated entries are minor but show the bilingual pipeline is not fully caught up. The category sets are asserted to match across English, Chinese, and the target, which is a good guard against drift, and the assertion fired clean on my run. The code itself is tight: `reorder-categories.py` is 40 lines, uses regex to find and rewrite the two locale blocks, and shells out to Node for the README step. It is procedural and readable.</p><p>This is for someone building on or around DeepSeek Harness who wants to browse what exists, or a maintainer reshaping the taxonomy. It is not for someone who wants a polished package with a license and a clean install. Where it bites: no license, no package.json, tests that assume an undocumented setup, and generated READMEs you must not edit by hand. For browsing 2058 plugins it works. For vendoring into something else, read the source first and sort out the license yourself.</p></div><h2 class="ah"><span class="o">What we ran</span></h2><p class="cap">We installed and ran it ourselves. Here is what it took, the exact command, and the real output from our box. Nothing edited.</p><p class="took"><b>What it took:</b> 2 attempts to get running; we installed/fixed: <code>npm install js-yaml 2</code>.</p><pre class="term cmd">#!/usr/bin/env bash
+set -e
+
+cd /tmp/rr/awesome-dsh-plugin_awesome-dsh-plugin
+
+# Install the missing node dependency that scripts/lib/entries.mjs imports.
+# The scripts call generate-readme.mjs which pulls in entries.mjs, and that
+# module imports js-yaml at import time. No package.json ships in this repo,
+# so we install js-yaml into a local node_modules.
+npm install js-yaml 2&gt;&amp;1 | tail -1
+
+echo &quot;=== Before: CAT_IDS in scripts/lib/entries.mjs ===&quot;
+grep -m1 &#x27;export const CAT_IDS&#x27; scripts/lib/entries.mjs
+
+echo &quot;&quot;
+echo &quot;=== Capturing current category order ===&quot;
+ORDER=$(grep -oP &quot;export const CAT_IDS = \[\K[^\]]*&quot; scripts/lib/entries.mjs | tr -d &quot;&#x27; &quot;)
+
+echo &quot;=== Running reorder-categories.py with the same order (idempotent demo) ===&quot;
+python3 scripts/reorder-categories.py &quot;$ORDER&quot;
+
+echo &quot;&quot;
+echo &quot;=== After: CAT_IDS in scripts/lib/entries.mjs ===&quot;
+grep -m1 &#x27;export const CAT_IDS&#x27; scripts/lib/entries.mjs
+
+echo &quot;&quot;
+echo &quot;=== After: categories block in site/locales.mjs (en) ===&quot;
+grep -m1 &#x27;categories:&#x27; site/locales.mjs</pre><pre class="term out">found 0 vulnerabilities
+=== Before: CAT_IDS in scripts/lib/entries.mjs ===
+export const CAT_IDS = [&#x27;ui&#x27;, &#x27;usage&#x27;, &#x27;theme&#x27;, &#x27;model&#x27;, &#x27;identity&#x27;, &#x27;session&#x27;, &#x27;memory&#x27;, &#x27;tools&#x27;, &#x27;browser&#x27;, &#x27;vision&#x27;, &#x27;voice&#x27;, &#x27;docs&#x27;, &#x27;skill&#x27;, &#x27;workflow&#x27;, &#x27;git&#x27;, &#x27;notify&#x27;, &#x27;dev&#x27;, &#x27;security&#x27;, &#x27;remote&#x27;, &#x27;market&#x27;, &#x27;fun&#x27;]
+
+=== Capturing current category order ===
+=== Running reorder-categories.py with the same order (idempotent demo) ===
+README.md: up to date (2058 entries)
+README.zh.md: up to date (2058 entries)
+
+6 entries awaiting translation (showing en for now):
+  README.zh.md: https://github.com/domparent/OLEDCare
+  README.zh.md: https://github.com/chenbin-dev/dsh-auth-everying
+  README.zh.md: https://github.com/fashionmascherine-svg/dsh-polymarket-knowhow
+  README.zh.md: https://github.com/MeghanBao/dsh-backstory
+  README.zh.md: https://github.com/edusrez/dsh-smart-restart
+  README.zh.md: https://github.com/rand0wn/dsh-wrapped
+scripts/lib/entries.mjs updated
+site/locales.mjs updated
+CAT_IDS = [&#x27;ui&#x27;, &#x27;usage&#x27;, &#x27;theme&#x27;, &#x27;model&#x27;, &#x27;identity&#x27;, &#x27;session&#x27;, &#x27;memory&#x27;, &#x27;tools&#x27;, &#x27;browser&#x27;, &#x27;vision&#x27;, &#x27;voice&#x27;, &#x27;docs&#x27;, &#x27;skill&#x27;, &#x27;workflow&#x27;, &#x27;git&#x27;, &#x27;notify&#x27;, &#x27;dev&#x27;, &#x27;security&#x27;, &#x27;remote&#x27;, &#x27;market&#x27;, &#x27;fun&#x27;]
+
+=== After: CAT_IDS in scripts/lib/entries.mjs ===
+export const CAT_IDS = [&#x27;ui&#x27;, &#x27;usage&#x27;, &#x27;theme&#x27;, &#x27;model&#x27;, &#x27;identity&#x27;, &#x27;session&#x27;, &#x27;memory&#x27;, &#x27;tools&#x27;, &#x27;browser&#x27;, &#x27;vision&#x27;, &#x27;voice&#x27;, &#x27;docs&#x27;, &#x27;skill&#x27;, &#x27;workflow&#x27;, &#x27;git&#x27;, &#x27;notify&#x27;, &#x27;dev&#x27;, &#x27;security&#x27;, &#x27;remote&#x27;, &#x27;market&#x27;, &#x27;fun&#x27;]
+
+=== After: categories block in site/locales.mjs (en) ===
+    categories: {</pre><div class="cta"><a href="https://github.com/awesome-dsh-plugin/awesome-dsh-plugin" rel="noopener">View awesome-dsh-plugin/awesome-dsh-plugin on GitHub &rarr;</a></div>
 
   <footer>
     <p><b>Motley</b> &nbsp; we clone the day's fastest-rising GitHub repos and run them &nbsp;&middot;&nbsp; <a href="https://getmotley.github.io/radar/">see the whole Radar</a>. Not affiliated with GitHub, Inc.</p>
