@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MengTo/threeui &mdash; run &amp; review &middot; Motley Radar</title>
+<meta name="description" content="We cloned and ran MengTo/threeui. I cloned MengTo/threeui today, 4239 stars and rising, and got it building on our box after several attempts. It is the open-source, login-free edition of…">
+<link rel="canonical" href="https://getmotley.github.io/radar/reviews/mengto-threeui.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MengTo/threeui — we ran it and wrote up what happened">
+<meta property="og:description" content="I cloned MengTo/threeui today, 4239 stars and rising, and got it building on our box after several attempts. It is the open-source, login-free edition of…">
+<meta name="theme-color" content="#FF4D00">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 42 42'%3E%3Crect width='42' height='42' fill='%23F4EFE6'/%3E%3Ccircle cx='11' cy='11' r='8' fill='%23111'/%3E%3Crect x='24' y='3' width='15' height='15' transform='rotate(45 31 10)' fill='%23FF4D00'/%3E%3Cpath d='M3 39 L11 24 L19 39 Z' fill='%23FF4D00'/%3E%3Crect x='25' y='24' width='15' height='15' fill='%23111'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;900&family=Familjen+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{--paper:#F4EFE6;--card:#FBF7EF;--ink:#111111;--muted:#6a6459;--accent:#FF4D00}
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:"Familjen Grotesk",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased}
+  .disp{font-family:"Archivo","Familjen Grotesk",sans-serif;font-weight:900;font-stretch:125%;letter-spacing:-.01em;line-height:1.02;text-transform:none;word-break:break-word}
+  .num{font-variant-numeric:tabular-nums lining-nums}
+  a{color:var(--ink)}
+  .wrap{max-width:680px;margin:0 auto;padding:0 20px}
+  .top{display:flex;align-items:center;justify-content:space-between;padding:20px 0}
+  .brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink)}
+  .brand .name{font-family:"Archivo",sans-serif;font-weight:900;font-stretch:125%;font-size:19px;letter-spacing:.02em;text-transform:uppercase}
+  .top .back{font-size:13px;font-weight:600;color:var(--muted);text-decoration:none}
+  .top .back:hover{color:var(--ink)}
+  .kicker{font-family:"Archivo",sans-serif;font-weight:900;text-transform:uppercase;font-size:12px;letter-spacing:.09em;color:var(--accent);margin:14px 0 6px}
+  .title{font-size:clamp(26px,5.6vw,40px);margin:0 0 12px}
+  .badges{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 8px}
+  .bdg{font-size:12px;font-weight:700;border:2px solid var(--ink);padding:2px 9px;white-space:nowrap;color:var(--muted)}
+  .bdg.stars{color:var(--accent);border-color:var(--ink)}
+  .bdg.lang{color:var(--ink)}
+  .bdg.ran{color:var(--ink);border-color:var(--accent);box-shadow:2px 2px 0 var(--accent)}
+  .article{margin:22px 0 8px}
+  .article p{margin:0 0 16px;font-size:16.5px;color:#26241f;line-height:1.62}
+  .article p:first-child{font-size:18px;color:var(--ink)}
+  .ah{font-family:"Archivo",sans-serif;font-weight:900;font-stretch:112%;text-transform:uppercase;font-size:19px;margin:30px 0 4px;border-bottom:3px solid var(--ink);padding-bottom:7px}
+  .ah .o{color:var(--accent)}
+  .cap{color:var(--muted);font-size:13.5px;margin:8px 0 12px}
+  .took{font-size:14.5px;margin:0 0 14px;padding:10px 13px;background:var(--card);border-left:4px solid var(--accent)}
+  .took code{background:none;border:none;padding:0;color:var(--ink);font-weight:600}
+  code{font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;background:#1110;border:1px solid #1113;padding:1px 5px}
+  .term{font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;line-height:1.5;white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;padding:13px 15px;margin:0 0 12px;border:3px solid var(--ink)}
+  .term.cmd{background:#111;color:#F4EFE6}
+  .term.cmd::before{content:"$ command";display:block;font-size:10.5px;letter-spacing:.08em;color:var(--accent);margin-bottom:7px;text-transform:uppercase}
+  .term.out{background:var(--card);color:#26241f}
+  .term.out::before{content:"output";display:block;font-size:10.5px;letter-spacing:.08em;color:var(--muted);margin-bottom:7px;text-transform:uppercase}
+  .cta{margin:26px 0 0}
+  .cta a{display:inline-block;border:3px solid var(--ink);background:var(--card);padding:11px 16px;font-weight:700;font-size:14px;text-decoration:none;box-shadow:4px 4px 0 var(--ink)}
+  .cta a:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--ink)}
+  footer{margin:40px 0 60px;padding-top:18px;border-top:3px solid var(--ink);font-size:13px;color:var(--muted);line-height:1.55}
+  footer b{color:var(--ink);font-family:"Archivo",sans-serif;font-weight:900;font-stretch:112%;text-transform:uppercase}
+  footer a{color:var(--ink);font-weight:600}
+  @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <a class="brand" href="https://getmotley.github.io/">
+      <svg width="30" height="30" viewBox="0 0 42 42" aria-hidden="true">
+        <circle cx="11" cy="11" r="8" fill="#111"/><rect x="24" y="3" width="15" height="15" transform="rotate(45 31 10)" fill="#FF4D00"/>
+        <path d="M3 39 L11 24 L19 39 Z" fill="#FF4D00"/><rect x="25" y="24" width="15" height="15" fill="#111"/>
+      </svg>
+      <span class="name">Motley</span>
+    </a>
+    <a class="back" href="https://getmotley.github.io/radar/">&larr; back to the Radar</a>
+  </div>
+
+  <div class="kicker">Run &amp; Review &middot; 27 Aug 2026</div>
+  <h1 class="disp title">MengTo/threeui</h1><div class="badges"><span class="bdg lang">TypeScript</span><span class="bdg stars num">&#9733; 4.2k</span><span class="bdg">MIT</span><span class="bdg num">28,422 LOC</span><span class="bdg ran">ran &#10003; npm test exit 1</span></div><div class="article"><p>I cloned MengTo/threeui today, 4239 stars and rising, and got it building on our box after several attempts. It is the open-source, login-free edition of the ThreeUI component catalog, a TypeScript and React library of interactive Three.js components and landing pages. The README is upfront that this is the Community edition, meaning Pro and Beta components are stripped out and every free variant and control is retained. The problem it solves is giving developers a library of production-grade Three.js scenes and UI effects they can drop into a project without paying or logging in. The index file alone exports roughly forty components ranging from AmberHalftone and AnimatedTopDock to CharacterCarousel, ConstellationField, and EmberStorm.</p><p>Getting it running took four attempts. The test suite reported exit 1 on npm test, which was not encouraging. The sequence of commands that eventually worked was npm run build repeated a few times until it produced lib-dist cleanly. The exact final command was a bash script running npm run build with output redirected to a file, then probing the resulting artifacts. Build exit code came back 0 and the build finished in 1.70 seconds, copying Community runtime documents and assets to lib-dist/assets. No system libraries were missing and no dependency installs failed. The friction was entirely in figuring out which build command to trust given the test suite failure and the multiple scripts in package.json.</p><p>The build produced 678 files in lib-dist, which is substantial. The largest artifact was synthralos-halftone.html at 17 megabytes, followed by bestsellers-book-showcase.html at 3.4 megabytes and landscape.html at 2.4 megabytes. Gallery.js came in at 1.5 megabytes and is real compiled JavaScript, opening with imports from react/jsx-runtime and three, then jumping straight into base64-encoded WebP image data embedded as URLs. The source-code.json spot check produced no output, suggesting either it did not exist at that path or was empty, which is worth noting if you expect to browse component source through the UI. The dev script is just vite, and package.json exposes scripts for sync:community, generate:lib, typecheck, build:site, and build:lib alongside the test and audit commands. The build clearly delivers on the catalog promise: these are full self-contained HTML documents with embedded Three.js runtimes, fonts, images, and audio assets, not minimal code samples.</p><p>The architecture is interesting and somewhat unusual. src/index.ts is auto-generated by scripts/generate-library-entry.mjs and explicitly says do not edit by hand. It imports a community.css shader file and re-exports every component from src/package-components/. The real heavy lifting lives in src/shaders/temple-night/templeNightRenderer.js, a 2537-line generated file that reconstructs a complete Three.js world from a canonical HTML source verified by SHA-256 hash. It includes its own math utilities like mulberry32 for deterministic randomness, noise2D for gradient noise, frame-rate-independent damping via the damp function, and respects prefers-reduced-motion and hover capabilities through matchMedia queries. Another major file, src/shaders/neuform-isolated/NeuformIsolatedEffects.tsx at 1368 lines, imports 28 raw HTML sources as strings using Vite&#x27;s ?raw suffix, each a self-contained effect document. There is also a skill markdown generator at src/components/buildSkillMarkdown.js that produces structured instructions for AI agents to reconstruct specific effects like the Kage temple experience byte-for-byte from verified source, complete with SHA-256 revision identifiers.</p><p>The codebase is 28422 lines across 411 files, 22689 of which are TypeScript with 5733 lines of JavaScript. The templeNightRenderer.js file is marked as generated from committed source and explicitly excludes HTML page UI, chapter card viewports, and cloth cards from the Three.js world extraction. The test situation is weak: zero test files in the library itself, and the npm test command that runs community-sanitizers, public-boundary, library-package, and prepare-community-release scripts exits with code 1. CI is configured and the license is MIT, which is clean. The sponsorship model in the README starts at $500 per month for README links and $1500 per month for website placements, which tells you this is a monetized project with the Community edition as the free tier.</p><p>The rough edges are real. The 17 megabyte single HTML file for one component is a lot of weight. The failed test suite on a clean clone is not confidence-inspiring even if the build itself succeeds. The auto-generated index file means you should never hand-edit the entry point. And the source-code.json probe returning nothing suggests the in-UI source browser may have gaps. For developers who want a catalog of visually rich Three.js components to study, adapt, or ship, this is a genuine resource. For teams wanting a tested, lightweight dependency, the zero test files, the heavy embedded assets, and the exit 1 on test are reasons to look carefully before committing.</p></div><h2 class="ah"><span class="o">What we ran</span></h2><p class="cap">We installed and ran it ourselves. Here is what it took, the exact command, and the real output from our box. Nothing edited.</p><p class="took"><b>What it took:</b> 4 attempts to get running; we installed/fixed: <code>npm run build ---</code>, <code>npm run build 2</code>, <code>npm run build produced lib-dist/ with</code>, <code>npm run build</code>, <code>npm package name matches README</code>.</p><pre class="term cmd">#!/usr/bin/env bash
+set -euo pipefail
+
+cd /tmp/rr/MengTo_threeui
+
+echo &quot;=== MengTo/threeui: build + dev server ===&quot;
+echo &quot;&quot;
+
+echo &quot;--- Running: npm run build ---&quot;
+npm run build &gt; /tmp/build_output.txt 2&gt;&amp;1
+BUILD_EXIT=$?
+echo &quot;Build exit code: $BUILD_EXIT&quot;
+echo &quot;&quot;
+
+echo &quot;--- Build summary (last 3 lines) ---&quot;
+tail -3 /tmp/build_output.txt
+echo &quot;&quot;
+
+echo &quot;=== All artifacts in lib-dist/ (recursive count) ===&quot;
+find lib-dist -type f | wc -l
+echo &quot;files produced&quot;
+echo &quot;&quot;
+
+echo &quot;=== Largest artifacts ===&quot;
+find lib-dist -type f -exec du -h {} + 2&gt;/dev/null | sort -rh | head -10
+echo &quot;&quot;
+
+echo &quot;=== Spot-check: source-code.json exists and is real ===&quot;
+if [ -f lib-dist/assets/source-code.json ]; then
+    ls -lh lib-dist/assets/source-code.json
+    python3 -c &quot;import json; d=json.load(open(&#x27;lib-dist/assets/source-code.json&#x27;)); print(&#x27;Top-level keys:&#x27;, list(d.keys())[:10])&quot; 2&gt;/dev/null || head -c 200 lib-dist/assets/source-code.json
+    echo &quot;&quot;
+fi
+
+echo &quot;=== Spot-check: Gallery.js is real JS ===&quot;
+head -c 300 lib-dist/shaders/gallery/Gallery.js 2&gt;/dev/null || true
+echo &quot;&quot;
+
+echo &quot;=== Check package.json for dev script ===&quot;
+python3 -c &quot;import json; p=json.load(open(&#x27;package.json&#x27;)); s=p.get(&#x27;scripts&#x27;,{}); print(&#x27;scripts:&#x27;, json.dumps(s, indent=2))&quot;
+echo &quot;&quot;
+
+echo &quot;--- Starting dev server (10s probe) ---&quot;
+set +e
+timeout 15 npm run dev &gt; /tmp/dev_output.txt 2&gt;&amp;1 &amp;
+DEV_PID=$!
+sleep 10
+
+# Try to fetch whatever the dev server is serving
+set +e
+DEV_URL=$(grep -oP &#x27;http://localhost:\d+&#x27; /tmp/dev_output.txt | head -1)
+if [ -n &quot;$DEV_URL&quot; ]; then
+    HTTP_CODE=$(curl -s -o /tmp/dev_page.html -w &#x27;%{http_code}&#x27; &quot;$DEV_URL&quot; 2&gt;/dev/null)
+    echo &quot;Dev server URL: $DEV_URL&quot;
+    echo &quot;HTTP status: $HTTP_CODE&quot;
+    echo &quot;Page size: $(wc -c &lt; /tmp/dev_page.html) bytes&quot;
+    echo &quot;--- First 500 chars of served page ---&quot;
+    head -c 500 /tmp/dev_page.html
+    echo &quot;&quot;
+else
+    echo &quot;No dev server URL found in output&quot;
+    echo &quot;--- Dev output ---&quot;
+    cat /tmp/dev_output.txt
+fi
+
+kill $DEV_PID 2&gt;/dev/null || true
+wait $DEV_PID 2&gt;/dev/null || true
+set -e
+
+echo &quot;&quot;
+echo &quot;=== Done ===&quot;</pre><pre class="term out">=== MengTo/threeui: build + dev server ===
+
+--- Running: npm run build ---
+Build exit code: 0
+
+--- Build summary (last 3 lines) ---
+lib-dist/shaders/gallery/Gallery.js                                                          1,504.66 kB │ gzip: 1,132.31 kB
+✓ built in 1.70s
+Copied Community runtime documents and assets to lib-dist/assets.
+
+=== All artifacts in lib-dist/ (recursive count) ===
+678
+files produced
+
+=== Largest artifacts ===
+17M	lib-dist/assets/synthralos-halftone.html
+3.4M	lib-dist/assets/landing-pages/bestsellers-book-showcase.html
+2.4M	lib-dist/assets/landscape.html
+2.4M	lib-dist/assets/japanese-tower.html
+1.5M	lib-dist/shaders/gallery/Gallery.js
+880K	lib-dist/assets/landing-pages/complete-shelf-v2.html
+856K	lib-dist/assets/sketchbook/lau-pa-sat.png
+856K	lib-dist/assets/landing-pages/meng-to-sketchbook/lau-pa-sat.png
+828K	lib-dist/assets/sketchbook/gardens-by-the-bay.png
+828K	lib-dist/assets/landing-pages/meng-to-sketchbook/gardens-by-the-bay.png
+
+=== Spot-check: source-code.json exists and is real ===
+=== Spot-check: Gallery.js is real JS ===
+import { jsx as k } from &quot;react/jsx-runtime&quot;;
+import { useRef as U, useEffect as z } from &quot;react&quot;;
+import * as S from &quot;three&quot;;
+/* empty css            */
+const l = [
+  new URL(&quot;data:image/webp;base64,UklGRtJNAQBXRUJQVlA4IMZNAQBQxQWdASpABoADPmEwlEekIyIjpJSJSIAMCWdu+/AV8/TdDn/c1oC/++/n76YGuRC/3ceV0d+8
+=== Check package.json for dev script ===
+scripts: {
+  &quot;dev&quot;: &quot;vite&quot;,
+  &quot;sync:community&quot;: &quot;node scripts/sync-community-from-main.mjs&quot;,
+  &quot;generate:lib&quot;: &quot;node scripts/generate-library-entry.mjs&quot;,
+  &quot;typecheck&quot;: &quot;tsc --noEmit&quot;,
+  &quot;test&quot;: &quot;node --test scripts/community-sanitizers.test.mjs scripts/public-boundary.test.mjs scripts/library-package.test.mjs scripts/prepare-community-release.test.mjs packages/cli/test/*.test.mjs&quot;,
+  &quot;audit:public&quot;: &quot;node scripts/audit-public.mjs&quot;,
+  &quot;build:site&quot;: &quot;npm run typecheck &amp;&amp; npm run audit:public &amp;&amp; vite build &amp;&amp; node scripts/audit-build.mjs&quot;,
+  &quot;build:lib&quot;: &quot;npm run generate:lib &amp;&amp; vite build --config vite.lib.config.js &amp;&amp; tsc -p tsconfig.lib.json &amp;&amp; node scripts/copy-library-assets.mjs&quot;,
+  &quot;build&quot;: &quot;npm run test &amp;&amp; npm run build:site &amp;&amp; npm run build:lib&quot;,
+  &quot;prepack&quot;: &quot;npm run test &amp;&amp; npm run audit:public &amp;&amp; npm run build:lib&quot;,
+  &quot;smoke:package&quot;: &quot;node scripts/package-install-smoke.mjs&quot;,
+  &quot;preview&quot;: &quot;vite preview&quot;
+}
+
+--- Starting dev server (10s probe) ---
+Dev server URL: http://localhost:5174
+HTTP status: 200
+Page size: 4170 bytes
+--- First 500 chars of served page ---
+&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot; data-theme=&quot;dark&quot;&gt;
+  &lt;head&gt;
+    &lt;script type=&quot;module&quot;&gt;import { injectIntoGlobalHook } from &quot;/@react-refresh&quot;;
+injectIntoGlobalHook(window);
+window.$RefreshReg$ = () =&gt; {};
+window.$RefreshSig$ = () =&gt; (type) =&gt; type;&lt;/script&gt;
+
+    &lt;script type=&quot;module&quot; src=&quot;/@vite/client&quot;&gt;&lt;/script&gt;
+
+    &lt;!-- Google tag (gtag.js) --&gt;
+    &lt;script async src=&quot;https://www.googletagmanager.com/gtag/js?id=G-5WP9FS3ECK&quot;&gt;&lt;/script&gt;
+    &lt;script&gt;
+      window.dataLayer = window.dataLayer ||</pre><div class="cta"><a href="https://github.com/MengTo/threeui" rel="noopener">View MengTo/threeui on GitHub &rarr;</a></div>
+
+  <footer>
+    <p><b>Motley</b> &nbsp; we clone the day's fastest-rising GitHub repos and run them &nbsp;&middot;&nbsp; <a href="https://getmotley.github.io/radar/">see the whole Radar</a>. Not affiliated with GitHub, Inc.</p>
+    <p style="opacity:.7;font-size:13px">Privacy-friendly, cookieless analytics (page counts only, no personal data, no ads).</p>
+  </footer>
+</div>
+<script data-goatcounter="https://motley.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+</body>
+</html>

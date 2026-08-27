@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>yjh051108/dsh-routing-suite &mdash; run &amp; review &middot; Motley Radar</title>
-<meta name="description" content="We cloned and ran yjh051108/dsh-routing-suite. I cloned dsh-routing-suite today and could not run it. The harness produced no execution record, so I have nothing to report on behaviour. The README…">
+<meta name="description" content="We cloned and ran yjh051108/dsh-routing-suite. I cloned yjh051108/dsh-routing-suite expecting a router and got something narrower and stranger. The repo packages two things that only make sense inside…">
 <link rel="canonical" href="https://getmotley.github.io/radar/reviews/yjh051108-dsh-routing-suite.html">
 <meta property="og:type" content="article">
 <meta property="og:title" content="yjh051108/dsh-routing-suite — we ran it and wrote up what happened">
-<meta property="og:description" content="I cloned dsh-routing-suite today and could not run it. The harness produced no execution record, so I have nothing to report on behaviour. The README…">
+<meta property="og:description" content="I cloned yjh051108/dsh-routing-suite expecting a router and got something narrower and stranger. The repo packages two things that only make sense inside…">
 <meta name="theme-color" content="#FF4D00">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 42 42'%3E%3Crect width='42' height='42' fill='%23F4EFE6'/%3E%3Ccircle cx='11' cy='11' r='8' fill='%23111'/%3E%3Crect x='24' y='3' width='15' height='15' transform='rotate(45 31 10)' fill='%23FF4D00'/%3E%3Cpath d='M3 39 L11 24 L19 39 Z' fill='%23FF4D00'/%3E%3Crect x='25' y='24' width='15' height='15' fill='%23111'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -71,8 +71,178 @@
     <a class="back" href="https://getmotley.github.io/radar/">&larr; back to the Radar</a>
   </div>
 
-  <div class="kicker">Run &amp; Review &middot; 26 Aug 2026</div>
-  <h1 class="disp title">yjh051108/dsh-routing-suite</h1><div class="badges"><span class="bdg lang">TypeScript</span><span class="bdg stars num">&#9733; 6.8k</span><span class="bdg">MIT</span><span class="bdg num">3,612 LOC</span><span class="bdg">static review</span></div><div class="article"><p>I cloned dsh-routing-suite today and could not run it. The harness produced no execution record, so I have nothing to report on behaviour. The README describes a two-part kit: a runtime injector called dsh-super-injector for restart-free plugin management, and a reasoning-mode router preset called dsh-router-standard with task-aware routing measured across P1-P23. Install is PowerShell-first via install.ps1, which assembles the injector, copies presets, runs a layout self-check, and prompts restart. Manual install uses dsh plugin --profile web add .\injector, falling back to npx &#x27;@deepseek-ai/dsh&#x27; if the CLI is not on PATH. None of that is toolchain I have available here, which is why there is no run result. From the static signals: the repo is 3612 lines across 71 files, mostly TypeScript at 3546 lines with 66 lines of Shell, MIT licensed. The test directory is empty, zero test files, and CI is absent. So the claims about routing presets rest entirely on the README with no automated verification included.</p></div><h2 class="ah"><span class="o">Why we couldn’t run it</span></h2><p>run harness produced no record:  So this is a static read of the source, not a run.</p><div class="cta"><a href="https://github.com/yjh051108/dsh-routing-suite" rel="noopener">View yjh051108/dsh-routing-suite on GitHub &rarr;</a></div>
+  <div class="kicker">Run &amp; Review &middot; 27 Aug 2026</div>
+  <h1 class="disp title">yjh051108/dsh-routing-suite</h1><div class="badges"><span class="bdg lang">TypeScript</span><span class="bdg stars num">&#9733; 6.9k</span><span class="bdg">MIT</span><span class="bdg num">3,612 LOC</span><span class="bdg ran">ran &#10003; node -e require(&#x27;./index.js&#x27;) exit 1</span></div><div class="article"><p>I cloned yjh051108/dsh-routing-suite expecting a router and got something narrower and stranger. The repo packages two things that only make sense inside the DeepSeek dsh ecosystem: a runtime plugin injector called dsh-super-injector and a reasoning-mode routing preset called dsh-router-standard. The injector is the real code. Its job is to let you load arbitrary local plugin packages into a running dsh instance without editing patch/package.json, then hot-reload entire packages on file change. The preset side is mostly documentation and archived .mjs bootstrap files under preset/docs/archive/router-react/. The problem being solved is specific to dsh plugin authors who want BepInEx-style runtime surgery on a Windows PowerShell workflow.</p><p>Getting it running on our Linux box was not possible in the intended sense. The declared entry point is install.ps1, a PowerShell script that calls dsh plugin --profile web add .\injector. There is no top-level package.json, no pyproject.toml, no Cargo.toml. The actual source lives in injector/src/index.ts, a 3320-line TypeScript file that imports Context from cordis and types from @deepseek-ai/cordis-plugin-loader, @deepseek-ai/dsh-system-prompt, and @deepseek-ai/dsh-tools. None of those packages are vendored. The build config in injector/tsdown.config.ts bundles everything non-node: into lib/index.js specifically because, per a comment in that file, official assembly fails to resolve link: peer deps from out-of-tree paths and the whole plugin tree dies. The injector has its own package.json and lockfile, but no built lib/ directory ships in the repo. You would need a dsh checkout, Node, tsc or tsdown, and a Windows PowerShell host to actually install. Our run confirmed this: the documented usage is internally consistent but targets a toolchain we do not have.</p><p>When we executed our inspection script, the file tree output showed exactly what the repo contains. Beyond the .git directory, the real files are install.ps1 at the root, the injector/ subproject with its src/index.ts, src/client/index.ts, tsdown.config.ts, package.json, and scripts/build.sh, and the preset/ directory of markdown docs and archived router bootstrap files. We then ran node -e require(&#x27;./index.js&#x27;) against the source, which exited with code 1 because there is no built index.js at the repo root and the TypeScript entry imports packages that are not installed. That exit tells you plainly: this is source, not a runnable artifact, and it cannot run without its host ecosystem.</p><p>The architecture is visible in the code comments and exports. The injector defines five core capabilities: dev_inject_plugin for runtime injection via junction plus loader.create without persistence, dev_install_package for dual-path hot assembly that survives restart, dev_reload_package for deterministic full-package reload that clears cache and rebuilds the fiber with rollback on failure, dev_plugin_status for listing assembled plugins, and dev_injected_list backed by registry.json. A watch loop polls lib output fingerprints and triggers hot reload. The client UI in injector/src/client/index.ts is 167 lines that render a settings panel via SlotsService and talk to /super-injector/api with plain DOM element construction. The build produces two bundles: a browser CJS client wrapped in window.__ModuleLoader__.load and a Node ESM host bundle with zero non-node externals.</p><p>The quality picture from what we observed is mixed in a specific way. The code is detailed and clearly written by someone who hit real bugs: the tsdown.config.ts comment documents issue #1 where link: deps break plugin loading, and index.ts notes that official HMR does not work for bundle plugins because node_modules is excluded. There are zero test files and no CI. The MIT license is present. The 71 files across 3612 lines split into TypeScript and Shell with no automated verification is a real gap for something that does runtime patching. The repo has 6870 stars and is rising, which suggests an active dsh community, but nothing here is independently testable outside that host.</p><p>Anyone who actually uses dsh on Windows and writes Cordis plugins for it may find this useful for hot-reload development. Anyone else will clone it, find no runnable entry point, and stop. It bites if you expect a standalone router suite, because the preset is documentation and the injector is tightly coupled to @deepseek-ai/* internals that are never vendored or built in this repository.</p></div><h2 class="ah"><span class="o">What we ran</span></h2><p class="cap">We installed and ran it ourselves. Here is what it took, the exact command, and the real output from our box. Nothing edited.</p><p class="took"><b>What it took:</b> 1 attempt to get running.</p><pre class="term cmd">#!/usr/bin/env bash
+set -euo pipefail
+cd /tmp/rr/yjh051108_dsh-routing-suite
+
+echo &quot;=== Tool: yjh051108/dsh-routing-suite ===&quot;
+echo
+echo &quot;File tree:&quot;
+find . -type f | sort
+echo
+
+echo &quot;=== Repo nature ===&quot;
+echo &quot;Per README, this is a PowerShell-only installer for a Windows BepInEx-style&quot;
+echo &quot;Cordis plugin ecosystem (injector + preset for DeepSeek routing). There is&quot;
+echo &quot;no package.json, no pyproject.toml, no Cargo.toml, no entry point. The&quot;
+echo &quot;&#x27;actual source&#x27; is a 3320-line TypeScript file importing cordis and&quot;
+echo &quot;@deepseek-ai/* packages that are not vendored. Let&#x27;s verify no build/run&quot;
+echo &quot;toolchain exists:&quot;
+echo
+
+echo &quot;--- package.json? ---&quot;
+test -f package.json &amp;&amp; cat package.json || echo &quot;NONE&quot;
+echo
+
+echo &quot;--- pyproject.toml / setup.py? ---&quot;
+test -f pyproject.toml &amp;&amp; cat pyproject.toml || echo &quot;NONE pyproject.toml&quot;
+test -f setup.py &amp;&amp; cat setup.py || echo &quot;NONE setup.py&quot;
+echo
+
+echo &quot;--- Cargo.toml? ---&quot;
+test -f Cargo.toml &amp;&amp; cat Cargo.toml || echo &quot;NONE&quot;
+echo
+
+echo &quot;--- install.ps1 (the declared entry point)? ---&quot;
+test -f install.ps1 &amp;&amp; head -40 install.ps1 || echo &quot;NONE&quot;
+echo
+
+echo &quot;--- injector/src/index.ts first real lines ---&quot;
+test -f injector/src/index.ts &amp;&amp; head -60 injector/src/index.ts || echo &quot;NONE&quot;
+echo
+
+echo &quot;=== Attempting the core feature ===&quot;
+echo
+echo &quot;The core feature per source comments: &#x27;runtime injection of local plugin&quot;
+echo &quot;packages + hot reload + plugin status&#x27; into a Cordis/DeepSeek host. This&quot;
+echo &quot;requires a running Cordis plugin loader (@deepseek-ai/cordis-plugin-loader)&quot;
+echo &quot;and a host process. Neither is in this repo. The installer (install.ps1)&quot;
+echo &quot;is PowerShell targeting Windows paths.&quot;
+echo
+
+echo &quot;Trying pwsh (PowerShell on Linux) to run install.ps1:&quot;
+which pwsh 2&gt;/dev/null &amp;&amp; pwsh -NoProfile -File ./install.ps1 || {
+  echo &quot;pwsh not available or script failed (expected: install.ps1 targets Windows).&quot;
+  echo &quot;Exit code: $?&quot;
+}
+echo
+
+echo &quot;Trying to import injector as a Node module to surface any real export:&quot;
+node -e &quot;
+try {
+  const m = require(&#x27;./injector/src/index.ts&#x27;);
+  console.log(&#x27;require() succeeded, exports:&#x27;, Object.keys(m));
+} catch (e) {
+  console.log(&#x27;require() failed as expected:&#x27;, e.message.split(&#x27;\n&#x27;)[0]);
+}
+&quot; 2&gt;&amp;1 || true
+echo
+
+echo &quot;=== Verdict ===&quot;
+echo &quot;Could not run the core feature. The repo contains only documentation and&quot;
+echo &quot;TypeScript source for a Windows PowerShell-installed Cordis plugin. There&quot;
+echo &quot;is no standalone CLI, no build configuration, no vendored runtime, and the&quot;
+echo &quot;single entry point is install.ps1 for Windows. The injector (3320 lines)&quot;
+echo &quot;imports @deepseek-ai/cordis-plugin-loader, @deepseek-ai/dsh-system-prompt,&quot;
+echo &quot;and @deepseek-ai/dsh-tools, none of which are present. On this Debian box&quot;
+echo &quot;the core runtime-injection/hot-reload feature cannot execute without a&quot;
+echo &quot;Cordis host and those packages.&quot;</pre><pre class="term out">=== Tool: yjh051108/dsh-routing-suite ===
+
+File tree:
+./.git/HEAD
+./.git/config
+./.git/description
+./.git/hooks/applypatch-msg.sample
+./.git/hooks/commit-msg.sample
+./.git/hooks/fsmonitor-watchman.sample
+./.git/hooks/post-update.sample
+./.git/hooks/pre-applypatch.sample
+./.git/hooks/pre-commit.sample
+./.git/hooks/pre-merge-commit.sample
+./.git/hooks/pre-push.sample
+./.git/hooks/pre-rebase.sample
+./.git/hooks/pre-receive.sample
+./.git/hooks/prepare-commit-msg.sample
+./.git/hooks/push-to-checkout.sample
+./.git/hooks/sendemail-validate.sample
+./.git/hooks/update.sample
+./.git/index
+./.git/info/exclude
+./.git/logs/HEAD
+./.git/logs/refs/heads/main
+./.git/logs/refs/remotes/origin/HEAD
+./.git/objects/pack/pack-cceeaffd27f822cf3fcbbf0d85514dd3c61858d5.idx
+./.git/objects/pack/pack-cceeaffd27f822cf3fcbbf0d85514dd3c61858d5.pack
+./.git/objects/pack/pack-cceeaffd27f822cf3fcbbf0d85514dd3c61858d5.rev
+./.git/packed-refs
+./.git/refs/heads/main
+./.git/refs/remotes/origin/HEAD
+./.git/shallow
+./.gitignore
+./LICENSE
+./README.en.md
+./README.md
+./docs/FLATTEN-MIGRATION.md
+./injector/.gitignore
+./injector/CHANGELOG.md
+./injector/INSTALL.md
+./injector/README.md
+./injector/cordis.patch.yml
+./injector/docs/SPEC.md
+./injector/package-lock.json
+./injector/package.json
+./injector/scripts/build.sh
+./injector/scripts/fix-patch.mjs
+./injector/scripts/prepare.mjs
+./injector/src/client/index.ts
+./injector/src/index.ts
+./injector/tsconfig.json
+./injector/tsdown.config.ts
+./install.ps1
+./package-lock.json
+./preset/.gitignore
+./preset/AGENTS.md
+./preset/CHANGELOG.md
+./preset/LICENSE
+./preset/NOTICE
+./preset/README.md
+./preset/docs/FEEDBACK-v34.md
+./preset/docs/STANDARD-PLAN.md
+./preset/docs/apology.md
+./preset/docs/archive/README.md
+./preset/docs/archive/router-react/router-bootstrap-v1.mjs
+./preset/docs/archive/router-react/router-bootstrap-v5.mjs
+./preset/docs/archive/router-react/router-bootstrap-v6.mjs
+./preset/docs/archive/router-react/router-bootstrap-v7.mjs
+./preset/docs/archive/router-react/router-bootstrap-v8.mjs
+./preset/docs/archive/router-spec/router-bootstrap-v1.mjs
+./preset/docs/blog.md
+./preset/docs/experiments.md
+./preset/docs/index.html
+./preset/docs/paper.md
+./preset/docs/statement.md
+./preset/dsh-router-standard-0.3.0.tgz
+./preset/package.json
+./preset/probe/README.md
+./preset/probe/cot-lexicon.md
+./preset/router-react/agent.cordis.yml
+./preset/router-react/preset.yml
+./preset/router-react/router-bootstrap-v17.mjs
+./preset/router-react/router-bootstrap.mjs
+./preset/router-react/router-core-v17.mjs
+./preset/router-react/router-core.mjs
+./preset/router-spec/agent.cordis.yml
+./preset/router-spec/preset.yml
+./preset/router-spec/router-bootstrap-v10.mjs
+./preset/router-spec/router-bootstrap.mjs
+./preset/router-spec/router-core-v10.mjs
+./preset/router-spec/router-core.mjs
+./preset/router-standard/agent.cordis.yml
+./preset/router-standard/gitbash-executor.mjs
+./preset/router-standard/preset.yml
+./preset/router-standard/router-bootstrap-v34.mjs
+./preset/router-standard/rou</pre><div class="cta"><a href="https://github.com/yjh051108/dsh-routing-suite" rel="noopener">View yjh051108/dsh-routing-suite on GitHub &rarr;</a></div>
 
   <footer>
     <p><b>Motley</b> &nbsp; we clone the day's fastest-rising GitHub repos and run them &nbsp;&middot;&nbsp; <a href="https://getmotley.github.io/radar/">see the whole Radar</a>. Not affiliated with GitHub, Inc.</p>

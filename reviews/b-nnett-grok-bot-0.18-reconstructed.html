@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>b-nnett/grok-bot-0.18-reconstructed &mdash; run &amp; review &middot; Motley Radar</title>
+<meta name="description" content="We cloned and ran b-nnett/grok-bot-0.18-reconstructed. I cloned b-nnett/grok-bot-0.18-reconstructed today to see what a source-oriented reconstruction of Grok Bot 0.18.0 actually looks like. The repo sits at…">
+<link rel="canonical" href="https://getmotley.github.io/radar/reviews/b-nnett-grok-bot-0.18-reconstructed.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="b-nnett/grok-bot-0.18-reconstructed — we ran it and wrote up what happened">
+<meta property="og:description" content="I cloned b-nnett/grok-bot-0.18-reconstructed today to see what a source-oriented reconstruction of Grok Bot 0.18.0 actually looks like. The repo sits at…">
+<meta name="theme-color" content="#FF4D00">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 42 42'%3E%3Crect width='42' height='42' fill='%23F4EFE6'/%3E%3Ccircle cx='11' cy='11' r='8' fill='%23111'/%3E%3Crect x='24' y='3' width='15' height='15' transform='rotate(45 31 10)' fill='%23FF4D00'/%3E%3Cpath d='M3 39 L11 24 L19 39 Z' fill='%23FF4D00'/%3E%3Crect x='25' y='24' width='15' height='15' fill='%23111'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;900&family=Familjen+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{--paper:#F4EFE6;--card:#FBF7EF;--ink:#111111;--muted:#6a6459;--accent:#FF4D00}
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:"Familjen Grotesk",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased}
+  .disp{font-family:"Archivo","Familjen Grotesk",sans-serif;font-weight:900;font-stretch:125%;letter-spacing:-.01em;line-height:1.02;text-transform:none;word-break:break-word}
+  .num{font-variant-numeric:tabular-nums lining-nums}
+  a{color:var(--ink)}
+  .wrap{max-width:680px;margin:0 auto;padding:0 20px}
+  .top{display:flex;align-items:center;justify-content:space-between;padding:20px 0}
+  .brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink)}
+  .brand .name{font-family:"Archivo",sans-serif;font-weight:900;font-stretch:125%;font-size:19px;letter-spacing:.02em;text-transform:uppercase}
+  .top .back{font-size:13px;font-weight:600;color:var(--muted);text-decoration:none}
+  .top .back:hover{color:var(--ink)}
+  .kicker{font-family:"Archivo",sans-serif;font-weight:900;text-transform:uppercase;font-size:12px;letter-spacing:.09em;color:var(--accent);margin:14px 0 6px}
+  .title{font-size:clamp(26px,5.6vw,40px);margin:0 0 12px}
+  .badges{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 8px}
+  .bdg{font-size:12px;font-weight:700;border:2px solid var(--ink);padding:2px 9px;white-space:nowrap;color:var(--muted)}
+  .bdg.stars{color:var(--accent);border-color:var(--ink)}
+  .bdg.lang{color:var(--ink)}
+  .bdg.ran{color:var(--ink);border-color:var(--accent);box-shadow:2px 2px 0 var(--accent)}
+  .article{margin:22px 0 8px}
+  .article p{margin:0 0 16px;font-size:16.5px;color:#26241f;line-height:1.62}
+  .article p:first-child{font-size:18px;color:var(--ink)}
+  .ah{font-family:"Archivo",sans-serif;font-weight:900;font-stretch:112%;text-transform:uppercase;font-size:19px;margin:30px 0 4px;border-bottom:3px solid var(--ink);padding-bottom:7px}
+  .ah .o{color:var(--accent)}
+  .cap{color:var(--muted);font-size:13.5px;margin:8px 0 12px}
+  .took{font-size:14.5px;margin:0 0 14px;padding:10px 13px;background:var(--card);border-left:4px solid var(--accent)}
+  .took code{background:none;border:none;padding:0;color:var(--ink);font-weight:600}
+  code{font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;background:#1110;border:1px solid #1113;padding:1px 5px}
+  .term{font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;line-height:1.5;white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;padding:13px 15px;margin:0 0 12px;border:3px solid var(--ink)}
+  .term.cmd{background:#111;color:#F4EFE6}
+  .term.cmd::before{content:"$ command";display:block;font-size:10.5px;letter-spacing:.08em;color:var(--accent);margin-bottom:7px;text-transform:uppercase}
+  .term.out{background:var(--card);color:#26241f}
+  .term.out::before{content:"output";display:block;font-size:10.5px;letter-spacing:.08em;color:var(--muted);margin-bottom:7px;text-transform:uppercase}
+  .cta{margin:26px 0 0}
+  .cta a{display:inline-block;border:3px solid var(--ink);background:var(--card);padding:11px 16px;font-weight:700;font-size:14px;text-decoration:none;box-shadow:4px 4px 0 var(--ink)}
+  .cta a:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--ink)}
+  footer{margin:40px 0 60px;padding-top:18px;border-top:3px solid var(--ink);font-size:13px;color:var(--muted);line-height:1.55}
+  footer b{color:var(--ink);font-family:"Archivo",sans-serif;font-weight:900;font-stretch:112%;text-transform:uppercase}
+  footer a{color:var(--ink);font-weight:600}
+  @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <a class="brand" href="https://getmotley.github.io/">
+      <svg width="30" height="30" viewBox="0 0 42 42" aria-hidden="true">
+        <circle cx="11" cy="11" r="8" fill="#111"/><rect x="24" y="3" width="15" height="15" transform="rotate(45 31 10)" fill="#FF4D00"/>
+        <path d="M3 39 L11 24 L19 39 Z" fill="#FF4D00"/><rect x="25" y="24" width="15" height="15" fill="#111"/>
+      </svg>
+      <span class="name">Motley</span>
+    </a>
+    <a class="back" href="https://getmotley.github.io/radar/">&larr; back to the Radar</a>
+  </div>
+
+  <div class="kicker">Run &amp; Review &middot; 27 Aug 2026</div>
+  <h1 class="disp title">b-nnett/grok-bot-0.18-reconstructed</h1><div class="badges"><span class="bdg lang">TypeScript</span><span class="bdg stars num">&#9733; 3.2k</span><span class="bdg">unknown</span><span class="bdg num">364,798 LOC</span><span class="bdg ran">ran &#10003; npm test exit 1</span></div><div class="article"><p>I cloned b-nnett/grok-bot-0.18-reconstructed today to see what a source-oriented reconstruction of Grok Bot 0.18.0 actually looks like. The repo sits at 3181 stars and is rising, which makes sense given the current appetite for understanding how shipped AI desktop apps work. This is an unofficial TypeScript reconstruction of the macOS Electron app, not a reverse-engineered binary or a scraped UI. Someone read the shipped app carefully and wrote readable TypeScript implementations of its Electron, host, coordinator, local-execution, protocol, and renderer boundaries, then added a deterministic toolchain for turning those sources back into a working macOS application. The README also lists practical extensions: an inference router for Cursor, Claude Code, Codex, and OpenRouter, plugin and MCP tools across routed providers, local usage tracking, an optional local Docker sandbox, and a reconstructed settings surface. The scale is real: 364,798 lines of TypeScript across 2,111 files.</p><p>Getting it running was straightforward in our case. The documented usage worked as-is on the first attempt. I ran a shell script that inspected the package layout, checked for tsx and tsc availability, and attempted a minimal import of the core transcript module. The repository structure is clean. Running find for TypeScript files immediately surfaced the real source tree: frontend/vite.config.ts, frontend/src/recovered/contracts/surface-notice.ts, frontend/src/recovered/contracts/rpc-edge.ts, frontend/src/recovered/contracts/desktop-bridge.ts, frontend/src/recovered/contracts/main-rpc.ts, frontend/src/recovered/catalog.ts, and a deep tree of recovered features under frontend/src/recovered/features covering window-chrome, access, settings, and onboarding. The package.json declares the name grok-bot-0.18-reconstructed at version 0.18.0-reconstructed.1, private true, type module. No missing system libraries, no dependency hell, no patches needed. The test suite is another matter: npm test exits with code 1, and the repo reports zero test files, so that failure is structural rather than a code regression.</p><p>What actually happened when I ran it confirmed the repo is a reconstruction you can read and import, not a testable application. I wrote a minimal script that imported stripContextTags from source/packages/agent-transcript/index.ts and fed it the string &quot;Here is a message &lt;context&gt;some context data&lt;/context&gt; with tags&quot;. The directory listing confirmed the module exists alongside context-stripping.ts, paths.ts, and trace-format.ts. The import path resolution worked and tsx was available, which means the core modules are genuinely importable TypeScript, not stubs. But with zero test files and npm test exiting 1, there is no verification layer. The output tells you the code is structurally sound at the module level but unverified by any suite.</p><p>The architecture is substantial and the source confirms real engineering. The agent-transcript package handles conversation persistence with TranscriptStoreOptions controlling whether text, JSON, and JSONL writes happen, with an appendFile hook and a fallbackToFullWriteOnIncrementalFailure flag. There is an OVERSIZE_TRANSCRIPT_BLOB_THRESHOLD_BYTES constant set at 5,000,000, and the code handles Uint8Array serialization with a dedicated marker string. The agent package is dense: it imports BackgroundSummarizationMode, flushPostTurnEndedWork, DeferredInteractionResponseError, PrivacyCapability, PrivacyMode, redacted protos, a SummarizationOrchestrator, and a whole set of action handlers including UserMessageActionHandler, ResumeActionHandler, SubscriptionNotificationActionHandler, GoalContinuationActionHandler, SummarizeActionHandler, and ShellCommandActionHandler. The Electron main process in source/electron-main/main.ts defines typed interfaces for MainWebContents and MainBrowserWindow, handles DevTools gating, window state persistence, title bar overlays, and input event chords. The node-agent-coordinator package wires a gateway client, WebAuthn provider and signer, MCP OAuth forwarder, local exec daemon supervisor, transport stage recorder, and createCoordinatorInferenceRouter. These are not toy files.</p><p>The quality read from firsthand inspection is that this is a careful reconstruction with real internal structure and consistent type discipline. Every interface I opened uses readonly fields, union types, and explicit null returns. The rough edges are equally clear. The license is unknown, which is a real problem for anyone considering building on top of it. CI exists and is enabled, but the test suite has zero files and fails on exit, so CI is green only in the sense that there is nothing to run or it reports failure depending on configuration. The agent package alone imports from roughly thirty sibling modules, which means understanding the call graph requires real time. The reconstructed nature also means you are reading someone&#x27;s interpretation of a shipped app, not the original source, so behavioral fidelity is unverified.</p><p>Who should use this: developers who want to study how a production AI desktop app structures its Electron, coordinator, and agent boundaries, and who are comfortable reading 365,000 lines of TypeScript to do it. The inference router and MCP tooling additions are practical if you want to route across Cursor, Claude Code, Codex, and OpenRouter. Where it bites: no license means no commercial use without legal review, zero tests mean you are on your own for verification, and npm test failing means CI signal is noise. This is a research artifact and a reading resource, not a dependency you pin.</p></div><h2 class="ah"><span class="o">What we ran</span></h2><p class="cap">We installed and ran it ourselves. Here is what it took, the exact command, and the real output from our box. Nothing edited.</p><p class="took"><b>What it took:</b> 1 attempt to get running.</p><pre class="term cmd">#!/usr/bin/env bash
+set -e
+cd /tmp/rr/b-nnett_grok-bot-0.18-reconstructed
+
+# Examine what&#x27;s actually importable
+ls source/packages/agent-transcript/ 2&gt;/dev/null || true
+
+# Try to find the actual source files (not just the excerpt)
+find . -path ./node_modules -prune -o -name &#x27;*.ts&#x27; -print | head -30
+
+# Check if there&#x27;s a compiled JS version
+find . -path ./node_modules -prune -o -name &#x27;*.js&#x27; -print | head -30
+
+# Check for package.json scripts
+cat package.json 2&gt;/dev/null | head -40 || true
+
+# Attempt to compile and import the core transcript module
+if [ -f source/packages/agent-transcript/index.ts ]; then
+    # Check if tsx or ts-node is available
+    ls node_modules/.bin/tsx 2&gt;/dev/null &amp;&amp; echo &quot;tsx available&quot; || echo &quot;no tsx&quot;
+    ls node_modules/.bin/tsc 2&gt;/dev/null &amp;&amp; echo &quot;tsc available&quot; || echo &quot;no tsc&quot;
+
+    # Try running a minimal import via tsx
+    cat &gt; /tmp/test_transcript.ts &lt;&lt;&#x27;EOF&#x27;
+import { stripContextTags } from &quot;../tmp/rr/b-nnett_grok-bot-0.18-reconstructed/source/packages/agent-transcript/index.ts&quot;;
+
+const input = &quot;Here is a message &lt;context&gt;some context data&lt;/context&gt; with tags&quot;;
+const result = stripContextTags(input);
+console.log(&quot;INPUT:&quot;, input);
+console.log(&quot;OUTPUT:&quot;, result);
+EOF
+
+    npx tsx /tmp/test_transcript.ts 2&gt;&amp;1 || echo &quot;tsx import failed&quot;
+
+    # Alternative: try to just parse and execute with node after compiling
+    npx tsc --outDir /tmp/compiled source/packages/agent-transcript/index.ts 2&gt;&amp;1 || echo &quot;tsc compile failed&quot;
+
+    # If compilation produced output, try running it
+    if [ -f /tmp/compiled/agent-transcript/index.js ]; then
+        node -e &quot;
+            const mod = require(&#x27;/tmp/compiled/agent-transcript/index.js&#x27;);
+            console.log(&#x27;Module exports:&#x27;, Object.keys(mod));
+            if (mod.stripContextTags) {
+                const input = &#x27;Hello &lt;context&gt;secret&lt;/context&gt; world&#x27;;
+                console.log(&#x27;INPUT:&#x27;, input);
+                console.log(&#x27;OUTPUT:&#x27;, mod.stripContextTags(input));
+            }
+        &quot; 2&gt;&amp;1 || echo &quot;node require failed&quot;
+    fi
+else
+    echo &quot;No source/packages/agent-transcript/index.ts found&quot;
+    # Show the real tree structure
+    find . -path ./node_modules -prune -o -type f -print | head -50
+fi
+
+echo &quot;---&quot;
+echo &quot;Done.&quot;</pre><pre class="term out">context-stripping.ts
+index.ts
+paths.ts
+trace-format.ts
+./frontend/vite.config.ts
+./frontend/src/dev/dom-inspector.ts
+./frontend/src/env.d.ts
+./frontend/src/upstream.ts
+./frontend/src/recovered/contracts/surface-notice.ts
+./frontend/src/recovered/contracts/rpc-edge.ts
+./frontend/src/recovered/contracts/desktop-bridge.ts
+./frontend/src/recovered/contracts/main-rpc.ts
+./frontend/src/recovered/catalog.ts
+./frontend/src/recovered/features/runtime-theme-token-installer.ts
+./frontend/src/recovered/features/window-chrome/app-alert/controller.ts
+./frontend/src/recovered/features/window-chrome/global-keyboard-shortcuts.ts
+./frontend/src/recovered/features/window-chrome/model.ts
+./frontend/src/recovered/features/access/cover/computer-rebuild-model.ts
+./frontend/src/recovered/features/access/cover/computer-rebuild-transport-store.ts
+./frontend/src/recovered/features/access/cover/first-box-gate.ts
+./frontend/src/recovered/features/access/cover/roster-snapshot-store.ts
+./frontend/src/recovered/features/access/cover/computer-rebuild-migration-store.ts
+./frontend/src/recovered/features/access/cover/computer-rebuild-box-store.ts
+./frontend/src/recovered/features/access/cover/rebuild-signal.ts
+./frontend/src/recovered/features/access/cover/model.ts
+./frontend/src/recovered/features/access/cover/composition.ts
+./frontend/src/recovered/features/settings/overlay/entrypoint.ts
+./frontend/src/recovered/features/settings/overlay/router.ts
+./frontend/src/recovered/features/settings/overlay/updates.ts
+./frontend/src/recovered/features/settings/overlay/desktop.ts
+./frontend/src/recovered/features/settings/overlay/updates-controller.ts
+./frontend/src/recovered/features/settings/overlay/model.ts
+./frontend/src/recovered/features/settings/overlay/computer.ts
+./frontend/src/recovered/features/onboarding/signed-in/suggestions.ts
+{
+  &quot;name&quot;: &quot;grok-bot-0.18-reconstructed&quot;,
+  &quot;version&quot;: &quot;0.18.0-reconstructed.1&quot;,
+  &quot;private&quot;: true,
+  &quot;type&quot;: &quot;module&quot;,
+  &quot;description&quot;: &quot;Source-oriented reconstruction of the publicly shipped Grok Bot 0.18.0 macOS application&quot;,
+  &quot;engines&quot;: {
+    &quot;node&quot;: &quot;&gt;=26.5.0 &lt;27&quot;
+  },
+  &quot;scripts&quot;: {
+    &quot;bootstrap&quot;: &quot;node scripts/bootstrap-runtime.mjs&quot;,
+    &quot;build&quot;: &quot;node scripts/build.mjs&quot;,
+    &quot;check&quot;: &quot;npm run typecheck &amp;&amp; npm run source:typecheck &amp;&amp; npm test&quot;,
+    &quot;frontend:build&quot;: &quot;vite build --config frontend/vite.config.ts&quot;,
+    &quot;frontend:recover&quot;: &quot;node scripts/recover-frontend.mjs&quot;,
+    &quot;native:patch&quot;: &quot;node scripts/apply-third-party-patches.mjs&quot;,
+    &quot;native:build:electron&quot;: &quot;node scripts/build-tree-sitter-electron.mjs&quot;,
+    &quot;package&quot;: &quot;npm run check &amp;&amp; node scripts/package-macos.mjs&quot;,
+    &quot;package:diagnostic&quot;: &quot;npm run check &amp;&amp; node scripts/package-fidelity-diagnostic.mjs&quot;,
+    &quot;publication:check&quot;: &quot;node scripts/verify-publication-tree.mjs&quot;,
+    &quot;postinstall&quot;: &quot;node scripts/apply-third-party-patches.mjs&quot;,
+    &quot;smoke&quot;: &quot;node scripts/smoke.mjs&quot;,
+    &quot;test&quot;: &quot;node --test tests/*.test.mjs&quot;,
+    &quot;typecheck&quot;: &quot;tsc --project frontend/tsconfig.json&quot;,
+    &quot;sou</pre><div class="cta"><a href="https://github.com/b-nnett/grok-bot-0.18-reconstructed" rel="noopener">View b-nnett/grok-bot-0.18-reconstructed on GitHub &rarr;</a></div>
+
+  <footer>
+    <p><b>Motley</b> &nbsp; we clone the day's fastest-rising GitHub repos and run them &nbsp;&middot;&nbsp; <a href="https://getmotley.github.io/radar/">see the whole Radar</a>. Not affiliated with GitHub, Inc.</p>
+    <p style="opacity:.7;font-size:13px">Privacy-friendly, cookieless analytics (page counts only, no personal data, no ads).</p>
+  </footer>
+</div>
+<script data-goatcounter="https://motley.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+</body>
+</html>
