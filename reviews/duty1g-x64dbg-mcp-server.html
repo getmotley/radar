@@ -71,7 +71,7 @@
     <a class="back" href="https://getmotley.github.io/radar/">&larr; back to the Radar</a>
   </div>
 
-  <div class="kicker">Run &amp; Review &middot; 29 Aug 2026</div>
+  <div class="kicker">Run &amp; Review &middot; 30 Aug 2026</div>
   <h1 class="disp title">duty1g/x64dbg-mcp-server</h1><div class="badges"><span class="bdg lang">Zig</span><span class="bdg stars num">&#9733; 1.5k</span><span class="bdg">MIT</span><span class="bdg num">6,403 LOC</span><span class="bdg">static review</span></div><div class="article"><p>Cloned duty1g/x64dbg-mcp-server today. It is a native MCP plugin for x64dbg that exposes the debugger over HTTP so an MCP-compatible AI assistant can control it. The README pitches this as agentic reverse engineering: connect a client, drive x64dbg programmatically. Primary language is Zig, 6403 lines across 20 files, MIT licensed.</p><p>I could not run it. There is no Python entrypoint and no Zig toolchain on my machine, so this was a static review only. I did not execute the plugin or connect a client.</p><p>One concrete signal: the repo has zero test files and no CI. 6403 lines of Zig with no automated verification is a real gap for something that bridges an AI assistant to a live debugger. The structure is small, 20 files, which is manageable to read, but the absence of tests means any behaviour claims rest entirely on manual use.</p></div><h2 class="ah"><span class="o">Why we couldn’t run it</span></h2><p>no runnable Python entrypoint (primary language Zig); static review only So this is a static read of the source, not a run.</p><div class="cta"><a href="https://github.com/duty1g/x64dbg-mcp-server" rel="noopener">View duty1g/x64dbg-mcp-server on GitHub &rarr;</a></div>
 
   <footer>
