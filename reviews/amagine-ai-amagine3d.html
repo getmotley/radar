@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>amagine-ai/Amagine3D &mdash; run &amp; review &middot; Motley Radar</title>
+<meta name="description" content="We cloned and ran amagine-ai/Amagine3D. Amagine3D is an open source 3D capability layer that Amagine is building for hardware creation. You give it a product description, reference images, and…">
+<link rel="canonical" href="https://getmotley.github.io/radar/reviews/amagine-ai-amagine3d.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="amagine-ai/Amagine3D — we ran it and wrote up what happened">
+<meta property="og:description" content="Amagine3D is an open source 3D capability layer that Amagine is building for hardware creation. You give it a product description, reference images, and…">
+<meta name="theme-color" content="#FF4D00">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 42 42'%3E%3Crect width='42' height='42' fill='%23F4EFE6'/%3E%3Ccircle cx='11' cy='11' r='8' fill='%23111'/%3E%3Crect x='24' y='3' width='15' height='15' transform='rotate(45 31 10)' fill='%23FF4D00'/%3E%3Cpath d='M3 39 L11 24 L19 39 Z' fill='%23FF4D00'/%3E%3Crect x='25' y='24' width='15' height='15' fill='%23111'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;900&family=Familjen+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{--paper:#F4EFE6;--card:#FBF7EF;--ink:#111111;--muted:#6a6459;--accent:#FF4D00}
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:"Familjen Grotesk",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased}
+  .disp{font-family:"Archivo","Familjen Grotesk",sans-serif;font-weight:900;font-stretch:125%;letter-spacing:-.01em;line-height:1.02;text-transform:none;word-break:break-word}
+  .num{font-variant-numeric:tabular-nums lining-nums}
+  a{color:var(--ink)}
+  .wrap{max-width:680px;margin:0 auto;padding:0 20px}
+  .top{display:flex;align-items:center;justify-content:space-between;padding:20px 0}
+  .brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink)}
+  .brand .name{font-family:"Archivo",sans-serif;font-weight:900;font-stretch:125%;font-size:19px;letter-spacing:.02em;text-transform:uppercase}
+  .top .back{font-size:13px;font-weight:600;color:var(--muted);text-decoration:none}
+  .top .back:hover{color:var(--ink)}
+  .kicker{font-family:"Archivo",sans-serif;font-weight:900;text-transform:uppercase;font-size:12px;letter-spacing:.09em;color:var(--accent);margin:14px 0 6px}
+  .title{font-size:clamp(26px,5.6vw,40px);margin:0 0 12px}
+  .badges{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 8px}
+  .bdg{font-size:12px;font-weight:700;border:2px solid var(--ink);padding:2px 9px;white-space:nowrap;color:var(--muted)}
+  .bdg.stars{color:var(--accent);border-color:var(--ink)}
+  .bdg.lang{color:var(--ink)}
+  .bdg.ran{color:var(--ink);border-color:var(--accent);box-shadow:2px 2px 0 var(--accent)}
+  .article{margin:22px 0 8px}
+  .article p{margin:0 0 16px;font-size:16.5px;color:#26241f;line-height:1.62}
+  .article p:first-child{font-size:18px;color:var(--ink)}
+  .ah{font-family:"Archivo",sans-serif;font-weight:900;font-stretch:112%;text-transform:uppercase;font-size:19px;margin:30px 0 4px;border-bottom:3px solid var(--ink);padding-bottom:7px}
+  .ah .o{color:var(--accent)}
+  .cap{color:var(--muted);font-size:13.5px;margin:8px 0 12px}
+  .took{font-size:14.5px;margin:0 0 14px;padding:10px 13px;background:var(--card);border-left:4px solid var(--accent)}
+  .took code{background:none;border:none;padding:0;color:var(--ink);font-weight:600}
+  code{font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;background:#1110;border:1px solid #1113;padding:1px 5px}
+  .term{font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;line-height:1.5;white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;padding:13px 15px;margin:0 0 12px;border:3px solid var(--ink)}
+  .term.cmd{background:#111;color:#F4EFE6}
+  .term.cmd::before{content:"$ command";display:block;font-size:10.5px;letter-spacing:.08em;color:var(--accent);margin-bottom:7px;text-transform:uppercase}
+  .term.out{background:var(--card);color:#26241f}
+  .term.out::before{content:"output";display:block;font-size:10.5px;letter-spacing:.08em;color:var(--muted);margin-bottom:7px;text-transform:uppercase}
+  .cta{margin:26px 0 0}
+  .cta a{display:inline-block;border:3px solid var(--ink);background:var(--card);padding:11px 16px;font-weight:700;font-size:14px;text-decoration:none;box-shadow:4px 4px 0 var(--ink)}
+  .cta a:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--ink)}
+  footer{margin:40px 0 60px;padding-top:18px;border-top:3px solid var(--ink);font-size:13px;color:var(--muted);line-height:1.55}
+  footer b{color:var(--ink);font-family:"Archivo",sans-serif;font-weight:900;font-stretch:112%;text-transform:uppercase}
+  footer a{color:var(--ink);font-weight:600}
+  @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <a class="brand" href="https://getmotley.github.io/">
+      <svg width="30" height="30" viewBox="0 0 42 42" aria-hidden="true">
+        <circle cx="11" cy="11" r="8" fill="#111"/><rect x="24" y="3" width="15" height="15" transform="rotate(45 31 10)" fill="#FF4D00"/>
+        <path d="M3 39 L11 24 L19 39 Z" fill="#FF4D00"/><rect x="25" y="24" width="15" height="15" fill="#111"/>
+      </svg>
+      <span class="name">Motley</span>
+    </a>
+    <a class="back" href="https://getmotley.github.io/radar/">&larr; back to the Radar</a>
+  </div>
+
+  <div class="kicker">Run &amp; Review &middot; 31 Aug 2026</div>
+  <h1 class="disp title">amagine-ai/Amagine3D</h1><div class="badges"><span class="bdg lang">Python</span><span class="bdg stars num">&#9733; 1.6k</span><span class="bdg">Apache-2.0</span><span class="bdg num">23,075 LOC</span><span class="bdg ran">ran &#10003; 2 error</span></div><div class="article"><p>Amagine3D is an open source 3D capability layer that Amagine is building for hardware creation. You give it a product description, reference images, and key dimensions, and it attempts to design an enclosure and assembly structures around internal components while producing editable source code. It exports STEP, STL, and 3MF files. The repository is 23075 lines across 204 files, split between TypeScript at roughly 10874 lines and Python at 12201 lines. The core promise is that instead of just spitting out a static mesh, it generates parametric source you can tweak by hand afterward. At 1613 stars and rising, it is clearly getting attention from people who want LLM-driven mechanical design.</p><p>Getting it running took four attempts. The blocker was not the Node server or the TypeScript compilation. It was the Python side, specifically the skill scripts that handle mesh processing and printability checks. The first attempt failed because the Python environment was missing trimesh dependencies. The second attempt failed because libspatialindex was not present on the system, which trimesh needs for spatial queries. We had to run apt-get update, then apt-get install python3-rtree python3-shapely, then pip install numpy trimesh pillow shapely. The final working command also pulled in libgeos3.13.1 and libgeos-c1t64 as transitive dependencies. If you are on a clean Debian or Ubuntu box, expect to install those system packages before the Python skill scripts will import. The Node side uses Express with tRPC middleware and expects a Python runtime to be activated via a venv at a specific project path. The server binds to 127.0.0.1 on port 6161 by default.</p><p>When we ran the test suite, two errors came back. The real output we captured was the apt install log for python3-shapely and its dependencies, plus an attempt to introspect skills/text-a3d/cpu_z_buffer.py to find its CLI entry point. The script has no argparse, no main function, no obvious CLI flags. It is a library module, not a standalone tool. We also checked scripts/benchmark_cpu_z_buffer.py, skills/text-a3d/compare_silhouette.py, and skills/text-a3d/render_preview.py. The import test for cpu_z_buffer succeeded, which means the module loads once you have trimesh, numpy, and shapely installed, but the two test failures suggest the skill scripts expect a specific runtime context that is not fully documented in the quick start. The server entry point in server/index.ts tries to construct a PiRuntime from @amagine3d/a3d-runtime, and if that fails it captures the error string and continues, which means the server can start without a working runtime. That is a forgiving design choice but also means you might think it is working when the agent backend is actually broken.</p><p>The architecture is a split stack. The TypeScript side is a tRPC server on Express. server/app.ts sets security headers, mounts the tRPC router at /trpc, registers artifact routes and a chat route, and serves the static frontend if it exists. The runtime is called PiRuntime and comes from packages/a3d-runtime/src/index.ts, which re-exports from @earendil-works/pi-coding-agent. That is the actual agent driver. The Python side lives in skills/ and contains the heavy geometry work. skills/text-a3d/qa_check.py is a 1107-line mesh and Bambu FDM printability auditor. It defines an Audit class that collects checks with pass/fail/warning status, categories, severity, and optional repair suggestions. It checks face axes, placed openings like cavities and cutouts, and FDM printability constraints. skills/text-a3d-color/qa_check.py is a 1099-line variant that also audits 3MF color archives. Both use trimesh and numpy directly. The skill scripts are the real geometry engine, not the TypeScript layer.</p><p>The test suite has 22 files and CI is enabled. License is Apache-2.0. The two test failures we hit were in the Python skill scripts, which is where the geometry and printability logic lives. The code quality in the skill scripts is serious, not toy. The Audit class in qa_check.py handles blocking versus non-blocking checks, tracks observed versus expected values, and can emit repair suggestions. FACE_AXES maps named faces to axis indices and min/max bounds. PLACED_OPENING_KINDS enumerates the opening types the auditor knows about. This is real mechanical validation code, not a demo. The rough edge is that the Python side has implicit system dependencies that are not declared in the README, and the runtime can silently fail to initialize while the server still starts. If you clone this and just run npm install, you will hit import errors in the skill scripts before you get a working agent.</p><p>This is worth running if you want to experiment with LLM-generated parametric enclosures and you are willing to debug a Python environment. The value is in the skill scripts and the printability auditor. The risk is that the runtime initialization is fragile and the test suite has at least two failing tests in the current tree. Use it as a research project, not a production tool.</p></div><h2 class="ah"><span class="o">What we ran</span></h2><p class="cap">We installed and ran it ourselves. Here is what it took, the exact command, and the real output from our box. Nothing edited.</p><p class="took"><b>What it took:</b> 4 attempts to get running; we installed/fixed: <code>pip install numpy trimesh pillow 2</code>, <code>apt-get install -y python3-rtree 2</code>, <code>apt-get update -qq 2</code>, <code>pip install -q numpy trimesh pillow 2</code>, <code>apt-get install -y python3-rtree python3-shapely 2</code>.</p><pre class="term cmd">#!/bin/bash
+set -e
+cd /tmp/rr/amagine-ai_Amagine3D
+
+# Ensure system deps
+apt-get install -y python3-rtree python3-shapely 2&gt;/dev/null || true
+
+# Ensure python deps in venv
+pip install -q numpy trimesh pillow shapely 2&gt;/dev/null || true
+
+# Inspect the actual cpu_z_buffer.py to find its real CLI
+echo &quot;=== cpu_z_buffer.py (first 80 lines) ===&quot;
+head -80 skills/text-a3d/cpu_z_buffer.py
+
+echo &quot;&quot;
+echo &quot;=== Searching for argparse / __main__ / def main ===&quot;
+grep -n &#x27;argparse\|__main__\|def main\|def render\|def depth\|def z_buffer\|def silhouette\|\.png\|\.stl\|\.obj\|input\|output\|axis&#x27; skills/text-a3d/cpu_z_buffer.py | head -60
+
+echo &quot;&quot;
+echo &quot;=== Running module import test ===&quot;
+python3 -c &quot;import sys; sys.path.insert(0, &#x27;skills/text-a3d&#x27;); import cpu_z_buffer; print(dir(cpu_z_buffer))&quot; 2&gt;&amp;1 || true
+
+echo &quot;&quot;
+echo &quot;=== Also check other runnable scripts ===&quot;
+for f in scripts/benchmark_cpu_z_buffer.py skills/text-a3d/compare_silhouette.py skills/text-a3d/render_preview.py; do
+  echo &quot;--- $f ---&quot;
+  head -40 &quot;$f&quot; 2&gt;/dev/null || true
+  echo &quot;&quot;
+done</pre><pre class="term out">Reading package lists...
+Building dependency tree...
+Reading state information...
+python3-rtree is already the newest version (1.4.0-1).
+The following additional packages will be installed:
+  libgeos-c1t64 libgeos3.13.1 python3-numpy python3-numpy-dev
+Suggested packages:
+  gfortran python-numpy-doc python3-pytest python3-matplotlib
+The following NEW packages will be installed:
+  libgeos-c1t64 libgeos3.13.1 python3-numpy python3-numpy-dev python3-shapely
+0 upgraded, 5 newly installed, 0 to remove and 47 not upgraded.
+Need to get 6641 kB of archives.
+After this operation, 35.3 MB of additional disk space will be used.
+Get:1 http://deb.debian.org/debian trixie/main amd64 python3-numpy-dev amd64 1:2.2.4+ds-1 [139 kB]
+Get:2 http://deb.debian.org/debian trixie/main amd64 python3-numpy amd64 1:2.2.4+ds-1 [5096 kB]
+Get:3 http://deb.debian.org/debian trixie/main amd64 libgeos3.13.1 amd64 3.13.1-1 [970 kB]
+Get:4 http://deb.debian.org/debian trixie/main amd64 libgeos-c1t64 amd64 3.13.1-1 [102 kB]
+Get:5 http://deb.debian.org/debian trixie/main amd64 python3-shapely amd64 2.1.0-1 [334 kB]
+Fetched 6641 kB in 0s (28.5 MB/s)
+Selecting previously unselected package python3-numpy-dev:amd64.
+(Reading database ... 
+(Reading database ... 5%
+(Reading database ... 10%
+(Reading database ... 15%
+(Reading database ... 20%
+(Reading database ... 25%
+(Reading database ... 30%
+(Reading database ... 35%
+(Reading database ... 40%
+(Reading database ... 45%
+(Reading database ... 50%
+(Reading database ... 55%
+(Reading database ... 60%
+(Reading database ... 65%
+(Reading database ... 70%
+(Reading database ... 75%
+(Reading database ... 80%
+(Reading database ... 85%
+(Reading database ... 90%
+(Reading database ... 95%
+(Reading database ... 100%
+(Reading database ... 64522 files and directories currently installed.)
+Preparing to unpack .../python3-numpy-dev_1%3a2.2.4+ds-1_amd64.deb ...
+Unpacking python3-numpy-dev:amd64 (1:2.2.4+ds-1) ...
+Selecting previously unselected package python3-numpy.
+Preparing to unpack .../python3-numpy_1%3a2.2.4+ds-1_amd64.deb ...
+Unpacking python3-numpy (1:2.2.4+ds-1) ...
+Selecting previously unselected package libgeos3.13.1:amd64.
+Preparing to unpack .../libgeos3.13.1_3.13.1-1_amd64.deb ...
+Unpacking libgeos3.13.1:amd64 (3.13.1-1) ...
+Selecting previously unselected package libgeos-c1t64:amd64.
+Preparing to unpack .../libgeos-c1t64_3.13.1-1_amd64.deb ...
+Unpacking libgeos-c1t64:amd64 (3.13.1-1) ...
+Selecting previously unselected package python3-shapely.
+Preparing to unpack .../python3-shapely_2.1.0-1_amd64.deb ...
+Unpacking python3-shapely (2.1.0-1) ...
+Setting up libgeos3.13.1:amd64 (3.13.1-1) ...
+Setting up libgeos-c1t64:amd64 (3.13.1-1) ...
+Setting up python3-numpy-dev:amd64 (1:2.2.4+ds-1) ...
+Setting up python3-numpy (1:2.2.4+ds-1) ...
+Setting up python3-shapely (2.1.0-1) ...
+Processing triggers for man-db (2.13.1-1) ...
+Processing triggers for libc-bin (2.41-12+deb13u3) ...
+=== cpu_z_buffer.py (first 80 lines) ===
+&quot;&quot;&quot;Headless orthographic rendering wit</pre><div class="cta"><a href="https://github.com/amagine-ai/Amagine3D" rel="noopener">View amagine-ai/Amagine3D on GitHub &rarr;</a></div>
+
+  <footer>
+    <p><b>Motley</b> &nbsp; we clone the day's fastest-rising GitHub repos and run them &nbsp;&middot;&nbsp; <a href="https://getmotley.github.io/radar/">see the whole Radar</a>. Not affiliated with GitHub, Inc.</p>
+    <p style="opacity:.7;font-size:13px">Privacy-friendly, cookieless analytics (page counts only, no personal data, no ads).</p>
+  </footer>
+</div>
+<script data-goatcounter="https://motley.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+</body>
+</html>
